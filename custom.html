@@ -361,17 +361,19 @@ body {
 }
 
 /* Hide all bones/skeletons to match clean vector meat layout */
-.meat-diagram svg g[pointer-events="none"],
-.meat-diagram svg path[stroke*="url(#gBS)"],
-.meat-diagram svg path[stroke*="gBS"],
-.meat-diagram svg path[stroke*="#FFF"],
-.meat-diagram svg path[stroke*="#FF"],
-.meat-diagram svg circle[fill*="gBone"],
-.meat-diagram svg ellipse[fill*="gBone"],
-.meat-diagram svg g[filter*="boneGlow"],
-.meat-diagram svg path[stroke*="#C0940C"],
-.meat-diagram svg g[stroke*="#AA8008"],
-.meat-diagram svg ellipse[fill*="#F4E080"] {
+#diag-chicken svg [filter*="boneGlow"],
+#diag-chicken svg [fill*="gBone"],
+#diag-chicken svg [stroke*="gBS"],
+#diag-chicken svg [stroke*="gBSV"],
+#diag-chicken svg [stroke*="gNeck"],
+#diag-chicken svg [stroke*="#C0940C"],
+#diag-chicken svg [stroke*="#AA8008"],
+#diag-chicken svg [fill*="#F4E080"],
+#diag-chicken svg [fill*="#ECD868"],
+#diag-chicken svg [stroke*="#DDCA60"],
+#diag-chicken svg [fill*="#EFE490"],
+#diag-chicken svg [fill*="#F8F0D0"],
+#diag-chicken svg [fill*="#FFFFF8"] {
   display: none !important;
 }
 
@@ -784,7 +786,7 @@ body {
                  C250 352 268 386 289 406 C300 418 314 425 320 426
                  L320 146 Z"
               fill="url(#gBL)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M320 146 C304 148 276 163 258 196 C239 229 237 272 243 312 C250 352 268 386 289 406 C300 418 314 425 320 426 L320 146 Z"
+            <path d="M320 146 C290 148 210 160 190 210 C170 260 180 330 210 380 C230 410 290 425 320 426 L320 146 Z"
               fill="none" filter="url(#fBreast)" opacity="0.72" pointer-events="none"/>
             <!-- Very bright convex mound â€” multiple layers for 3D bulk -->
             <path d="M317 156 C311 198 308 248 310 296 C312 334 316 368 319 418"
@@ -817,7 +819,7 @@ body {
                  C390 352 372 386 351 406 C340 418 326 425 320 426
                  L320 146 Z"
               fill="url(#gBR)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M320 146 C336 148 364 163 382 196 C401 229 403 272 397 312 C390 352 372 386 351 406 C340 418 326 425 320 426 L320 146 Z"
+            <path d="M320 146 C350 148 430 160 450 210 C470 260 460 330 430 380 C410 410 350 425 320 426 L320 146 Z"
               fill="none" filter="url(#fBreast)" opacity="0.72" pointer-events="none"/>
             <path d="M323 156 C329 198 332 248 330 296 C328 334 324 368 321 418"
               stroke="#FFFFF0" stroke-width="28" fill="none" opacity="0.14" stroke-linecap="round" pointer-events="none"/>
@@ -1041,7 +1043,7 @@ body {
                  C304 644 308 612 303 583
                  C298 558 285 534 270 532 Z"
               fill="url(#gTL)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M270 532 C242 537 210 557 196 593 C183 629 193 665 217 676 C240 686 270 680 286 663 C304 644 308 612 303 583 C298 558 285 534 270 532 Z"
+            <path d="M290 530 C250 530 170 550 160 600 C150 640 180 690 215 690 C250 690 295 650 290 590 C285 550 290 535 290 530 Z"
               fill="none" filter="url(#fDark)" opacity="0.80" pointer-events="none"/>
             <!-- FEMUR BONE â€” large, very prominent -->
             <path d="M289 542 C279 576 273 614 274 650"
@@ -1084,7 +1086,7 @@ body {
                  C336 644 332 612 337 583
                  C342 558 355 534 370 532 Z"
               fill="url(#gTR)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M370 532 C398 537 430 557 444 593 C457 629 447 665 423 676 C400 686 370 680 354 663 C336 644 332 612 337 583 C342 558 355 534 370 532 Z"
+            <path d="M350 530 C390 530 470 550 480 600 C490 640 460 690 425 690 C390 690 345 650 350 590 C355 550 350 535 350 530 Z"
               fill="none" filter="url(#fDark)" opacity="0.80" pointer-events="none"/>
             <path d="M351 542 C361 576 367 614 366 650"
               stroke="url(#gBSV)" stroke-width="20" fill="none" stroke-linecap="round" opacity="0.56" pointer-events="none"/>
@@ -1121,7 +1123,7 @@ body {
                  C278 800 294 780 294 760
                  C295 734 283 704 267 684 Z"
               fill="url(#gDL)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M246 672 C226 694 215 725 219 757 C222 786 239 804 258 802 C278 800 294 780 294 760 C295 734 283 704 267 684 Z"
+            <path d="M215 680 C185 710 180 770 210 810 C230 830 260 830 270 800 C280 770 270 720 255 680 Z"
               fill="none" filter="url(#fDark)" opacity="0.68" pointer-events="none"/>
 
             <!-- PROXIMAL TIBIA (knee) â€” double condyle -->
@@ -1171,7 +1173,7 @@ body {
                  C362 800 346 780 346 760
                  C345 734 357 704 373 684 Z"
               fill="url(#gDR)" stroke="#3A1C00" stroke-width="2.2"/>
-            <path d="M394 672 C414 694 425 725 421 757 C418 786 401 804 382 802 C362 800 346 780 346 760 C345 734 357 704 373 684 Z"
+            <path d="M425 680 C455 710 460 770 430 810 C410 830 380 830 370 800 C360 770 370 720 385 680 Z"
               fill="none" filter="url(#fDark)" opacity="0.68" pointer-events="none"/>
             <!-- PROXIMAL TIBIA right -->
             <ellipse cx="376" cy="676" rx="28" ry="17"
@@ -1356,6 +1358,50 @@ let viewMode = '2d';       // '2d' or '3d'
 
 // Track severed parts of the chicken: { 'breast_l': true, ... }
 const severedParts = {};
+
+// ═══════════════════════════════════════════════════
+// SCALE COUNTER ANIMATION
+// ═══════════════════════════════════════════════════
+function animateScale(targetWeight, partName, emoji) {
+  const pan = document.getElementById('scalePan');
+  const display = document.getElementById('weightDisplay');
+  const partLabel = document.getElementById('scalePartName');
+  const emojiEl = document.getElementById('scaleEmoji');
+
+  // Scale dip animation
+  pan.classList.remove('weighing');
+  void pan.offsetWidth;
+  pan.classList.add('weighing');
+
+  // Show emoji floating above pan
+  emojiEl.textContent = emoji || '🥩';
+  emojiEl.style.opacity = '1';
+
+  // Digital counter animation
+  const duration = 600;
+  const steps = 30;
+  const step = targetWeight / steps;
+  let current = 0;
+  let i = 0;
+
+  display.textContent = '0';
+  partLabel.textContent = partName;
+
+  const interval = setInterval(() => {
+    i++;
+    current = Math.min(Math.round(step * i), targetWeight);
+    display.textContent = current.toLocaleString();
+    if (i >= steps) {
+      clearInterval(interval);
+      display.textContent = targetWeight.toLocaleString();
+    }
+  }, duration / steps);
+
+  setTimeout(() => {
+    pan.classList.remove('weighing');
+    emojiEl.style.opacity = '0.7';
+  }, duration + 100);
+}
 
 // ════════════════════════════════════════════════════
 // DIRECTIONAL CUT MAP
@@ -1784,7 +1830,7 @@ function spawnBloodParticles(cx, cy, baseAngle) {
 let scene3, camera3, renderer3, chickenGroup, raycaster, mouse;
 const parts3D = {};
 
-const 3DColors = {
+const colors3D = {
   back: 0xFFB74D,       // Creamy orange
   breast_l: 0xFFF8E1,   // Bright cream-yellow
   breast_r: 0xFFF8E1,   // Bright cream-yellow
@@ -1845,7 +1891,7 @@ function buildChicken3D() {
   chickenGroup = new THREE.Group();
 
   const materials = {};
-  for (const [part, hex] of Object.entries(3DColors)) {
+  for (const [part, hex] of Object.entries(colors3D)) {
     materials[part] = new THREE.MeshToonMaterial({
       color: hex,
       roughness: 0.65,
