@@ -353,7 +353,7 @@ class WebGLRenderer {
         const cx = proj.x;
         const cy = proj.y;
         
-        ctx.beginPath();
+        // Translate and rotate FIRST, then draw
         ctx.translate(cx, cy);
         ctx.rotate(mesh.rotation.z);
         
@@ -364,27 +364,33 @@ class WebGLRenderer {
           highlightColor = lightenColor(glowHex, 0.45);
         }
         
+        // Draw cylinder body
         const grad = ctx.createLinearGradient(-rx, 0, rx, 0);
         grad.addColorStop(0, shadowColor);
-        grad.addColorStop(0.3, isGlowing ? glowHex : baseColor);
+        grad.addColorStop(0.35, isGlowing ? glowHex : baseColor);
+        grad.addColorStop(0.65, isGlowing ? glowHex : baseColor);
         grad.addColorStop(1, shadowColor);
         
         ctx.fillStyle = grad;
-        ctx.fillRect(-rx, -ry/2, rx*2, ry);
-        
-        ctx.beginPath();
-        ctx.ellipse(0, -ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.ellipse(0, ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.stroke();
-        
         ctx.strokeStyle = darkenColor(baseColor, 0.45);
         ctx.lineWidth = 1.8;
+        ctx.fillRect(-rx, -ry/2, rx*2, ry);
         ctx.strokeRect(-rx, -ry/2, rx*2, ry);
+        
+        // Top ellipse cap
+        ctx.beginPath();
+        ctx.ellipse(0, -ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
+        ctx.fillStyle = lightenColor(baseColor, 0.2);
+        ctx.fill();
+        ctx.strokeStyle = darkenColor(baseColor, 0.45);
+        ctx.stroke();
+        
+        // Bottom ellipse cap
+        ctx.beginPath();
+        ctx.ellipse(0, ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
+        ctx.fillStyle = darkenColor(baseColor, 0.15);
+        ctx.fill();
+        ctx.stroke();
       }
       
       ctx.restore();
