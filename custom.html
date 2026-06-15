@@ -636,12 +636,11 @@ body {
       <div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>
     </div>
 
-    <!-- Internal Offal Box -->
-    <div class="workshop-title">Cavity Organ Harvest (Offal)</div>
+    <div class="workshop-title" id="offalSectionTitle">Cavity Organ Harvest (Offal)</div>
     <div class="offal-box" id="internalPartsBox" style="margin-bottom: 16px;">
       <!-- Populated by JS script -->
     </div>
-    <div style="font-size:0.6rem; color:var(--ink-light); margin-top:-10px; margin-bottom: 16px; font-style:italic; opacity:0.8;">Click to extract edible offal.</div>
+    <div style="font-size:0.6rem; color:var(--ink-light); margin-top:-10px; margin-bottom: 16px; font-style:italic; opacity:0.8;">Click to extract edible offal / extras.</div>
 
     <div class="workshop-footer-actions">
       <button class="btn-workshop-save" onclick="saveCustomCutsToCart()">
@@ -659,6 +658,16 @@ body {
     
     <!-- Toolbar overlay inside SVG panel -->
     <div class="ws-toolbar">
+      <!-- Animal type selector tabs -->
+      <div class="toggle-group" style="margin-right:8px;">
+        <button class="ws-tool-btn active" id="diagAnimalChicken" onclick="setAnimal('chicken')" style="font-size:0.7rem;">
+          🐔 Chicken
+        </button>
+        <button class="ws-tool-btn" id="diagAnimalFish" onclick="setAnimal('fish')" style="font-size:0.7rem;">
+          🐟 Fish
+        </button>
+      </div>
+
       <!-- View mode toggle -->
       <div class="toggle-group" style="margin-right: 12px;">
         <button class="ws-tool-btn active" id="btn2D" onclick="setViewMode('2d')">
@@ -682,12 +691,12 @@ body {
       <span class="ws-hint" id="wsModeHint">▶ Select Mode - click parts to inspect</span>
     </div>
 
-    <!-- 2D SVG Diagram (Chicken Ventral) -->
+    <!-- 2D SVG Diagram (Chicken) -->
         <div class="meat-diagram active" id="diag-chicken">
       <div class="diagram-label" style="display:none"></div>
-      <div style="width:100%;height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:hidden;padding-top:72px;box-sizing:border-box">
+      <div style="width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:hidden;padding-top:65px;box-sizing:border-box">
         <svg viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
-             style="width:auto;height:calc(100vh - 170px);max-height:600px;min-height:380px;display:block;">
+             style="width:auto;height:calc(100vh - 110px);max-height:720px;min-height:420px;display:block;">
           <defs>
 
             <!-- Clip paths for Back splitting -->
@@ -1499,6 +1508,284 @@ body {
 
 
 
+    <!-- 2D SVG Diagram (Fish) -->
+        <div class="meat-diagram" id="diag-fish" style="display:none">
+      <div class="diagram-label" style="display:none"></div>
+      <div style="width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#D8EEF4;overflow:hidden;padding-top:65px;box-sizing:border-box">
+        <svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg"
+             style="width:auto;height:calc(100vh - 130px);max-height:580px;min-height:280px;display:block;">
+          <defs>
+            <!-- Fish body gradient (silver iridescence) -->
+            <linearGradient id="gFishBodyMain" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#E8F4F8"/>
+              <stop offset="30%"  stop-color="#C4DCE8"/>
+              <stop offset="60%"  stop-color="#A8C8DA"/>
+              <stop offset="100%" stop-color="#88A8BC"/>
+            </linearGradient>
+            <linearGradient id="gFishBodyShine" x1="10%" y1="0%" x2="90%" y2="0%">
+              <stop offset="0%"   stop-color="#7890A0" stop-opacity="0.6"/>
+              <stop offset="20%"  stop-color="#F0F8FF" stop-opacity="0.9"/>
+              <stop offset="50%"  stop-color="#E0F0F8" stop-opacity="0.95"/>
+              <stop offset="80%"  stop-color="#F0F8FF" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#7890A0" stop-opacity="0.6"/>
+            </linearGradient>
+            <radialGradient id="gFishHead" cx="30%" cy="40%" r="70%">
+              <stop offset="0%"   stop-color="#AABCC8"/>
+              <stop offset="60%"  stop-color="#8098A8"/>
+              <stop offset="100%" stop-color="#5A7888"/>
+            </radialGradient>
+            <radialGradient id="gFishMidGrad" cx="50%" cy="30%" r="65%">
+              <stop offset="0%"   stop-color="#F8FDFF"/>
+              <stop offset="40%"  stop-color="#CCDCE8"/>
+              <stop offset="100%" stop-color="#8AACBC"/>
+            </radialGradient>
+            <!-- Drop shadow -->
+            <filter id="fFishShadow" x="-8%" y="-10%" width="120%" height="130%">
+              <feDropShadow dx="4" dy="8" stdDeviation="10" flood-color="#1A3848" flood-opacity="0.3"/>
+            </filter>
+            <!-- Scale texture -->
+            <filter id="fScaleTexture">
+              <feTurbulence type="fractalNoise" baseFrequency="0.08 0.12" numOctaves="3" seed="5" result="n"/>
+              <feColorMatrix type="matrix" in="n"
+                values="0 0 0 0 0.3  0 0 0 0 0.5  0 0 0 0 0.7  0 0 0 0.12 0" result="c"/>
+              <feComposite in="c" in2="SourceGraphic" operator="in" result="t"/>
+              <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge>
+            </filter>
+
+            <!-- Clip paths for fish sections -->
+            <clipPath id="clipHead">
+              <rect x="0"   y="0" width="190" height="420"/>
+            </clipPath>
+            <clipPath id="clipFront">
+              <rect x="190" y="0" width="130" height="420"/>
+            </clipPath>
+            <clipPath id="clipMid">
+              <rect x="320" y="0" width="140" height="420"/>
+            </clipPath>
+            <clipPath id="clipBack">
+              <rect x="460" y="0" width="110" height="420"/>
+            </clipPath>
+            <clipPath id="clipTail">
+              <rect x="570" y="0" width="130" height="420"/>
+            </clipPath>
+          </defs>
+
+          <!-- Background water effect -->
+          <rect width="700" height="420" fill="#D0E8F0"/>
+          <ellipse cx="350" cy="225" rx="310" ry="145" fill="none" stroke="#B0D4E0" stroke-width="1.5" opacity="0.5"/>
+          <ellipse cx="350" cy="225" rx="270" ry="125" fill="none" stroke="#B0D4E0" stroke-width="1" opacity="0.35"/>
+          <ellipse cx="350" cy="225" rx="220" ry="100" fill="none" stroke="#B0D4E0" stroke-width="0.8" opacity="0.25"/>
+
+          <!-- ========= COMPLETE FISH BODY PATH (the outline used by all sections) ========= -->
+          <!-- Defined once; clipped per section for coloring -->
+          <!-- Tail prongs -->
+          <g filter="url(#fFishShadow)">
+
+            <!-- TAIL section -->
+            <g class="cut-part" id="el-fish-tail" data-part="fish_tail" data-meat="fish"
+               data-weight="60" data-price="0.80" data-emoji="🐟"
+               clip-path="url(#clipTail)" style="cursor:pointer">
+              <path class="part-fill part-outline"
+                d="M110 220
+                   C200 215 310 215 430 220 C500 222 550 226 570 228
+                   L592 165 C598 145 605 118 612 100 C620 80 625 70 615 68
+                   C605 66 596 80 585 100 C574 120 566 148 558 168
+                   L570 228 L570 222
+                   C566 202 558 178 556 158 C550 132 545 114 535 110
+                   C520 104 510 118 504 136 C498 155 498 178 500 200
+                   L570 222 L570 228 L571 232 L570 238
+                   L500 260 C498 282 498 305 504 324 C510 342 520 356 535 350
+                   C545 346 550 328 556 302 C558 282 566 258 570 238
+                   L570 232
+                   C566 252 558 278 585 260 C596 270 605 280 615 282
+                   C625 280 620 270 612 250 C605 232 598 215 592 195
+                   L570 232 Z"
+                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="2" opacity="0"/>
+
+              <!-- Actual tail fork shapes -->
+              <!-- Top prong -->
+              <path class="part-fill part-outline"
+                d="M570 210 C572 195 575 175 580 160 C586 140 595 118 610 98
+                   C618 87 622 72 612 70 C602 68 594 84 586 104 C577 124 572 152 570 175
+                   C568 188 567 200 568 210 Z"
+                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="1.8"/>
+
+              <!-- Bottom prong -->
+              <path class="part-fill part-outline"
+                d="M570 240 C568 256 568 270 570 285 C572 302 577 328 586 348
+                   C594 368 602 382 612 380 C622 378 618 363 610 352
+                   C596 332 587 308 580 288 C575 274 572 254 570 240 Z"
+                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="1.8"/>
+
+              <!-- Tail body connection -->
+              <path class="part-fill part-outline"
+                d="M540 205 C552 205 562 208 570 210
+                   L570 240 C562 242 552 245 540 245
+                   C528 245 520 242 514 238 C508 234 506 228 508 222
+                   C510 216 518 210 528 207 Z"
+                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="1.8"/>
+
+              <!-- Fin rays in tail -->
+              <line x1="570" y1="215" x2="610" y2="98"  stroke="#3A6078" stroke-width="1" opacity="0.3" pointer-events="none"/>
+              <line x1="570" y1="218" x2="600" y2="112" stroke="#3A6078" stroke-width="0.8" opacity="0.25" pointer-events="none"/>
+              <line x1="570" y1="235" x2="610" y2="352" stroke="#3A6078" stroke-width="1" opacity="0.3" pointer-events="none"/>
+              <line x1="570" y1="232" x2="600" y2="338" stroke="#3A6078" stroke-width="0.8" opacity="0.25" pointer-events="none"/>
+            </g>
+
+            <!-- BACK section -->
+            <g class="cut-part" id="el-fish-back" data-part="fish_back" data-meat="fish"
+               data-weight="150" data-price="1.50" data-emoji="🐟"
+               clip-path="url(#clipBack)" style="cursor:pointer">
+              <path class="part-fill part-outline"
+                d="M110 220
+                   C180 215 260 210 320 210 C380 210 440 215 460 218
+                   C480 220 500 224 520 227 C540 230 555 232 570 235
+                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
+                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
+                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="2"/>
+            </g>
+
+            <!-- MID section (premium) -->
+            <g class="cut-part" id="el-fish-mid" data-part="fish_mid" data-meat="fish"
+               data-weight="220" data-price="3.20" data-emoji="🐟"
+               clip-path="url(#clipMid)" style="cursor:pointer">
+              <path class="part-fill part-outline"
+                d="M110 220
+                   C180 215 260 210 320 210 C380 210 440 215 460 218
+                   C480 220 500 224 520 227 C540 230 555 232 570 235
+                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
+                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
+                fill="url(#gFishMidGrad)" stroke="#4A7088" stroke-width="2"/>
+            </g>
+
+            <!-- FRONT section -->
+            <g class="cut-part" id="el-fish-front" data-part="fish_front" data-meat="fish"
+               data-weight="180" data-price="2.80" data-emoji="🐟"
+               clip-path="url(#clipFront)" style="cursor:pointer">
+              <path class="part-fill part-outline"
+                d="M110 220
+                   C180 215 260 210 320 210 C380 210 440 215 460 218
+                   C480 220 500 224 520 227 C540 230 555 232 570 235
+                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
+                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
+                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="2"/>
+            </g>
+
+            <!-- HEAD section -->
+            <g class="cut-part" id="el-fish-head" data-part="fish_head" data-meat="fish"
+               data-weight="140" data-price="0.90" data-emoji="🐟"
+               clip-path="url(#clipHead)" style="cursor:pointer">
+              <path class="part-fill part-outline"
+                d="M110 220
+                   C180 215 260 210 320 210 C380 210 440 215 460 218
+                   C480 220 500 224 520 227 C540 230 555 232 570 235
+                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
+                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
+                fill="url(#gFishHead)" stroke="#4A7088" stroke-width="2"/>
+
+              <!-- Mouth -->
+              <path d="M112 218 C108 220 108 222 112 224"
+                fill="none" stroke="#2A5060" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
+
+              <!-- Eye -->
+              <circle cx="148" cy="208" r="14" fill="#F8FDFF" stroke="#2A5060" stroke-width="2" pointer-events="none"/>
+              <circle cx="151" cy="208" r="9"  fill="#1A2838" pointer-events="none"/>
+              <circle cx="148" cy="205" r="4"  fill="#0A1020" pointer-events="none"/>
+              <circle cx="144" cy="202" r="2.5" fill="white" opacity="0.85" pointer-events="none"/>
+              <circle cx="156" cy="212" r="1.5" fill="white" opacity="0.55" pointer-events="none"/>
+
+              <!-- Gill arc -->
+              <path d="M182 196 C188 208 188 222 184 234 C180 244 175 250 170 253"
+                fill="none" stroke="#2A5060" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
+              <path d="M176 198 C182 210 182 224 178 236"
+                fill="none" stroke="#4A7090" stroke-width="1.2" opacity="0.45" pointer-events="none"/>
+            </g>
+          </g>
+
+          <!-- ========= DECORATIVE ELEMENTS (non-clickable) ========= -->
+
+          <!-- Dorsal fin -->
+          <path d="M195 196 C218 160 252 138 295 130 C340 122 385 128 420 138 C450 146 468 160 472 196"
+            fill="rgba(168,200,220,0.55)" stroke="#4A7090" stroke-width="1.8" pointer-events="none"/>
+          <!-- Dorsal fin rays -->
+          <g stroke="#3A6080" stroke-width="0.9" opacity="0.32" pointer-events="none">
+            <line x1="205" y1="196" x2="215" y2="152"/>
+            <line x1="230" y1="196" x2="234" y2="138"/>
+            <line x1="258" y1="196" x2="260" y2="130"/>
+            <line x1="286" y1="196" x2="288" y2="126"/>
+            <line x1="316" y1="196" x2="318" y2="125"/>
+            <line x1="346" y1="196" x2="347" y2="126"/>
+            <line x1="374" y1="196" x2="375" y2="128"/>
+            <line x1="400" y1="196" x2="400" y2="135"/>
+            <line x1="424" y1="196" x2="424" y2="144"/>
+            <line x1="448" y1="196" x2="448" y2="155"/>
+            <line x1="466" y1="196" x2="466" y2="164"/>
+          </g>
+
+          <!-- Pectoral fin -->
+          <path d="M188 220 C170 232 155 255 160 268 C164 278 180 276 198 260 C213 245 218 228 200 220 Z"
+            fill="rgba(168,200,220,0.5)" stroke="#4A7090" stroke-width="1.5" pointer-events="none"/>
+
+          <!-- Ventral fin -->
+          <path d="M306 232 C295 252 288 274 292 285 C295 292 308 290 318 277 C326 264 325 245 310 236 Z"
+            fill="rgba(168,200,220,0.45)" stroke="#4A7090" stroke-width="1.2" pointer-events="none"/>
+
+          <!-- Anal fin -->
+          <path d="M424 234 C416 250 413 268 418 278 C422 284 433 282 440 270 C448 256 447 240 432 236 Z"
+            fill="rgba(168,200,220,0.4)" stroke="#4A7090" stroke-width="1.2" pointer-events="none"/>
+
+          <!-- Lateral line (running through body) -->
+          <path d="M180 220 C240 219 320 218 400 217 C440 217 485 218 520 220"
+            stroke="#3A6080" stroke-width="1.5" fill="none" opacity="0.3" stroke-dasharray="7,4" pointer-events="none"/>
+
+          <!-- Scale pattern arcs (decorative) -->
+          <g opacity="0.14" fill="none" stroke="#2A4860" stroke-width="1.2" pointer-events="none">
+            <path d="M220 202 Q235 193 250 202"/><path d="M240 210 Q255 201 270 210"/>
+            <path d="M220 214 Q235 205 250 214"/><path d="M240 222 Q255 213 270 222"/>
+            <path d="M260 204 Q275 195 290 204"/><path d="M280 212 Q295 203 310 212"/>
+            <path d="M260 216 Q275 207 290 216"/><path d="M280 224 Q295 215 310 224"/>
+            <path d="M300 202 Q315 193 330 202"/><path d="M320 210 Q335 201 350 210"/>
+            <path d="M300 214 Q315 205 330 214"/><path d="M320 222 Q335 213 350 222"/>
+            <path d="M340 202 Q355 193 370 202"/><path d="M360 210 Q375 201 390 210"/>
+            <path d="M340 214 Q355 205 370 214"/><path d="M360 222 Q375 213 390 222"/>
+            <path d="M380 204 Q395 195 410 204"/><path d="M400 212 Q415 203 430 212"/>
+            <path d="M380 216 Q395 207 410 216"/><path d="M400 224 Q415 215 430 224"/>
+            <path d="M420 206 Q435 197 450 206"/><path d="M440 214 Q455 205 470 214"/>
+            <path d="M420 218 Q435 209 450 218"/>
+          </g>
+
+          <!-- Section divider lines -->
+          <line x1="190" y1="198" x2="190" y2="254" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
+          <line x1="320" y1="192" x2="320" y2="260" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
+          <line x1="460" y1="196" x2="460" y2="256" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
+          <line x1="570" y1="208" x2="570" y2="242" stroke="#1A4860" stroke-width="2.5" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
+
+          <!-- Section labels -->
+          <text x="148" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">HEAD</text>
+          <text x="255" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">FRONT</text>
+          <text x="390" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">MIDDLE</text>
+          <text x="515" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">BACK</text>
+          <text x="612" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">TAIL</text>
+
+          <!-- Tick marks from label to fish -->
+          <line x1="148" y1="257" x2="148" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
+          <line x1="255" y1="263" x2="255" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
+          <line x1="390" y1="265" x2="390" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
+          <line x1="515" y1="257" x2="515" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
+          <line x1="612" y1="252" x2="612" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
+
+          <!-- Title -->
+          <text x="350" y="370" text-anchor="middle"
+            font-family="'Playfair Display',serif" font-size="18" font-weight="900"
+            fill="#082030" letter-spacing="0.10em">WHOLE FISH</text>
+          <text x="350" y="385" text-anchor="middle"
+            font-family="'DM Mono',monospace" font-size="7.5"
+            fill="#1A5068" letter-spacing="0.22em" opacity="0.62">FRESH CUT · SELECT SECTION TO HARVEST</text>
+        </svg>
+      </div>
+    </div>
+
+
     <!-- 3D Canvas Container -->
     <div id="canvas3d-container">
       <canvas id="canvas3d"></canvas>
@@ -1506,7 +1793,7 @@ body {
 
     <!-- Quick Select Sidebar -->
     <div class="quick-select-sidebar" id="quickSelectSidebar">
-      <div class="qss-title">📋 Chicken Parts List</div>
+      <div class="qss-title" id="qssTitle">🍗 CHICKEN PARTS LIST</div>
       <div class="qss-list" id="qssList">
         <!-- Rendered by JS -->
       </div>
@@ -1989,6 +2276,35 @@ function setBaseScaleWeightState(val) { baseScaleWeight = val; }
 function setIsBonelessState(val) { isBoneless = val; }
 function setIsSkinlessState(val) { isSkinless = val; }
 
+// Current animal type
+let currentAnimal = 'chicken'; // 'chicken' or 'fish'
+function setCurrentAnimalState(val) { currentAnimal = val; }
+
+// Fish data
+const FISH_PART_WEIGHTS = {
+  fish_head: 140, fish_front: 180, fish_mid: 220, fish_back: 150, fish_tail: 60
+};
+const FISH_PART_PRICES = {
+  fish_head: 0.90, fish_front: 2.80, fish_mid: 3.20, fish_back: 1.50, fish_tail: 0.80
+};
+const FISH_PART_INFO = {
+  'fish_head|fish':  { name: 'Fish Head',      weight: 140, price: 0.90, emoji: '🐟', tip: 'Collagen-rich head, perfect for curry and broth.' },
+  'fish_front|fish': { name: 'Front Steaks',   weight: 180, price: 2.80, emoji: '🐟', tip: 'Front shoulder steaks — firm, flavorful meat.' },
+  'fish_mid|fish':   { name: 'Middle Steaks',  weight: 220, price: 3.20, emoji: '🐟', tip: 'Thickest middle section — the premium cut.' },
+  'fish_back|fish':  { name: 'Back Steaks',    weight: 150, price: 1.50, emoji: '🐟', tip: 'Back section steaks — lean and tender.' },
+  'fish_tail|fish':  { name: 'Tail Piece',     weight:  60, price: 0.80, emoji: '🐟', tip: 'Tail piece — great for frying or soup base.' },
+};
+const FISH_OFFAL_DATA = [
+  { n: 'Fish Roe',   w: 30, p: 1.20, e: '🟡' },
+  { n: 'Fish Liver', w: 20, p: 0.80, e: '🟤' },
+];
+
+// Parts where "Boneless" doesn't make sense (mostly bone/cartilage already)
+const NO_BONELESS_PARTS = new Set([
+  'wing_l', 'wing_r', 'back_upper', 'back_lower', 'neck', 'fish_head', 'fish_tail'
+]);
+
+
 
 // ==========================================
 // MODULE: scale.js
@@ -2309,7 +2625,13 @@ const PART_DIRS = {
   breast_r:   { dx: 32, dy:-12, rot:  9, scale:0.88 },
   neck:       { dx:  0, dy:-70, rot:  0, scale:0.78 },
   back_upper: { dx:  0, dy:-15, rot:  0, scale:0.90 },
-  back_lower: { dx:  0, dy: 45, rot:  0, scale:0.90 }
+  back_lower: { dx:  0, dy: 45, rot:  0, scale:0.90 },
+  // Fish parts
+  fish_head:  { dx:-60, dy:  0, rot:-12, scale:0.82 },
+  fish_front: { dx:-20, dy:-18, rot: -5, scale:0.86 },
+  fish_mid:   { dx:  0, dy:-22, rot:  0, scale:0.88 },
+  fish_back:  { dx: 20, dy:-18, rot:  5, scale:0.86 },
+  fish_tail:  { dx: 60, dy:  0, rot: 12, scale:0.82 },
 };
 
 function getDir(partId) {
@@ -2406,8 +2728,9 @@ function spawnBloodParticles(cx, cy, baseAngle) {
 }
 
 function cut2DPart(el, cx, cy) {
-  const partId = el.dataset.part;
-  const info = PART_INFO[partId + '|chicken'];
+  const partId   = el.dataset.part;
+  const meatType = el.dataset.meat || 'chicken';
+  const info = meatType === 'fish' ? FISH_PART_INFO[partId + '|fish'] : PART_INFO[partId + '|chicken'];
   if (!info) return;
   if (severedParts[partId]) return;
 
@@ -2505,8 +2828,15 @@ function setupSVGInteractions() {
       let displayWeight = weight;
       let displayPrice = price;
       const side = partId.endsWith('_l') ? 'l' : 'r';
+      const meatType = el.dataset.meat || 'chicken';
 
-      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+      if (meatType === 'fish') {
+        const info = FISH_PART_INFO[partId + '|fish'];
+        displayName = info ? info.name : partId;
+        displayWeight = FISH_PART_WEIGHTS[partId] || weight;
+        displayPrice  = FISH_PART_PRICES[partId]  || price;
+        if (!severedParts[partId]) el.classList.add('selected-part');
+      } else if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
         const wholeLegId = `leg_whole_${side}`;
         const info = PART_INFO[wholeLegId + '|chicken'];
         displayName = info ? info.name : `Whole Leg`;
@@ -2834,6 +3164,10 @@ function animate3D() {
     return;
   }
   setIsAnimatingState(true);
+  // Self-heal: if canvas was resized to 0 (hidden during init), fix it now
+  if (renderer3 && (renderer3.width < 50 || renderer3.height < 50)) {
+    onWindowResize();
+  }
   requestAnimationFrame(animate3D);
   if (chickenGroup) {
     chickenGroup.rotation.y = Math.sin(Date.now() * 0.0006) * 0.22;
@@ -3004,7 +3338,7 @@ function syncPartTo3D(partId, visible) {
 function renderSessionCuts() {
   const container = document.getElementById('sessionCutsList');
   if (sessionCuts.length === 0) {
-    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>';
+    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the meat.</div>';
     return;
   }
   
@@ -3059,35 +3393,46 @@ function renderSessionCuts() {
     `;
   }).join('');
 
-  // Bind click handlers to prevent global scope onclick dependencies
+  // Bind click handlers
   container.querySelectorAll('.sci-remove').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      removeSessionCut(parseInt(btn.dataset.idx));
-    };
+    btn.onclick = (e) => { e.stopPropagation(); removeSessionCut(parseInt(btn.dataset.idx)); };
   });
 
   container.querySelectorAll('.sci-size-select').forEach(sel => {
-    sel.onchange = (e) => {
-      e.stopPropagation();
-      setCutSize(parseInt(sel.dataset.idx), sel.value);
-    };
+    sel.onchange = (e) => { e.stopPropagation(); setCutSize(parseInt(sel.dataset.idx), sel.value); };
     sel.onclick = (e) => e.stopPropagation();
   });
 
   container.querySelectorAll('.sci-qty-btn-minus').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      adjustCutQty(parseInt(btn.dataset.idx), -1);
-    };
+    btn.onclick = (e) => { e.stopPropagation(); adjustCutQty(parseInt(btn.dataset.idx), -1); };
   });
 
   container.querySelectorAll('.sci-qty-btn-plus').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      adjustCutQty(parseInt(btn.dataset.idx), 1);
-    };
+    btn.onclick = (e) => { e.stopPropagation(); adjustCutQty(parseInt(btn.dataset.idx), 1); };
   });
+}
+
+// --- Boneless toggle for incompatible parts ---
+function updateBonelessAvailability(partId) {
+  const bonelessLabel = document.querySelector('label[for="checkBoneless"]');
+  const bonelessCheck = document.getElementById('checkBoneless');
+  if (!bonelessCheck) return;
+
+  if (NO_BONELESS_PARTS.has(partId)) {
+    bonelessCheck.checked = false;
+    bonelessCheck.disabled = true;
+    setIsBonelessState(false);
+    if (bonelessLabel) {
+      bonelessLabel.style.opacity = '0.38';
+      bonelessLabel.title = 'Boneless not available for this part';
+    }
+  } else {
+    bonelessCheck.disabled = false;
+    if (bonelessLabel) {
+      bonelessLabel.style.opacity = '1';
+      bonelessLabel.title = '';
+    }
+  }
 }
 
 function inspectPart(el) {
@@ -3101,15 +3446,52 @@ function inspectPart(el) {
   }
 
   if (!partId) return;
-  const side = partId.endsWith('_l') ? 'l' : 'r';
-  
+
+  // Determine meat type from element or currentAnimal
+  const svgEl = document.querySelector(`[data-part="${partId}"]`);
+  const meatType = (svgEl && svgEl.dataset.meat) || currentAnimal || 'chicken';
+
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  
+
+  // Update boneless availability before reading isBoneless/isSkinless
+  updateBonelessAvailability(partId);
+
   const checkB = document.getElementById('checkBoneless');
   const checkS = document.getElementById('checkSkinless');
   const activeB = checkB ? checkB.checked : false;
   const activeS = checkS ? checkS.checked : false;
 
+  // Fish parts path
+  if (meatType === 'fish') {
+    const info = FISH_PART_INFO[partId + '|fish'];
+    if (!info) return;
+
+    const targetEl = svgEl || document.querySelector(`[data-part="${partId}"]`);
+    if (targetEl) targetEl.classList.add('selected-part');
+
+    setSelectedLegSideState(null);
+    setCurrentScalePartIdState(partId);
+
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Add ${info.name}`;
+
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+
+    let adjusted = info.weight;
+    if (activeB && !NO_BONELESS_PARTS.has(partId)) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+
+    animateScale(adjusted, info.name, '🐟');
+    if (typeof renderQuickSelectSidebar === 'function') renderQuickSelectSidebar();
+    return;
+  }
+
+  // Chicken parts path
+  const side = partId.endsWith('_l') ? 'l' : 'r';
+  
   if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
     const wholeLegId = `leg_whole_${side}`;
     const info = PART_INFO[wholeLegId + '|chicken'];
@@ -3118,6 +3500,10 @@ function inspectPart(el) {
     [`thigh_${side}`, `leg_${side}`].forEach(p => {
       getSVGElements(p).forEach(elPart => elPart.classList.add('selected-part'));
     });
+
+    updateBonelessAvailability(wholeLegId);
+    const activeB2 = checkB ? checkB.checked : false;
+    const activeS2 = checkS ? checkS.checked : false;
 
     setSelectedLegSideState(side);
     setCurrentScalePartIdState(wholeLegId);
@@ -3130,8 +3516,8 @@ function inspectPart(el) {
     setPartScaleWeight(info.weight);
     
     let adjusted = info.weight;
-    if (activeB) adjusted *= 0.8;
-    if (activeS) adjusted *= 0.95;
+    if (activeB2) adjusted *= 0.8;
+    if (activeS2) adjusted *= 0.95;
     adjusted = Math.round(adjusted);
     
     animateScale(adjusted, info.name, '🍗');
@@ -3167,8 +3553,10 @@ function inspectPart(el) {
 
 function initOffalBox() {
   const box = document.getElementById('internalPartsBox');
+  if (!box) return;
   box.innerHTML = '';
-  OFFAL_DATA.forEach(p => {
+  const data = currentAnimal === 'fish' ? FISH_OFFAL_DATA : OFFAL_DATA;
+  data.forEach(p => {
     const tag = document.createElement('div');
     tag.style.cssText = `
       background: white; border: 1px solid var(--border); border-radius: 4px;
@@ -3202,28 +3590,47 @@ function harvestOffal(name, weight, price, emoji) {
 function renderQuickSelectSidebar() {
   const listContainer = document.getElementById('qssList');
   if (!listContainer) return;
+
+  // Update sidebar title
+  const qssTitle = document.getElementById('qssTitle');
   
-  const items = [
-    { id: 'breast_l', name: 'Breast (Left)', emoji: '🥩', weight: 255 },
-    { id: 'breast_r', name: 'Breast (Right)', emoji: '🥩', weight: 255 },
-    { id: 'wing_l', name: 'Wing (Left)', emoji: '🍗', weight: 95 },
-    { id: 'wing_r', name: 'Wing (Right)', emoji: '🍗', weight: 95 },
-    { id: 'thigh_l', name: 'Thigh (Left)', emoji: '🍗', weight: 172 },
-    { id: 'thigh_r', name: 'Thigh (Right)', emoji: '🍗', weight: 172 },
-    { id: 'leg_l', name: 'Drumstick (Left)', emoji: '🍗', weight: 148 },
-    { id: 'leg_r', name: 'Drumstick (Right)', emoji: '🍗', weight: 148 },
-    { id: 'back_upper', name: 'Ribs (Upper Back)', emoji: '🦴', weight: 200 },
-    { id: 'back_lower', name: 'Lower Back', emoji: '🍗', weight: 180 },
-    { id: 'neck', name: 'Neck', emoji: '🦴', weight: 115 }
-  ];
+  let items;
+  if (currentAnimal === 'fish') {
+    if (qssTitle) qssTitle.textContent = '🐟 FISH PARTS LIST';
+    items = [
+      { id: 'fish_head',  name: 'Fish Head',     emoji: '🐟', weight: 140 },
+      { id: 'fish_front', name: 'Front Steaks',   emoji: '🐟', weight: 180 },
+      { id: 'fish_mid',   name: 'Middle Steaks',  emoji: '🐟', weight: 220 },
+      { id: 'fish_back',  name: 'Back Steaks',    emoji: '🐟', weight: 150 },
+      { id: 'fish_tail',  name: 'Tail Piece',     emoji: '🐟', weight:  60 },
+    ];
+  } else {
+    if (qssTitle) qssTitle.textContent = '🍗 CHICKEN PARTS LIST';
+    items = [
+      { id: 'breast_l', name: 'Breast (Left)',      emoji: '🥩', weight: 255 },
+      { id: 'breast_r', name: 'Breast (Right)',     emoji: '🥩', weight: 255 },
+      { id: 'wing_l',   name: 'Wing (Left)',        emoji: '🍗', weight: 95 },
+      { id: 'wing_r',   name: 'Wing (Right)',       emoji: '🍗', weight: 95 },
+      { id: 'thigh_l',  name: 'Thigh (Left)',       emoji: '🍗', weight: 172 },
+      { id: 'thigh_r',  name: 'Thigh (Right)',      emoji: '🍗', weight: 172 },
+      { id: 'leg_l',    name: 'Drumstick (Left)',   emoji: '🍗', weight: 148 },
+      { id: 'leg_r',    name: 'Drumstick (Right)',  emoji: '🍗', weight: 148 },
+      { id: 'back_upper', name: 'Ribs (Upper Back)',emoji: '🦴', weight: 200 },
+      { id: 'back_lower', name: 'Lower Back',       emoji: '🍗', weight: 180 },
+      { id: 'neck',     name: 'Neck',               emoji: '🦴', weight: 115 },
+    ];
+  }
   
   listContainer.innerHTML = items.map(item => {
-    const isHarvested = severedParts[item.id] || 
-      (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
-      (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
+    const isHarvested = currentAnimal === 'fish'
+      ? severedParts[item.id]
+      : severedParts[item.id] || 
+        (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
+        (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
       
     const isActive = currentScalePartId === item.id || 
-      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && (item.id.startsWith('thigh') || item.id.startsWith('leg')));
+      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && 
+       (item.id.startsWith('thigh') || item.id.startsWith('leg')));
       
     const classes = ['qss-item'];
     if (isHarvested) classes.push('harvested');
@@ -3244,6 +3651,13 @@ function renderQuickSelectSidebar() {
   listContainer.querySelectorAll('.qss-item').forEach(el => {
     el.onclick = (e) => {
       const partId = el.dataset.id;
+      
+      if (currentAnimal === 'fish') {
+        if (severedParts[partId]) return;
+        inspectPart(partId);
+        return;
+      }
+      
       const side = partId.endsWith('_l') ? 'l' : 'r';
       const isLegPart = partId.startsWith('thigh') || partId.startsWith('leg');
       
@@ -3269,15 +3683,18 @@ window.setViewMode = function(mode) {
   document.getElementById('btn2D').classList.toggle('active', mode === '2d');
   document.getElementById('btn3D').classList.toggle('active', mode === '3d');
 
-  const diagSvg = document.getElementById('diag-chicken');
+  const diagSvg = document.getElementById('diag-' + currentAnimal);
   const container3D = document.getElementById('canvas3d-container');
 
   if (mode === '2d') {
-    diagSvg.style.display = 'block';
+    if (diagSvg) diagSvg.style.display = 'block';
     container3D.style.display = 'none';
   } else {
-    diagSvg.style.display = 'none';
+    // Hide all diagram containers
+    document.querySelectorAll('.meat-diagram').forEach(d => d.style.display = 'none');
     container3D.style.display = 'block';
+    // Force layout reflow so clientWidth/Height are available
+    container3D.getBoundingClientRect();
     setTimeout(() => {
       if (typeof init3D === 'function') {
         if (!renderer3) {
@@ -3287,7 +3704,7 @@ window.setViewMode = function(mode) {
           animate3D();
         }
       }
-    }, 50);
+    }, 200); // increased from 50ms to 200ms for reliable layout
   }
 };
 
@@ -3305,12 +3722,48 @@ window.setTool = function(tool) {
     : '▶ Select Tool — click a part to inspect details';
 };
 
+// Animal switcher (Chicken / Fish)
+window.setAnimal = function(animal) {
+  setCurrentAnimalState(animal);
+
+  // Update tab buttons
+  const btnChicken = document.getElementById('diagAnimalChicken');
+  const btnFish    = document.getElementById('diagAnimalFish');
+  if (btnChicken) btnChicken.classList.toggle('active', animal === 'chicken');
+  if (btnFish)    btnFish.classList.toggle('active',    animal === 'fish');
+
+  // Show the right diagram, hide the other; also handle 3D toggle visibility
+  document.querySelectorAll('.meat-diagram').forEach(d => { d.style.display = 'none'; });
+  const activeDiag = document.getElementById('diag-' + animal);
+  if (activeDiag && viewMode === '2d') activeDiag.style.display = 'block';
+
+  // Reset left-panel state
+  const weightDisplay = document.getElementById('weightDisplay');
+  if (weightDisplay) weightDisplay.textContent = '0';
+  const scalePartName = document.getElementById('scalePartName');
+  if (scalePartName) scalePartName.textContent = '— empty —';
+
+  document.getElementById('harvestBtnContainer').style.display  = 'none';
+  document.getElementById('weightSelectorSection').style.display = 'none';
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+
+  // Re-setup interactions and sidebar for new animal
+  setupSVGInteractions();
+  renderQuickSelectSidebar();
+  initOffalBox();
+
+  // Update offal section title
+  const offalTitle = document.getElementById('offalSectionTitle');
+  if (offalTitle) offalTitle.textContent = animal === 'fish' ? 'FISH EXTRAS' : 'CAVITY / ORGAN HARVEST (OFFAL)';
+};
+
 window.setPartScaleWeight = setPartScaleWeight;
 window.onCustomWeightInput = onCustomWeightInput;
 window.harvestSelectedPart = harvestSelectedPart;
 window.undoLastCut = undoLastCut;
 window.toggleMeatOption = toggleMeatOption;
 window.renderQuickSelectSidebar = renderQuickSelectSidebar;
+window.inspectPart = inspectPart;
 
 window.saveCustomCutsToCart = function() {
   if (sessionCuts.length === 0) {

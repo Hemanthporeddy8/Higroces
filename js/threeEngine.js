@@ -248,6 +248,10 @@ export function animate3D() {
     return;
   }
   setIsAnimatingState(true);
+  // Self-heal: if canvas was resized to 0 (hidden during init), fix it now
+  if (renderer3 && (renderer3.width < 50 || renderer3.height < 50)) {
+    onWindowResize();
+  }
   requestAnimationFrame(animate3D);
   if (chickenGroup) {
     chickenGroup.rotation.y = Math.sin(Date.now() * 0.0006) * 0.22;

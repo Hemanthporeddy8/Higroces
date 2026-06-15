@@ -55,3 +55,32 @@ export function setSelectedLegSideState(val) { selectedLegSide = val; }
 export function setBaseScaleWeightState(val) { baseScaleWeight = val; }
 export function setIsBonelessState(val) { isBoneless = val; }
 export function setIsSkinlessState(val) { isSkinless = val; }
+
+// Current animal type
+export let currentAnimal = 'chicken'; // 'chicken' or 'fish'
+export function setCurrentAnimalState(val) { currentAnimal = val; }
+
+// Fish data
+export const FISH_PART_WEIGHTS = {
+  fish_head: 140, fish_front: 180, fish_mid: 220, fish_back: 150, fish_tail: 60
+};
+export const FISH_PART_PRICES = {
+  fish_head: 0.90, fish_front: 2.80, fish_mid: 3.20, fish_back: 1.50, fish_tail: 0.80
+};
+export const FISH_PART_INFO = {
+  'fish_head|fish':  { name: 'Fish Head',      weight: 140, price: 0.90, emoji: '🐟', tip: 'Collagen-rich head, perfect for curry and broth.' },
+  'fish_front|fish': { name: 'Front Steaks',   weight: 180, price: 2.80, emoji: '🐟', tip: 'Front shoulder steaks — firm, flavorful meat.' },
+  'fish_mid|fish':   { name: 'Middle Steaks',  weight: 220, price: 3.20, emoji: '🐟', tip: 'Thickest middle section — the premium cut.' },
+  'fish_back|fish':  { name: 'Back Steaks',    weight: 150, price: 1.50, emoji: '🐟', tip: 'Back section steaks — lean and tender.' },
+  'fish_tail|fish':  { name: 'Tail Piece',     weight:  60, price: 0.80, emoji: '🐟', tip: 'Tail piece — great for frying or soup base.' },
+};
+export const FISH_OFFAL_DATA = [
+  { n: 'Fish Roe',   w: 30, p: 1.20, e: '🟡' },
+  { n: 'Fish Liver', w: 20, p: 0.80, e: '🟤' },
+];
+
+// Parts where "Boneless" doesn't make sense (mostly bone/cartilage already)
+export const NO_BONELESS_PARTS = new Set([
+  'wing_l', 'wing_r', 'back_upper', 'back_lower', 'neck', 'fish_head', 'fish_tail'
+]);
+

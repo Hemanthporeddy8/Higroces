@@ -1,6 +1,7 @@
 import { 
   sessionCuts, actionHistory, legStates, severedParts, currentTool,
   PART_WEIGHTS, PART_PRICES, PART_INFO,
+  FISH_PART_WEIGHTS, FISH_PART_PRICES, FISH_PART_INFO,
   setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState
 } from './state.js';
 import { renderSessionCuts, inspectPart } from './ui.js';
@@ -18,7 +19,13 @@ export const PART_DIRS = {
   breast_r:   { dx: 32, dy:-12, rot:  9, scale:0.88 },
   neck:       { dx:  0, dy:-70, rot:  0, scale:0.78 },
   back_upper: { dx:  0, dy:-15, rot:  0, scale:0.90 },
-  back_lower: { dx:  0, dy: 45, rot:  0, scale:0.90 }
+  back_lower: { dx:  0, dy: 45, rot:  0, scale:0.90 },
+  // Fish parts
+  fish_head:  { dx:-60, dy:  0, rot:-12, scale:0.82 },
+  fish_front: { dx:-20, dy:-18, rot: -5, scale:0.86 },
+  fish_mid:   { dx:  0, dy:-22, rot:  0, scale:0.88 },
+  fish_back:  { dx: 20, dy:-18, rot:  5, scale:0.86 },
+  fish_tail:  { dx: 60, dy:  0, rot: 12, scale:0.82 },
 };
 
 export function getDir(partId) {
@@ -115,8 +122,9 @@ export function spawnBloodParticles(cx, cy, baseAngle) {
 }
 
 export function cut2DPart(el, cx, cy) {
-  const partId = el.dataset.part;
-  const info = PART_INFO[partId + '|chicken'];
+  const partId   = el.dataset.part;
+  const meatType = el.dataset.meat || 'chicken';
+  const info = meatType === 'fish' ? FISH_PART_INFO[partId + '|fish'] : PART_INFO[partId + '|chicken'];
   if (!info) return;
   if (severedParts[partId]) return;
 
@@ -214,8 +222,15 @@ export function setupSVGInteractions() {
       let displayWeight = weight;
       let displayPrice = price;
       const side = partId.endsWith('_l') ? 'l' : 'r';
+      const meatType = el.dataset.meat || 'chicken';
 
-      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+      if (meatType === 'fish') {
+        const info = FISH_PART_INFO[partId + '|fish'];
+        displayName = info ? info.name : partId;
+        displayWeight = FISH_PART_WEIGHTS[partId] || weight;
+        displayPrice  = FISH_PART_PRICES[partId]  || price;
+        if (!severedParts[partId]) el.classList.add('selected-part');
+      } else if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
         const wholeLegId = `leg_whole_${side}`;
         const info = PART_INFO[wholeLegId + '|chicken'];
         displayName = info ? info.name : `Whole Leg`;

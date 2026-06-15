@@ -2,8 +2,10 @@ import {
   sessionCuts, actionHistory, legStates, severedParts, currentScalePartId,
   baseScaleWeight, isBoneless, isSkinless,
   PART_WEIGHTS, PART_PRICES, PART_INFO, OFFAL_DATA,
+  FISH_PART_WEIGHTS, FISH_PART_PRICES, FISH_PART_INFO, FISH_OFFAL_DATA,
+  NO_BONELESS_PARTS, currentAnimal,
   setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState,
-  setBaseScaleWeightState
+  setBaseScaleWeightState, setIsBonelessState
 } from './state.js';
 import { setPartScaleWeight, adjustCutQty, setCutSize, removeSessionCut, animateScale } from './scale.js';
 import { getSVGElements } from './svgInteractions.js';
@@ -11,7 +13,7 @@ import { getSVGElements } from './svgInteractions.js';
 export function renderSessionCuts() {
   const container = document.getElementById('sessionCutsList');
   if (sessionCuts.length === 0) {
-    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>';
+    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the meat.</div>';
     return;
   }
   
@@ -66,35 +68,46 @@ export function renderSessionCuts() {
     `;
   }).join('');
 
-  // Bind click handlers to prevent global scope onclick dependencies
+  // Bind click handlers
   container.querySelectorAll('.sci-remove').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      removeSessionCut(parseInt(btn.dataset.idx));
-    };
+    btn.onclick = (e) => { e.stopPropagation(); removeSessionCut(parseInt(btn.dataset.idx)); };
   });
 
   container.querySelectorAll('.sci-size-select').forEach(sel => {
-    sel.onchange = (e) => {
-      e.stopPropagation();
-      setCutSize(parseInt(sel.dataset.idx), sel.value);
-    };
+    sel.onchange = (e) => { e.stopPropagation(); setCutSize(parseInt(sel.dataset.idx), sel.value); };
     sel.onclick = (e) => e.stopPropagation();
   });
 
   container.querySelectorAll('.sci-qty-btn-minus').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      adjustCutQty(parseInt(btn.dataset.idx), -1);
-    };
+    btn.onclick = (e) => { e.stopPropagation(); adjustCutQty(parseInt(btn.dataset.idx), -1); };
   });
 
   container.querySelectorAll('.sci-qty-btn-plus').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      adjustCutQty(parseInt(btn.dataset.idx), 1);
-    };
+    btn.onclick = (e) => { e.stopPropagation(); adjustCutQty(parseInt(btn.dataset.idx), 1); };
   });
+}
+
+// --- Boneless toggle for incompatible parts ---
+function updateBonelessAvailability(partId) {
+  const bonelessLabel = document.querySelector('label[for="checkBoneless"]');
+  const bonelessCheck = document.getElementById('checkBoneless');
+  if (!bonelessCheck) return;
+
+  if (NO_BONELESS_PARTS.has(partId)) {
+    bonelessCheck.checked = false;
+    bonelessCheck.disabled = true;
+    setIsBonelessState(false);
+    if (bonelessLabel) {
+      bonelessLabel.style.opacity = '0.38';
+      bonelessLabel.title = 'Boneless not available for this part';
+    }
+  } else {
+    bonelessCheck.disabled = false;
+    if (bonelessLabel) {
+      bonelessLabel.style.opacity = '1';
+      bonelessLabel.title = '';
+    }
+  }
 }
 
 export function inspectPart(el) {
@@ -108,15 +121,52 @@ export function inspectPart(el) {
   }
 
   if (!partId) return;
-  const side = partId.endsWith('_l') ? 'l' : 'r';
-  
+
+  // Determine meat type from element or currentAnimal
+  const svgEl = document.querySelector(`[data-part="${partId}"]`);
+  const meatType = (svgEl && svgEl.dataset.meat) || currentAnimal || 'chicken';
+
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  
+
+  // Update boneless availability before reading isBoneless/isSkinless
+  updateBonelessAvailability(partId);
+
   const checkB = document.getElementById('checkBoneless');
   const checkS = document.getElementById('checkSkinless');
   const activeB = checkB ? checkB.checked : false;
   const activeS = checkS ? checkS.checked : false;
 
+  // Fish parts path
+  if (meatType === 'fish') {
+    const info = FISH_PART_INFO[partId + '|fish'];
+    if (!info) return;
+
+    const targetEl = svgEl || document.querySelector(`[data-part="${partId}"]`);
+    if (targetEl) targetEl.classList.add('selected-part');
+
+    setSelectedLegSideState(null);
+    setCurrentScalePartIdState(partId);
+
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Add ${info.name}`;
+
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+
+    let adjusted = info.weight;
+    if (activeB && !NO_BONELESS_PARTS.has(partId)) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+
+    animateScale(adjusted, info.name, '🐟');
+    if (typeof renderQuickSelectSidebar === 'function') renderQuickSelectSidebar();
+    return;
+  }
+
+  // Chicken parts path
+  const side = partId.endsWith('_l') ? 'l' : 'r';
+  
   if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
     const wholeLegId = `leg_whole_${side}`;
     const info = PART_INFO[wholeLegId + '|chicken'];
@@ -125,6 +175,10 @@ export function inspectPart(el) {
     [`thigh_${side}`, `leg_${side}`].forEach(p => {
       getSVGElements(p).forEach(elPart => elPart.classList.add('selected-part'));
     });
+
+    updateBonelessAvailability(wholeLegId);
+    const activeB2 = checkB ? checkB.checked : false;
+    const activeS2 = checkS ? checkS.checked : false;
 
     setSelectedLegSideState(side);
     setCurrentScalePartIdState(wholeLegId);
@@ -137,8 +191,8 @@ export function inspectPart(el) {
     setPartScaleWeight(info.weight);
     
     let adjusted = info.weight;
-    if (activeB) adjusted *= 0.8;
-    if (activeS) adjusted *= 0.95;
+    if (activeB2) adjusted *= 0.8;
+    if (activeS2) adjusted *= 0.95;
     adjusted = Math.round(adjusted);
     
     animateScale(adjusted, info.name, '🍗');
@@ -174,8 +228,10 @@ export function inspectPart(el) {
 
 export function initOffalBox() {
   const box = document.getElementById('internalPartsBox');
+  if (!box) return;
   box.innerHTML = '';
-  OFFAL_DATA.forEach(p => {
+  const data = currentAnimal === 'fish' ? FISH_OFFAL_DATA : OFFAL_DATA;
+  data.forEach(p => {
     const tag = document.createElement('div');
     tag.style.cssText = `
       background: white; border: 1px solid var(--border); border-radius: 4px;
@@ -209,28 +265,47 @@ function harvestOffal(name, weight, price, emoji) {
 export function renderQuickSelectSidebar() {
   const listContainer = document.getElementById('qssList');
   if (!listContainer) return;
+
+  // Update sidebar title
+  const qssTitle = document.getElementById('qssTitle');
   
-  const items = [
-    { id: 'breast_l', name: 'Breast (Left)', emoji: '🥩', weight: 255 },
-    { id: 'breast_r', name: 'Breast (Right)', emoji: '🥩', weight: 255 },
-    { id: 'wing_l', name: 'Wing (Left)', emoji: '🍗', weight: 95 },
-    { id: 'wing_r', name: 'Wing (Right)', emoji: '🍗', weight: 95 },
-    { id: 'thigh_l', name: 'Thigh (Left)', emoji: '🍗', weight: 172 },
-    { id: 'thigh_r', name: 'Thigh (Right)', emoji: '🍗', weight: 172 },
-    { id: 'leg_l', name: 'Drumstick (Left)', emoji: '🍗', weight: 148 },
-    { id: 'leg_r', name: 'Drumstick (Right)', emoji: '🍗', weight: 148 },
-    { id: 'back_upper', name: 'Ribs (Upper Back)', emoji: '🦴', weight: 200 },
-    { id: 'back_lower', name: 'Lower Back', emoji: '🍗', weight: 180 },
-    { id: 'neck', name: 'Neck', emoji: '🦴', weight: 115 }
-  ];
+  let items;
+  if (currentAnimal === 'fish') {
+    if (qssTitle) qssTitle.textContent = '🐟 FISH PARTS LIST';
+    items = [
+      { id: 'fish_head',  name: 'Fish Head',     emoji: '🐟', weight: 140 },
+      { id: 'fish_front', name: 'Front Steaks',   emoji: '🐟', weight: 180 },
+      { id: 'fish_mid',   name: 'Middle Steaks',  emoji: '🐟', weight: 220 },
+      { id: 'fish_back',  name: 'Back Steaks',    emoji: '🐟', weight: 150 },
+      { id: 'fish_tail',  name: 'Tail Piece',     emoji: '🐟', weight:  60 },
+    ];
+  } else {
+    if (qssTitle) qssTitle.textContent = '🍗 CHICKEN PARTS LIST';
+    items = [
+      { id: 'breast_l', name: 'Breast (Left)',      emoji: '🥩', weight: 255 },
+      { id: 'breast_r', name: 'Breast (Right)',     emoji: '🥩', weight: 255 },
+      { id: 'wing_l',   name: 'Wing (Left)',        emoji: '🍗', weight: 95 },
+      { id: 'wing_r',   name: 'Wing (Right)',       emoji: '🍗', weight: 95 },
+      { id: 'thigh_l',  name: 'Thigh (Left)',       emoji: '🍗', weight: 172 },
+      { id: 'thigh_r',  name: 'Thigh (Right)',      emoji: '🍗', weight: 172 },
+      { id: 'leg_l',    name: 'Drumstick (Left)',   emoji: '🍗', weight: 148 },
+      { id: 'leg_r',    name: 'Drumstick (Right)',  emoji: '🍗', weight: 148 },
+      { id: 'back_upper', name: 'Ribs (Upper Back)',emoji: '🦴', weight: 200 },
+      { id: 'back_lower', name: 'Lower Back',       emoji: '🍗', weight: 180 },
+      { id: 'neck',     name: 'Neck',               emoji: '🦴', weight: 115 },
+    ];
+  }
   
   listContainer.innerHTML = items.map(item => {
-    const isHarvested = severedParts[item.id] || 
-      (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
-      (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
+    const isHarvested = currentAnimal === 'fish'
+      ? severedParts[item.id]
+      : severedParts[item.id] || 
+        (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
+        (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
       
     const isActive = currentScalePartId === item.id || 
-      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && (item.id.startsWith('thigh') || item.id.startsWith('leg')));
+      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && 
+       (item.id.startsWith('thigh') || item.id.startsWith('leg')));
       
     const classes = ['qss-item'];
     if (isHarvested) classes.push('harvested');
@@ -251,6 +326,13 @@ export function renderQuickSelectSidebar() {
   listContainer.querySelectorAll('.qss-item').forEach(el => {
     el.onclick = (e) => {
       const partId = el.dataset.id;
+      
+      if (currentAnimal === 'fish') {
+        if (severedParts[partId]) return;
+        inspectPart(partId);
+        return;
+      }
+      
       const side = partId.endsWith('_l') ? 'l' : 'r';
       const isLegPart = partId.startsWith('thigh') || partId.startsWith('leg');
       
