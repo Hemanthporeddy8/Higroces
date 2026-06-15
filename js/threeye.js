@@ -231,69 +231,74 @@ class WebGLRenderer {
     ctx.fillStyle = scene.background.hexStr || '#DCD8D0';
     ctx.fillRect(0, 0, W, H);
     
-    // Collect all visible meshes
-    const meshes = [];
-    scene.traverse(node => {
-      if (node.isMesh && node.visible) {
-        meshes.push(node);
-      }
-    });
-    
     const cameraZ = 5.0;
     const fov = 350; // Perspective zoom
     
-    meshes.forEach(mesh => {
-      let rotY = 0;
-      let parentPos = new Vector3();
+    const meshes = [];
+    
+    // Helper to traverse hierarchically and compute global positions
+    const traverse = (node, parentPos, parentRotY, parentScale, parentVisible) => {
+      const visible = parentVisible && node.visible;
+      if (!visible) return;
       
-      let p = mesh.parent;
-      while (p) {
-        rotY += p.rotation.y;
-        parentPos.x += p.position.x;
-        parentPos.y += p.position.y;
-        parentPos.z += p.position.z;
-        p = p.parent;
+      // Calculate global rotation (simple Y-axis accumulation)
+      const rotY = parentRotY + node.rotation.y;
+      
+      // Calculate global position (rotate local position by parent's Y rotation, and scale by parent's scale)
+      const lx = node.position.x * parentScale.x;
+      const ly = node.position.y * parentScale.y;
+      const lz = node.position.z * parentScale.z;
+      
+      const cosY = Math.cos(parentRotY);
+      const sinY = Math.sin(parentRotY);
+      
+      const gx = parentPos.x + (lx * cosY - lz * sinY);
+      const gy = parentPos.y + ly;
+      const gz = parentPos.z + (lx * sinY + lz * cosY);
+      
+      const scaleX = parentScale.x * node.scale.x;
+      const scaleY = parentScale.y * node.scale.y;
+      const scaleZ = parentScale.z * node.scale.z;
+      
+      const globalPos = new Vector3(gx, gy, gz);
+      const globalScale = new Vector3(scaleX, scaleY, scaleZ);
+      
+      if (node.isMesh) {
+        // Project to 2D screen coords
+        const scale = fov / (cameraZ - gz);
+        const screenX = gx * scale + W / 2;
+        const screenY = -gy * scale + H / 2;
+        
+        let rx = 0, ry = 0;
+        if (node.geometry.type === 'sphere') {
+          rx = Math.abs(node.geometry.radius * scaleX * scale);
+          ry = Math.abs(node.geometry.radius * scaleY * scale);
+        } else {
+          rx = Math.abs(node.geometry.radiusBottom * scaleX * scale);
+          ry = Math.abs(node.geometry.height * scaleY * scale);
+        }
+        
+        // Ensure values are finite and positive to prevent canvas errors
+        if (isFinite(screenX) && isFinite(screenY) && isFinite(rx) && isFinite(ry)) {
+          node._lastScreenPos = {
+            x: screenX,
+            y: screenY,
+            z: gz,
+            rx: Math.max(0.1, rx),
+            ry: Math.max(0.1, ry),
+            scale: scale,
+            rotY: rotY
+          };
+          meshes.push(node);
+        }
       }
       
-      // Rotate local coords around parent's Y axis
-      const lx = mesh.position.x;
-      const ly = mesh.position.y;
-      const lz = mesh.position.z;
-      
-      const cosY = Math.cos(rotY);
-      const sinY = Math.sin(rotY);
-      
-      const gx = lx * cosY - lz * sinY + parentPos.x;
-      const gy = ly + parentPos.y;
-      const gz = lx * sinY + lz * cosY + parentPos.z;
-      
-      // Project to 2D screen coords
-      const scale = fov / (cameraZ - gz);
-      const screenX = gx * scale + W / 2;
-      const screenY = -gy * scale + H / 2;
-      
-      const meshScaleX = mesh.scale.x;
-      const meshScaleY = mesh.scale.y;
-      
-      let rx = 0, ry = 0;
-      if (mesh.geometry.type === 'sphere') {
-        rx = mesh.geometry.radius * meshScaleX * scale;
-        ry = mesh.geometry.radius * meshScaleY * scale;
-      } else {
-        rx = mesh.geometry.radiusBottom * meshScaleX * scale;
-        ry = mesh.geometry.height * meshScaleY * scale;
-      }
-      
-      mesh._lastScreenPos = {
-        x: screenX,
-        y: screenY,
-        z: gz,
-        rx: rx,
-        ry: ry,
-        scale: scale,
-        rotY: rotY
-      };
-    });
+      node.children.forEach(child => {
+        traverse(child, globalPos, rotY, globalScale, visible);
+      });
+    };
+    
+    traverse(scene, new Vector3(0,0,0), 0, new Vector3(1,1,1), true);
     
     // Depth sorting (Z-buffer / Painter's Algorithm)
     meshes.sort((a, b) => a._lastScreenPos.z - b._lastScreenPos.z);
@@ -324,8 +329,8 @@ class WebGLRenderer {
         }
         
         const grad = ctx.createRadialGradient(
-          proj.x - rx * 0.25, proj.y - ry * 0.25, Math.min(rx, ry) * 0.1,
-          proj.x, proj.y, Math.max(rx, ry)
+          proj.x - rx * 0.25, proj.y - ry * 0.25, Math.max(0.1, Math.min(rx, ry) * 0.1),
+          proj.x, proj.y, Math.max(0.2, Math.max(rx, ry))
         );
         grad.addColorStop(0, highlightColor);
         grad.addColorStop(0.3, isGlowing ? glowHex : baseColor);
@@ -368,12 +373,12 @@ class WebGLRenderer {
         ctx.fillRect(-rx, -ry/2, rx*2, ry);
         
         ctx.beginPath();
-        ctx.ellipse(0, -ry/2, rx, rx*0.35, 0, 0, 2*Math.PI);
+        ctx.ellipse(0, -ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
         ctx.fill();
         ctx.stroke();
         
         ctx.beginPath();
-        ctx.ellipse(0, ry/2, rx, rx*0.35, 0, 0, 2*Math.PI);
+        ctx.ellipse(0, ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
         ctx.fill();
         ctx.stroke();
         
