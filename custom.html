@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SwiftCuts — Interactive Custom Cuts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Three.js Library CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Three.js Library CDN with fallback -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+  if (typeof THREE === 'undefined') {
+    document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></s' + 'cript>');
+  }
+</script>
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -342,9 +347,11 @@ body {
   transform-origin: center;
   will-change: transform, opacity;
   transition: filter 0.2s ease;
-  cursor: grab;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-drag: none;
 }
-.cut-part:active { cursor: grabbing; }
+.cut-part:active { cursor: pointer; }
 
 /* Knife mode cursor */
 .custom-right-panel.knife-active .cut-part:not(.part-severed) { cursor: none; }
@@ -512,7 +519,16 @@ body {
     </div>
     <div style="font-size:0.6rem; color:var(--ink-light); margin-top:2px; font-style:italic; opacity:0.8;">Click to extract edible offal.</div>
 
-    <div class="workshop-title">Harvested Cuts from this Chicken</div>
+    <div id="harvestBtnContainer" style="display: none; margin-bottom: 12px; background: var(--paper-dark); border-radius: 6px; padding: 8px; border: 1px solid var(--border); width: 100%; text-align: center;">
+      <button id="btnHarvestSelect" onclick="harvestSelectedWholeLeg()" class="btn-workshop-save" style="padding: 8px 12px; font-size: 0.75rem; background: var(--brand-primary); margin: 0 auto; width: 100%;">Harvest Whole Leg</button>
+    </div>
+
+    <div class="workshop-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span>Harvested Cuts</span>
+      <button onclick="undoLastCut()" style="background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 4px; font-family: 'Outfit', sans-serif;">
+        <span>↩</span> Undo last
+      </button>
+    </div>
     <div class="session-cuts-list" id="sessionCutsList">
       <div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>
     </div>
@@ -1355,9 +1371,156 @@ body {
 const sessionCuts = [];
 let currentTool = 'select'; // 'select' or 'knife'
 let viewMode = '2d';       // '2d' or '3d'
+let legStyle = 'whole';    // 'whole' or 'split'
 
 // Track severed parts of the chicken: { 'breast_l': true, ... }
 const severedParts = {};
+
+const PART_WEIGHTS = {
+  back: 380, breast_l: 255, breast_r: 255, neck: 115, wing_l: 95, wing_r: 95, thigh_l: 172, thigh_r: 172, leg_l: 148, leg_r: 148, leg_whole_l: 320, leg_whole_r: 320
+};
+const PART_PRICES = {
+  back: 1.20, breast_l: 3.50, breast_r: 3.50, neck: 0.90, wing_l: 1.80, wing_r: 1.80, thigh_l: 2.20, thigh_r: 2.20, leg_l: 1.60, leg_r: 1.60, leg_whole_l: 3.80, leg_whole_r: 3.80
+};
+
+function setLegStyle(style) {
+  legStyle = style;
+  document.getElementById('btnLegWhole').classList.toggle('active', style === 'whole');
+  document.getElementById('btnLegSplit').classList.toggle('active', style === 'split');
+  
+  // Clear any existing selected part highlights
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  document.getElementById('weightDisplay').textContent = '0';
+  document.getElementById('scalePartName').textContent = '— empty —';
+}
+
+function renderSessionCuts() {
+  const container = document.getElementById('sessionCutsList');
+  if (sessionCuts.length === 0) {
+    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>';
+    return;
+  }
+  
+  container.innerHTML = sessionCuts.map((item, idx) => {
+    if (item.id.startsWith('offal_')) {
+      return `
+        <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.2rem;">${item.emoji}</span>
+            <div>
+              <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink);">${item.name}</div>
+              <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • $${item.price.toFixed(2)}</div>
+            </div>
+          </div>
+          <button class="sci-remove" onclick="removeSessionCut(${idx})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+        </div>
+      `;
+    }
+
+    const sizes = ['Small', 'Medium', 'Large'];
+    const currentSize = item.size || 'Medium';
+
+    const sizeSelector = `
+      <select onchange="setCutSize(${idx}, this.value)" style="background:white; border:1px solid var(--border); border-radius:4px; padding:2px 4px; font-size:0.65rem; font-family:'Outfit',sans-serif; color:var(--ink); cursor:pointer; margin-right:4px;">
+        ${sizes.map(s => `<option value="${s}" ${s === currentSize ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+    `;
+
+    const qtyControls = `
+      <div style="display:inline-flex; align-items:center; gap:4px; margin-right:8px; background:white; border:1px solid var(--border); border-radius:4px; padding:1px 3px;">
+        <button onclick="adjustCutQty(${idx}, -1)" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">-</button>
+        <span style="font-family:'DM Mono',monospace; font-size:0.75rem; min-width:12px; text-align:center;">${item.qty || 1}</span>
+        <button onclick="adjustCutQty(${idx}, 1)" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">+</button>
+      </div>
+    `;
+
+    return `
+      <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
+        <div style="display:flex; align-items:center; gap:8px; max-width:160px;">
+          <span style="font-size:1.2rem;">${item.emoji}</span>
+          <div>
+            <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</div>
+            <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight * (item.qty || 1)}g • $${((item.price || 0) * (item.qty || 1)).toFixed(2)}</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center;">
+          ${sizeSelector}
+          ${qtyControls}
+          <button class="sci-remove" onclick="removeSessionCut(${idx})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function adjustCutQty(idx, amount) {
+  const item = sessionCuts[idx];
+  item.qty = (item.qty || 1) + amount;
+  if (item.qty <= 0) {
+    removeSessionCut(idx);
+  } else {
+    renderSessionCuts();
+  }
+}
+
+function setCutSize(idx, size) {
+  const item = sessionCuts[idx];
+  item.size = size;
+  
+  const baseWeight = PART_WEIGHTS[item.partId] || 150;
+  const basePrice = PART_PRICES[item.partId] || 2.0;
+
+  let mult = 1.0;
+  if (size === 'Small') mult = 0.8;
+  if (size === 'Large') mult = 1.25;
+
+  item.weight = Math.round(baseWeight * mult);
+  item.price = parseFloat((basePrice * mult).toFixed(2));
+
+  renderSessionCuts();
+}
+
+function removeSessionCut(idx) {
+  const item = sessionCuts[idx];
+  
+  if (!item.id.startsWith('offal_')) {
+    const partId = item.partId;
+    if (partId.startsWith('leg_whole_')) {
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      delete severedParts[`thigh_${side}`];
+      delete severedParts[`leg_${side}`];
+      
+      restorePart(`thigh_${side}`);
+      restorePart(`leg_${side}`);
+      syncPartTo3D(`thigh_${side}`, true);
+      syncPartTo3D(`leg_${side}`, true);
+    } else {
+      delete severedParts[partId];
+      restorePart(partId);
+      syncPartTo3D(partId, true);
+    }
+  }
+
+  sessionCuts.splice(idx, 1);
+  
+  if (sessionCuts.length > 0) {
+    const prev = sessionCuts[sessionCuts.length - 1];
+    animateScale(prev.weight, prev.name, prev.emoji);
+  } else {
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
+
+  renderSessionCuts();
+}
+
+function undoLastCut() {
+  if (sessionCuts.length === 0) {
+    alert("No cuts to undo!");
+    return;
+  }
+  removeSessionCut(sessionCuts.length - 1);
+}
 
 // ═══════════════════════════════════════════════════
 // SCALE COUNTER ANIMATION
@@ -1506,6 +1669,8 @@ const PART_INFO = {
   'thigh_r|chicken': { name:'Right Thigh', weight:172, price:2.20, tip:'Perfect for braising, curries, and slow cooks.' },
   'leg_l|chicken': { name:'Left Drumstick', weight:148, price:1.60, tip:'Score 2-3 diagonal cuts to bone. Cook to 80°C+ internal.' },
   'leg_r|chicken': { name:'Right Drumstick', weight:148, price:1.60, tip:'French-cut: scrape meat toward one end to expose bone.' },
+  'leg_whole_l|chicken': { name:'Left Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
+  'leg_whole_r|chicken': { name:'Right Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
 };
 
 const OFFAL_DATA = [
@@ -1531,13 +1696,14 @@ function setViewMode(mode) {
   } else {
     diagSvg.style.display = 'none';
     container3D.style.display = 'block';
-    // Initialize 3D on first toggle
-    if (!renderer3) {
-      init3D();
-    } else {
-      // Re-trigger render
-      onWindowResize();
-    }
+    // Initialize 3D after browser layout updates container clientWidth/Height
+    setTimeout(() => {
+      if (!renderer3) {
+        init3D();
+      } else {
+        onWindowResize();
+      }
+    }, 50);
   }
 }
 
@@ -1628,68 +1794,50 @@ function setupSVGInteractions() {
     const price    = parseFloat(el.dataset.price || '1.0');
     const emoji    = el.dataset.emoji || '🥩';
     const dir      = getDir(partId);
-    
-    // Pointer down for drag
-    let dragData = null;
-    el.addEventListener('pointerdown', e => {
-      if (currentTool === 'knife') return;
-      if (e.button !== 0) return;
-      if (severedParts[partId]) return;
-      
-      e.stopPropagation();
-      dragData = {
-        startX: e.clientX,
-        startY: e.clientY,
-        baseDx: parseFloat(el.dataset.dragPx || '0'),
-        baseDy: parseFloat(el.dataset.dragPy || '0'),
-        moved: false
-      };
-      el.setPointerCapture(e.pointerId);
-      
-      const onPointerMove = ev => {
-        if (!dragData) return;
-        const dx = ev.clientX - dragData.startX;
-        const dy = ev.clientY - dragData.startY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragData.moved = true;
-        
-        el.dataset.dragPx = dx + dragData.baseDx;
-        el.dataset.dragPy = dy + dragData.baseDy;
-        el.style.transition = 'none';
-        applyPartTransform(el);
-        el.style.filter = 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))';
-      };
-      
-      const onPointerUp = ev => {
-        el.releasePointerCapture(ev.pointerId);
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
-        
-        if (dragData && !dragData.moved) {
-          inspectPart(el);
-        } else {
-          el.style.filter = '';
-          applyPartTransform(el, 'transform 0.28s cubic-bezier(0.34,1.3,0.64,1)');
-        }
-        dragData = null;
-      };
-      
-      window.addEventListener('pointermove', onPointerMove);
-      window.addEventListener('pointerup', onPointerUp);
-    });
 
-    // Hover tooltip
+    // Hover tooltip & highlights
     el.addEventListener('mouseenter', () => {
-      const info = PART_INFO[partId + '|chicken'];
-      const displayName = info ? info.name : partId;
-      const tooltip = document.getElementById('tooltip');
-      
-      tooltip.textContent = `${displayName} • ${weight}g • $${price.toFixed(2)}`;
-      tooltip.classList.add('visible');
-      
-      if (currentTool === 'knife' && !severedParts[partId]) {
-        setSever(el, dir.dx * 0.18, dir.dy * 0.18, 1.04, dir.rot * 0.22);
-        applyPartTransform(el, 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)');
+      let displayName = '';
+      let displayWeight = weight;
+      let displayPrice = price;
+
+      if (legStyle === 'whole' && (partId.startsWith('thigh') || partId.startsWith('leg'))) {
+        const side = partId.endsWith('_l') ? 'l' : 'r';
+        const wholeLegId = `leg_whole_${side}`;
+        const info = PART_INFO[wholeLegId + '|chicken'];
+        displayName = info ? info.name : `Whole Leg`;
+        displayWeight = PART_WEIGHTS[wholeLegId];
+        displayPrice = PART_PRICES[wholeLegId];
+
+        // Highlight both thigh and leg parts
+        [`thigh_${side}`, `leg_${side}`].forEach(p => {
+          if (!severedParts[p]) {
+            getSVGElements(p).forEach(elPart => {
+              elPart.classList.add('selected-part');
+              if (currentTool === 'knife') {
+                const d = getDir(p);
+                setSever(elPart, d.dx * 0.18, d.dy * 0.18, 1.04, d.rot * 0.22);
+                applyPartTransform(elPart, 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)');
+              }
+            });
+          }
+        });
+      } else {
+        const info = PART_INFO[partId + '|chicken'];
+        displayName = info ? info.name : partId;
+        
+        if (!severedParts[partId]) {
+          el.classList.add('selected-part');
+          if (currentTool === 'knife') {
+            setSever(el, dir.dx * 0.18, dir.dy * 0.18, 1.04, dir.rot * 0.22);
+            applyPartTransform(el, 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)');
+          }
+        }
       }
+
+      const tooltip = document.getElementById('tooltip');
+      tooltip.textContent = `${displayName} • ${displayWeight}g • $${displayPrice.toFixed(2)}`;
+      tooltip.classList.add('visible');
     });
 
     el.addEventListener('mousemove', e => {
@@ -1700,6 +1848,24 @@ function setupSVGInteractions() {
 
     el.addEventListener('mouseleave', () => {
       document.getElementById('tooltip').classList.remove('visible');
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      
+      if (partId.startsWith('thigh') || partId.startsWith('leg')) {
+        if (legStates[side] === 'whole') {
+          [`thigh_${side}`, `leg_${side}`].forEach(p => {
+            getSVGElements(p).forEach(elPart => {
+              elPart.classList.remove('selected-part');
+              if (!severedParts[p]) {
+                setSever(elPart, 0, 0, 1, 0);
+                applyPartTransform(elPart, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
+              }
+            });
+          });
+          return;
+        }
+      }
+
+      el.classList.remove('selected-part');
       if (!severedParts[partId]) {
         setSever(el, 0, 0, 1, 0);
         applyPartTransform(el, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
@@ -1708,7 +1874,14 @@ function setupSVGInteractions() {
 
     el.addEventListener('click', e => {
       if (currentTool === 'knife') {
-        cut2DPart(el, e.clientX, e.clientY);
+        const side = partId.endsWith('_l') ? 'l' : 'r';
+        if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+          splitLeg(side, e.clientX, e.clientY);
+        } else {
+          cut2DPart(el, e.clientX, e.clientY);
+        }
+      } else {
+        inspectPart(el);
       }
     });
   });
@@ -1716,12 +1889,31 @@ function setupSVGInteractions() {
 
 function inspectPart(el) {
   const partId = el.dataset.part;
-  const info = PART_INFO[partId + '|chicken'];
-  if (!info) return;
-
+  const side = partId.endsWith('_l') ? 'l' : 'r';
+  
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  el.classList.add('selected-part');
-  animateScale(info.weight, info.name, el.dataset.emoji || '🥩');
+
+  if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+    const wholeLegId = `leg_whole_${side}`;
+    const info = PART_INFO[wholeLegId + '|chicken'];
+    if (!info) return;
+
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      getSVGElements(p).forEach(elPart => elPart.classList.add('selected-part'));
+    });
+
+    selectedLegSide = side;
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    animateScale(info.weight, info.name, '🍗');
+  } else {
+    const info = PART_INFO[partId + '|chicken'];
+    if (!info) return;
+
+    el.classList.add('selected-part');
+    selectedLegSide = null;
+    document.getElementById('harvestBtnContainer').style.display = 'none';
+    animateScale(info.weight, info.name, el.dataset.emoji || '🥩');
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -1748,21 +1940,10 @@ function cut2DPart(el, cx, cy) {
   setTimeout(() => ring.remove(), 550);
 
   const baseAngle = Math.atan2(dir.dy || 1, dir.dx || 1) * 180 / Math.PI;
-  [0, 1].forEach(i => {
-    const slash = document.createElement('div');
-    slash.className = i === 0 ? 'knife-slash' : 'knife-slash2';
-    const angle = baseAngle + (i === 0 ? -8 : 18) + (Math.random() * 8 - 4);
-    slash.style.cssText = `left:${cx - (i===0?45:25)}px;top:${cy - 1}px;--a:${angle}deg;`;
-    document.body.appendChild(slash);
-    setTimeout(() => slash.remove(), 520);
-  });
-
   spawnBloodParticles(cx, cy, baseAngle);
 
-  // Detach 2D SVG visually
   setTimeout(() => severPart(partId), 85);
 
-  // Fly emoji to scale
   const fly = document.getElementById('flyPiece');
   fly.textContent = emoji;
   fly.style.cssText = `display:block;left:${cx-18}px;top:${cy-18}px;opacity:1;transform:scale(1.5) rotate(0deg);transition:none;font-size:2.2rem;`;
@@ -1779,7 +1960,6 @@ function cut2DPart(el, cx, cy) {
     fly.style.opacity   = '0';
   }));
 
-  // Settle on scale, add to session cuts list
   setTimeout(() => {
     fly.style.display = 'none';
     animateScale(info.weight, info.name, emoji);
@@ -1791,12 +1971,13 @@ function cut2DPart(el, cx, cy) {
       weight: info.weight,
       price: info.price,
       emoji: emoji,
+      qty: 1,
+      size: 'Medium',
       isCustom: true
     });
     
+    actionHistory.push({ type: 'harvest', partId: partId });
     renderSessionCuts();
-    
-    // Sync to 3D mesh (make it disappear in 3D too)
     syncPartTo3D(partId, false);
   }, 740);
 }
@@ -1838,30 +2019,32 @@ const colors3D = {
   wing_r: 0xFFCC80,     // Warm yellow-orange
   thigh_l: 0xFF8A65,    // Clean orange
   thigh_r: 0xFF8A65,    // Clean orange
-  leg_l: 0xFF7043,      // Slightly deeper orange
-  leg_r: 0xFF7043,      // Slightly deeper orange
+  leg_l: 0xFF7043,      // Deeper orange
+  leg_r: 0xFF7043,      // Deeper orange
   neck: 0xFF8A65        // Clean orange
 };
 
 function init3D() {
   const container = document.getElementById('canvas3d-container');
   const canvas    = document.getElementById('canvas3d');
-  const W = container.clientWidth, H = container.clientHeight;
+  let W = container.clientWidth;
+  let H = container.clientHeight;
+  if (!W || !H) {
+    const rightPanel = document.getElementById('customRightPanel');
+    W = rightPanel.clientWidth || window.innerWidth - 320;
+    H = rightPanel.clientHeight || window.innerHeight;
+  }
 
-  // Scene
   scene3 = new THREE.Scene();
-  scene3.background = new THREE.Color(0xDCD8D0); // Clean vector sheet background color
+  scene3.background = new THREE.Color(0xDCD8D0);
 
-  // Camera
   camera3 = new THREE.PerspectiveCamera(40, W/H, 0.1, 50);
   camera3.position.set(0, 0, 5.0);
 
-  // Renderer
   renderer3 = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer3.setSize(W, H);
   renderer3.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // Lights (Strong illustrated toon setup)
   scene3.add(new THREE.AmbientLight(0xffffff, 0.75));
   
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -1872,14 +2055,11 @@ function init3D() {
   fillLight.position.set(-3.0, 1.0, 2.0);
   scene3.add(fillLight);
 
-  // Build model
   buildChicken3D();
 
-  // Raycaster & Mouse
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  // Events
   canvas.addEventListener('click', on3DClick);
   canvas.addEventListener('mousemove', on3DHover);
   window.addEventListener('resize', onWindowResize);
@@ -1899,7 +2079,6 @@ function buildChicken3D() {
     });
   }
 
-  // 1. BODY (Back / Carcass) - Plump and Bulky
   const backGroup = new THREE.Group();
   const backMesh = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 24), materials.back);
   backMesh.scale.set(0.9, 1.25, 0.85);
@@ -1909,7 +2088,6 @@ function buildChicken3D() {
   parts3D.back = backGroup;
   chickenGroup.add(backGroup);
 
-  // 2. LEFT BREAST
   const blGroup = new THREE.Group();
   const blMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 32, 24), materials.breast_l);
   blMesh.scale.set(0.85, 1.35, 0.82);
@@ -1921,7 +2099,6 @@ function buildChicken3D() {
   parts3D.breast_l = blGroup;
   chickenGroup.add(blGroup);
 
-  // 3. RIGHT BREAST
   const brGroup = new THREE.Group();
   const brMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 32, 24), materials.breast_r);
   brMesh.scale.set(0.85, 1.35, 0.82);
@@ -1933,7 +2110,6 @@ function buildChicken3D() {
   parts3D.breast_r = brGroup;
   chickenGroup.add(brGroup);
 
-  // 4. NECK
   const neckGroup = new THREE.Group();
   neckGroup.position.set(0, 1.15, 0.1);
   const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.55, 24), materials.neck);
@@ -1944,7 +2120,6 @@ function buildChicken3D() {
   parts3D.neck = neckGroup;
   chickenGroup.add(neckGroup);
 
-  // 5. LEFT WING - folded meaty parts
   const wlGroup = new THREE.Group();
   wlGroup.position.set(-0.95, 0.32, 0.05);
   const wlDrum = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), materials.wing_l);
@@ -1963,7 +2138,6 @@ function buildChicken3D() {
   parts3D.wing_l = wlGroup;
   chickenGroup.add(wlGroup);
 
-  // 6. RIGHT WING
   const wrGroup = new THREE.Group();
   wrGroup.position.set(0.95, 0.32, 0.05);
   const wrDrum = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), materials.wing_r);
@@ -1982,7 +2156,6 @@ function buildChicken3D() {
   parts3D.wing_r = wrGroup;
   chickenGroup.add(wrGroup);
 
-  // 7. LEFT THIGH - Plump thigh bulge
   const tlGroup = new THREE.Group();
   tlGroup.position.set(-0.52, -0.55, 0.22);
   const tlMesh = new THREE.Mesh(new THREE.SphereGeometry(0.64, 24, 18), materials.thigh_l);
@@ -1994,7 +2167,6 @@ function buildChicken3D() {
   parts3D.thigh_l = tlGroup;
   chickenGroup.add(tlGroup);
 
-  // 8. RIGHT THIGH
   const trGroup = new THREE.Group();
   trGroup.position.set(0.52, -0.55, 0.22);
   const trMesh = new THREE.Mesh(new THREE.SphereGeometry(0.64, 24, 18), materials.thigh_r);
@@ -2006,7 +2178,6 @@ function buildChicken3D() {
   parts3D.thigh_r = trGroup;
   chickenGroup.add(trGroup);
 
-  // 9. LEFT DRUMSTICK - thick leg cylinder
   const dlGroup = new THREE.Group();
   dlGroup.position.set(-0.46, -1.25, 0.28);
   const dlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_l);
@@ -2017,7 +2188,6 @@ function buildChicken3D() {
   parts3D.leg_l = dlGroup;
   chickenGroup.add(dlGroup);
 
-  // 10. RIGHT DRUMSTICK
   const drGroup = new THREE.Group();
   drGroup.position.set(0.46, -1.25, 0.28);
   const drMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_r);
@@ -2028,9 +2198,7 @@ function buildChicken3D() {
   parts3D.leg_r = drGroup;
   chickenGroup.add(drGroup);
 
-  // Align chicken slightly upward in scene
   chickenGroup.position.y = 0.2;
-  
   scene3.add(chickenGroup);
 }
 
@@ -2045,16 +2213,12 @@ function onWindowResize() {
 function animate3D() {
   if (viewMode !== '3d') return;
   requestAnimationFrame(animate3D);
-  
-  // Slow background rotation for visual depth
   if (chickenGroup) {
     chickenGroup.rotation.y = Math.sin(Date.now() * 0.0006) * 0.22;
   }
-  
   renderer3.render(scene3, camera3);
 }
 
-// Hover highlights (emissive glow)
 let hovered3DGroup = null;
 
 function on3DHover(e) {
@@ -2075,9 +2239,17 @@ function on3DHover(e) {
 
   const hits = raycaster.intersectObjects(clickableMeshes);
   
-  // Unhover previous
   if (hovered3DGroup) {
-    hovered3DGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x000000); });
+    const prevData = hovered3DGroup.userData;
+    const side = prevData.partId.endsWith('_l') ? 'l' : 'r';
+    if ((prevData.partId.startsWith('thigh') || prevData.partId.startsWith('leg')) && legStates[side] === 'whole') {
+      [`thigh_${side}`, `leg_${side}`].forEach(p => {
+        const grp = parts3D[p];
+        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x000000); });
+      });
+    } else {
+      hovered3DGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x000000); });
+    }
     hovered3DGroup = null;
   }
 
@@ -2086,36 +2258,75 @@ function on3DHover(e) {
     let parentGroup = hitMesh.parent;
     while (parentGroup && parentGroup.parent !== chickenGroup) { parentGroup = parentGroup.parent; }
 
-    if (parentGroup && !severedParts[parentGroup.userData.partId]) {
-      hovered3DGroup = parentGroup;
-      const glowHex = currentTool === 'knife' ? 0x441100 : 0x181000;
-      parentGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(glowHex); });
+    if (parentGroup) {
+      const pId = parentGroup.userData.partId;
+      if (!severedParts[pId]) {
+        hovered3DGroup = parentGroup;
+        const glowHex = currentTool === 'knife' ? 0x441100 : 0x181000;
+        const side = pId.endsWith('_l') ? 'l' : 'r';
+
+        if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
+          [`thigh_${side}`, `leg_${side}`].forEach(p => {
+            const grp = parts3D[p];
+            if (grp && !severedParts[p]) {
+              grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(glowHex); });
+            }
+          });
+        } else {
+          parentGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(glowHex); });
+        }
+      }
     }
   }
 }
 
 function on3DClick(e) {
   if (viewMode !== '3d') return;
-  if (currentTool !== 'knife') return;
   if (!hovered3DGroup) return;
 
   const group = hovered3DGroup;
   const data = group.userData;
-  if (severedParts[data.partId]) return;
+  const pId = data.partId;
+  const side = pId.endsWith('_l') ? 'l' : 'r';
 
-  // Cut the part!
-  cut3DPart(group, e.clientX, e.clientY);
+  if (currentTool === 'knife') {
+    if (severedParts[pId]) return;
+    if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
+      splitLeg(side, e.clientX, e.clientY);
+    } else {
+      cut3DPart(group, e.clientX, e.clientY);
+    }
+  } else {
+    // Select mode click in 3D
+    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+    if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
+      selectedLegSide = side;
+      document.getElementById('harvestBtnContainer').style.display = 'block';
+      animateScale(320, side === 'l' ? 'Left Chicken Leg' : 'Right Chicken Leg', '🍗');
+
+      [`thigh_${side}`, `leg_${side}`].forEach(p => {
+        const grp = parts3D[p];
+        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
+      });
+    } else {
+      selectedLegSide = null;
+      document.getElementById('harvestBtnContainer').style.display = 'none';
+      animateScale(data.weight, data.name, data.emoji);
+      group.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
+    }
+  }
 }
 
 function cut3DPart(group, cx, cy) {
   const data = group.userData;
-  severedParts[data.partId] = true;
+  const partId = data.partId;
+  if (severedParts[partId]) return;
+
+  severedParts[partId] = true;
   hovered3DGroup = null;
 
-  // Slash VFX at mouse coordinates
   spawn2DSlash(cx, cy);
 
-  // Animating mesh fly out and disappearance
   const startPos = group.position.clone();
   const startScale = group.scale.clone();
   const targetPos = new THREE.Vector3(startPos.x * 2.2, startPos.y * 1.5, startPos.z + 1.5);
@@ -2125,29 +2336,24 @@ function cut3DPart(group, cx, cy) {
     t += 0.055;
     if (t >= 1) {
       group.visible = false;
-      
-      // Complete weighing & add to cuts list
       animateScale(data.weight, data.name, data.emoji);
       sessionCuts.push({
-        id: data.partId + '_cut_' + Date.now(),
-        partId: data.partId,
+        id: partId + '_cut_' + Date.now(),
+        partId: partId,
         name: data.name,
         weight: data.weight,
         price: data.price,
         emoji: data.emoji,
+        qty: 1,
+        size: 'Medium',
         isCustom: true
       });
+      actionHistory.push({ type: 'harvest', partId: partId });
       renderSessionCuts();
-      
-      // Sync to 2D SVG
-      severPart(data.partId);
+      severPart(partId);
     } else {
       group.position.lerpVectors(startPos, targetPos, t);
-      group.scale.set(
-        startScale.x * (1 - t),
-        startScale.y * (1 - t),
-        startScale.z * (1 - t)
-      );
+      group.scale.set(startScale.x*(1-t), startScale.y*(1-t), startScale.z*(1-t));
       requestAnimationFrame(animateCut);
     }
   };

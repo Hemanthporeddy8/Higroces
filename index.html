@@ -879,13 +879,14 @@ window.addEventListener('DOMContentLoaded', () => {
       const customCuts = JSON.parse(customCutsStr);
       if (Array.isArray(customCuts) && customCuts.length > 0) {
         customCuts.forEach(cut => {
+          const sizeSuffix = cut.size && cut.size !== 'Medium' ? ` (${cut.size})` : '';
           mainCart.push({
             id: cut.id,
-            name: "Custom: " + cut.name,
+            name: "Custom: " + cut.name + sizeSuffix,
             price: cut.price,
             weight: cut.weight + "g",
             emoji: cut.emoji,
-            qty: 1,
+            qty: cut.qty || 1,
             isCustom: true
           });
         });
