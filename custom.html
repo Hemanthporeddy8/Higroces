@@ -501,7 +501,7 @@ body {
   <div class="custom-left-panel">
     
     <div class="workshop-title">Digital scale</div>
-    <div class="scale-container">
+    <div class="scale-container" style="margin-bottom: 10px;">
       <div class="scale-emoji-overlay" id="scaleEmoji">🥩</div>
       <div class="scale-pan" id="scalePan"></div>
       <div class="scale-pan-base"></div>
@@ -513,25 +513,44 @@ body {
       </div>
     </div>
 
-    <div class="workshop-title">Cavity Organ Harvest (Offal)</div>
-    <div class="offal-box" id="internalPartsBox">
-      <!-- Populated by JS script -->
+    <!-- Weight selector section (quick weight presets and custom text input) -->
+    <div id="weightSelectorSection" style="display: none; margin-bottom: 10px; background: var(--paper-dark); border-radius: 6px; padding: 8px; border: 1px solid var(--border); width: 100%;">
+      <div style="font-size: 0.65rem; font-weight: 700; color: var(--ink-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Weight Selection</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+        <button type="button" onclick="setPartScaleWeight(250)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">250g</button>
+        <button type="button" onclick="setPartScaleWeight(500)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">500g</button>
+        <button type="button" onclick="setPartScaleWeight(1000)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">1kg</button>
+        <button type="button" onclick="setPartScaleWeight(2000)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">2kg</button>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; background: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px;">
+        <span style="font-size: 0.65rem; color: var(--ink-light); font-weight: 600;">Custom:</span>
+        <input type="number" id="inputCustomWeight" oninput="onCustomWeightInput(this.value)" min="50" max="5000" style="width: 55px; font-family: 'DM Mono', monospace; font-size: 0.75rem; border: none; outline: none; text-align: right; color: var(--ink); font-weight: bold;" value="250">
+        <span style="font-size: 0.65rem; color: var(--ink-light); font-weight: 600;">grams</span>
+      </div>
     </div>
-    <div style="font-size:0.6rem; color:var(--ink-light); margin-top:2px; font-style:italic; opacity:0.8;">Click to extract edible offal.</div>
 
+    <!-- Harvest Button Container -->
     <div id="harvestBtnContainer" style="display: none; margin-bottom: 12px; background: var(--paper-dark); border-radius: 6px; padding: 8px; border: 1px solid var(--border); width: 100%; text-align: center;">
-      <button id="btnHarvestSelect" onclick="harvestSelectedWholeLeg()" class="btn-workshop-save" style="padding: 8px 12px; font-size: 0.75rem; background: var(--brand-primary); margin: 0 auto; width: 100%;">Harvest Whole Leg</button>
+      <button id="btnHarvestSelect" onclick="harvestSelectedPart()" class="btn-workshop-save" style="padding: 8px 12px; font-size: 0.75rem; background: var(--brand-primary); margin: 0 auto; width: 100%;">Harvest Part</button>
     </div>
 
-    <div class="workshop-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <!-- Harvested cuts list (placed directly below the scale section) -->
+    <div class="workshop-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;">
       <span>Harvested Cuts</span>
       <button onclick="undoLastCut()" style="background: none; border: none; color: var(--red); cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 4px; font-family: 'Outfit', sans-serif;">
         <span>↩</span> Undo last
       </button>
     </div>
-    <div class="session-cuts-list" id="sessionCutsList">
+    <div class="session-cuts-list" id="sessionCutsList" style="margin-bottom: 12px;">
       <div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>
     </div>
+
+    <!-- Internal Offal Box -->
+    <div class="workshop-title">Cavity Organ Harvest (Offal)</div>
+    <div class="offal-box" id="internalPartsBox" style="margin-bottom: 16px;">
+      <!-- Populated by JS script -->
+    </div>
+    <div style="font-size:0.6rem; color:var(--ink-light); margin-top:-10px; margin-bottom: 16px; font-style:italic; opacity:0.8;">Click to extract edible offal.</div>
 
     <div class="workshop-footer-actions">
       <button class="btn-workshop-save" onclick="saveCustomCutsToCart()">
@@ -1369,30 +1388,46 @@ body {
 // STATE MANAGEMENT
 // ═══════════════════════════════════════════════════
 const sessionCuts = [];
+const actionHistory = [];
+const legStates = { l: 'whole', r: 'whole' };
 let currentTool = 'select'; // 'select' or 'knife'
 let viewMode = '2d';       // '2d' or '3d'
-let legStyle = 'whole';    // 'whole' or 'split'
-
-// Track severed parts of the chicken: { 'breast_l': true, ... }
 const severedParts = {};
 
+let currentScalePartId = null;
+let currentScaleWeight = 0;
+let selectedLegSide = null; // 'l' or 'r'
+let activeCutsListIdx = null;
+
 const PART_WEIGHTS = {
-  back: 380, breast_l: 255, breast_r: 255, neck: 115, wing_l: 95, wing_r: 95, thigh_l: 172, thigh_r: 172, leg_l: 148, leg_r: 148, leg_whole_l: 320, leg_whole_r: 320
+  back: 380, breast_l: 255, breast_r: 255, neck: 115, wing_l: 95, wing_r: 95,
+  thigh_l: 172, thigh_r: 172, leg_l: 148, leg_r: 148, leg_whole_l: 320, leg_whole_r: 320
 };
 const PART_PRICES = {
-  back: 1.20, breast_l: 3.50, breast_r: 3.50, neck: 0.90, wing_l: 1.80, wing_r: 1.80, thigh_l: 2.20, thigh_r: 2.20, leg_l: 1.60, leg_r: 1.60, leg_whole_l: 3.80, leg_whole_r: 3.80
+  back: 1.20, breast_l: 3.50, breast_r: 3.50, neck: 0.90, wing_l: 1.80, wing_r: 1.80,
+  thigh_l: 2.20, thigh_r: 2.20, leg_l: 1.60, leg_r: 1.60, leg_whole_l: 3.80, leg_whole_r: 3.80
 };
 
-function setLegStyle(style) {
-  legStyle = style;
-  document.getElementById('btnLegWhole').classList.toggle('active', style === 'whole');
-  document.getElementById('btnLegSplit').classList.toggle('active', style === 'split');
-  
-  // Clear any existing selected part highlights
-  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  document.getElementById('weightDisplay').textContent = '0';
-  document.getElementById('scalePartName').textContent = '— empty —';
-}
+const PART_INFO = {
+  'back|chicken': { name:'Back / Carcass', weight:380, price:1.20, tip:'Backbone is gold for deep stock. Roast first at 220°C then simmer 3 hours.' },
+  'breast_l|chicken': { name:'Left Breast', weight:255, price:3.50, tip:'Lean white pectoral meat. Cut along sternum, slide blade flat along ribcage.' },
+  'breast_r|chicken': { name:'Right Breast', weight:255, price:3.50, tip:'Mirror of left. Butterfly by slicing 3/4 through horizontally, then open flat.' },
+  'neck|chicken': { name:'Neck', weight:115, price:0.90, tip:'Best part for gelatinous stock. Rich in cartilage and flavor.' },
+  'wing_l|chicken': { name:'Left Wing', weight:95, price:1.80, tip:'3 sections: drumette, flat, tip. Drumette and flat for cooking; tip for stock.' },
+  'wing_r|chicken': { name:'Right Wing', weight:95, price:1.80, tip:'Score skin before marinating. High heat ensures crispy skin.' },
+  'thigh_l|chicken': { name:'Left Thigh', weight:172, price:2.20, tip:'Most flavorful dark meat. Higher fat keeps it moist at high temps.' },
+  'thigh_r|chicken': { name:'Right Thigh', weight:172, price:2.20, tip:'Perfect for braising, curries, and slow cooks.' },
+  'leg_l|chicken': { name:'Left Drumstick', weight:148, price:1.60, tip:'Score 2-3 diagonal cuts to bone. Cook to 80°C+ internal.' },
+  'leg_r|chicken': { name:'Right Drumstick', weight:148, price:1.60, tip:'French-cut: scrape meat toward one end to expose bone.' },
+  'leg_whole_l|chicken': { name:'Left Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
+  'leg_whole_r|chicken': { name:'Right Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
+};
+
+const OFFAL_DATA = [
+  { n: 'Chicken Heart', w: 15, p: 0.50, e: '❤️' },
+  { n: 'Chicken Liver', w: 45, p: 0.80, e: '🥩' },
+  { n: 'Chicken Gizzard', w: 35, p: 0.60, e: '🥘' }
+];
 
 function renderSessionCuts() {
   const container = document.getElementById('sessionCutsList');
@@ -1412,7 +1447,7 @@ function renderSessionCuts() {
               <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • $${item.price.toFixed(2)}</div>
             </div>
           </div>
-          <button class="sci-remove" onclick="removeSessionCut(${idx})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+          <button class="sci-remove" onclick="removeSessionCut(${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
         </div>
       `;
     }
@@ -1421,16 +1456,16 @@ function renderSessionCuts() {
     const currentSize = item.size || 'Medium';
 
     const sizeSelector = `
-      <select onchange="setCutSize(${idx}, this.value)" style="background:white; border:1px solid var(--border); border-radius:4px; padding:2px 4px; font-size:0.65rem; font-family:'Outfit',sans-serif; color:var(--ink); cursor:pointer; margin-right:4px;">
+      <select onchange="setCutSize(${idx}, this.value); event.stopPropagation();" onclick="event.stopPropagation();" style="background:white; border:1px solid var(--border); border-radius:4px; padding:2px 4px; font-size:0.65rem; font-family:'Outfit',sans-serif; color:var(--ink); cursor:pointer; margin-right:4px;">
         ${sizes.map(s => `<option value="${s}" ${s === currentSize ? 'selected' : ''}>${s}</option>`).join('')}
       </select>
     `;
 
     const qtyControls = `
-      <div style="display:inline-flex; align-items:center; gap:4px; margin-right:8px; background:white; border:1px solid var(--border); border-radius:4px; padding:1px 3px;">
-        <button onclick="adjustCutQty(${idx}, -1)" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">-</button>
+      <div style="display:inline-flex; align-items:center; gap:4px; margin-right:8px; background:white; border:1px solid var(--border); border-radius:4px; padding:1px 3px;" onclick="event.stopPropagation();">
+        <button onclick="adjustCutQty(${idx}, -1); event.stopPropagation();" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">-</button>
         <span style="font-family:'DM Mono',monospace; font-size:0.75rem; min-width:12px; text-align:center;">${item.qty || 1}</span>
-        <button onclick="adjustCutQty(${idx}, 1)" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">+</button>
+        <button onclick="adjustCutQty(${idx}, 1); event.stopPropagation();" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">+</button>
       </div>
     `;
 
@@ -1446,7 +1481,7 @@ function renderSessionCuts() {
         <div style="display:flex; align-items:center;">
           ${sizeSelector}
           ${qtyControls}
-          <button class="sci-remove" onclick="removeSessionCut(${idx})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+          <button class="sci-remove" onclick="removeSessionCut(${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
         </div>
       </div>
     `;
@@ -1467,8 +1502,8 @@ function setCutSize(idx, size) {
   const item = sessionCuts[idx];
   item.size = size;
   
-  const baseWeight = PART_WEIGHTS[item.partId] || 150;
-  const basePrice = PART_PRICES[item.partId] || 2.0;
+  const baseWeight = item.baseWeight || PART_WEIGHTS[item.partId] || 150;
+  const basePrice = item.basePrice || PART_PRICES[item.partId] || 2.0;
 
   let mult = 1.0;
   if (size === 'Small') mult = 0.8;
@@ -1482,9 +1517,17 @@ function setCutSize(idx, size) {
 
 function removeSessionCut(idx) {
   const item = sessionCuts[idx];
+  if (!item) return;
   
   if (!item.id.startsWith('offal_')) {
     const partId = item.partId;
+    
+    // Remove from actionHistory
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
+    }
+
     if (partId.startsWith('leg_whole_')) {
       const side = partId.endsWith('_l') ? 'l' : 'r';
       delete severedParts[`thigh_${side}`];
@@ -1498,6 +1541,11 @@ function removeSessionCut(idx) {
       delete severedParts[partId];
       restorePart(partId);
       syncPartTo3D(partId, true);
+    }
+  } else {
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === item.partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
     }
   }
 
@@ -1515,11 +1563,26 @@ function removeSessionCut(idx) {
 }
 
 function undoLastCut() {
-  if (sessionCuts.length === 0) {
-    alert("No cuts to undo!");
+  if (actionHistory.length === 0) {
+    alert("No actions to undo!");
     return;
   }
-  removeSessionCut(sessionCuts.length - 1);
+  const lastAction = actionHistory.pop();
+  if (lastAction.type === 'harvest') {
+    const idx = sessionCuts.findIndex(item => item.partId === lastAction.partId);
+    if (idx !== -1) {
+      removeSessionCut(idx);
+    }
+  } else if (lastAction.type === 'split') {
+    const side = lastAction.side;
+    legStates[side] = 'whole';
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      syncPartTo3D(p, true);
+    });
+    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1656,30 +1719,6 @@ function restorePart(partId) {
 }
 
 // ═══════════════════════════════════════════════════
-// DATA DATABASES
-// ═══════════════════════════════════════════════════
-const PART_INFO = {
-  'back|chicken': { name:'Back / Carcass', weight:380, price:1.20, tip:'Backbone is gold for deep stock. Roast first at 220°C then simmer 3 hours.' },
-  'breast_l|chicken': { name:'Left Breast', weight:255, price:3.50, tip:'Lean white pectoral meat. Cut along sternum, slide blade flat along ribcage.' },
-  'breast_r|chicken': { name:'Right Breast', weight:255, price:3.50, tip:'Mirror of left. Butterfly by slicing 3/4 through horizontally, then open flat.' },
-  'neck|chicken': { name:'Neck', weight:115, price:0.90, tip:'Best part for gelatinous stock. Rich in cartilage and flavor.' },
-  'wing_l|chicken': { name:'Left Wing', weight:95, price:1.80, tip:'3 sections: drumette, flat, tip. Drumette and flat for cooking; tip for stock.' },
-  'wing_r|chicken': { name:'Right Wing', weight:95, price:1.80, tip:'Score skin before marinating. High heat ensures crispy skin.' },
-  'thigh_l|chicken': { name:'Left Thigh', weight:172, price:2.20, tip:'Most flavorful dark meat. Higher fat keeps it moist at high temps.' },
-  'thigh_r|chicken': { name:'Right Thigh', weight:172, price:2.20, tip:'Perfect for braising, curries, and slow cooks.' },
-  'leg_l|chicken': { name:'Left Drumstick', weight:148, price:1.60, tip:'Score 2-3 diagonal cuts to bone. Cook to 80°C+ internal.' },
-  'leg_r|chicken': { name:'Right Drumstick', weight:148, price:1.60, tip:'French-cut: scrape meat toward one end to expose bone.' },
-  'leg_whole_l|chicken': { name:'Left Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
-  'leg_whole_r|chicken': { name:'Right Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
-};
-
-const OFFAL_DATA = [
-  { n: 'Chicken Heart', w: 15, p: 0.50, e: '❤️' },
-  { n: 'Chicken Liver', w: 45, p: 0.80, e: '🥩' },
-  { n: 'Chicken Gizzard', w: 35, p: 0.60, e: '🥘' }
-];
-
-// ═══════════════════════════════════════════════════
 // WORKSHOP NAVIGATION
 // ═══════════════════════════════════════════════════
 function setViewMode(mode) {
@@ -1696,7 +1735,6 @@ function setViewMode(mode) {
   } else {
     diagSvg.style.display = 'none';
     container3D.style.display = 'block';
-    // Initialize 3D after browser layout updates container clientWidth/Height
     setTimeout(() => {
       if (!renderer3) {
         init3D();
@@ -1721,7 +1759,6 @@ function setTool(tool) {
     : '▶ Select Tool — click a part to inspect details';
 }
 
-// Populate Offal Box
 function initOffalBox() {
   const box = document.getElementById('internalPartsBox');
   box.innerHTML = '';
@@ -1746,22 +1783,25 @@ function harvestOffal(name, weight, price, emoji) {
     return;
   }
 
-  // Flash offal box
   const box = document.getElementById('internalPartsBox');
   box.style.background = 'rgba(184,40,24,0.1)';
   setTimeout(() => box.style.background = '', 200);
 
-  // Add to session cuts
   sessionCuts.push({
     id: 'offal_' + name.toLowerCase(),
     partId: 'offal_' + name.toLowerCase(),
     name: name,
+    baseWeight: weight,
+    basePrice: price,
     weight: weight,
     price: price,
     emoji: emoji,
+    qty: 1,
+    size: 'Medium',
     isCustom: true
   });
   
+  actionHistory.push({ type: 'harvest', partId: 'offal_' + name.toLowerCase() });
   animateScale(weight, name, emoji);
   renderSessionCuts();
 }
@@ -1771,7 +1811,6 @@ function harvestOffal(name, weight, price, emoji) {
 // ═══════════════════════════════════════════════════
 const knifeCursor = document.getElementById('knifeCursor');
 
-// Knife cursor tracking inside the right workspace panel
 document.getElementById('customRightPanel').addEventListener('mousemove', e => {
   if (currentTool === 'knife') {
     knifeCursor.style.display = 'block';
@@ -1786,7 +1825,6 @@ document.getElementById('customRightPanel').addEventListener('mouseleave', () =>
   knifeCursor.style.display = 'none';
 });
 
-// Setup click and hover events on the 2D SVG paths
 function setupSVGInteractions() {
   document.querySelectorAll('.cut-part').forEach(el => {
     const partId   = el.dataset.part;
@@ -1795,21 +1833,19 @@ function setupSVGInteractions() {
     const emoji    = el.dataset.emoji || '🥩';
     const dir      = getDir(partId);
 
-    // Hover tooltip & highlights
     el.addEventListener('mouseenter', () => {
       let displayName = '';
       let displayWeight = weight;
       let displayPrice = price;
+      const side = partId.endsWith('_l') ? 'l' : 'r';
 
-      if (legStyle === 'whole' && (partId.startsWith('thigh') || partId.startsWith('leg'))) {
-        const side = partId.endsWith('_l') ? 'l' : 'r';
+      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
         const wholeLegId = `leg_whole_${side}`;
         const info = PART_INFO[wholeLegId + '|chicken'];
         displayName = info ? info.name : `Whole Leg`;
         displayWeight = PART_WEIGHTS[wholeLegId];
         displayPrice = PART_PRICES[wholeLegId];
 
-        // Highlight both thigh and leg parts
         [`thigh_${side}`, `leg_${side}`].forEach(p => {
           if (!severedParts[p]) {
             getSVGElements(p).forEach(elPart => {
@@ -1850,31 +1886,28 @@ function setupSVGInteractions() {
       document.getElementById('tooltip').classList.remove('visible');
       const side = partId.endsWith('_l') ? 'l' : 'r';
       
-      if (partId.startsWith('thigh') || partId.startsWith('leg')) {
-        if (legStates[side] === 'whole') {
-          [`thigh_${side}`, `leg_${side}`].forEach(p => {
-            getSVGElements(p).forEach(elPart => {
-              elPart.classList.remove('selected-part');
-              if (!severedParts[p]) {
-                setSever(elPart, 0, 0, 1, 0);
-                applyPartTransform(elPart, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
-              }
-            });
+      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+        [`thigh_${side}`, `leg_${side}`].forEach(p => {
+          getSVGElements(p).forEach(elPart => {
+            elPart.classList.remove('selected-part');
+            if (!severedParts[p]) {
+              setSever(elPart, 0, 0, 1, 0);
+              applyPartTransform(elPart, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
+            }
           });
-          return;
+        });
+      } else {
+        el.classList.remove('selected-part');
+        if (!severedParts[partId]) {
+          setSever(el, 0, 0, 1, 0);
+          applyPartTransform(el, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
         }
-      }
-
-      el.classList.remove('selected-part');
-      if (!severedParts[partId]) {
-        setSever(el, 0, 0, 1, 0);
-        applyPartTransform(el, 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)');
       }
     });
 
     el.addEventListener('click', e => {
+      const side = partId.endsWith('_l') ? 'l' : 'r';
       if (currentTool === 'knife') {
-        const side = partId.endsWith('_l') ? 'l' : 'r';
         if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
           splitLeg(side, e.clientX, e.clientY);
         } else {
@@ -1888,10 +1921,19 @@ function setupSVGInteractions() {
 }
 
 function inspectPart(el) {
-  const partId = el.dataset.part;
+  let partId;
+  if (el.dataset && el.dataset.part) {
+    partId = el.dataset.part;
+  } else if (typeof el === 'string') {
+    partId = el;
+  } else {
+    partId = el.getAttribute('data-part');
+  }
+
   const side = partId.endsWith('_l') ? 'l' : 'r';
   
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  activeCutsListIdx = null;
 
   if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
     const wholeLegId = `leg_whole_${side}`;
@@ -1903,17 +1945,126 @@ function inspectPart(el) {
     });
 
     selectedLegSide = side;
+    currentScalePartId = wholeLegId;
+    currentScaleWeight = info.weight;
+    
     document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Harvest Whole Leg`;
+    
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+    
     animateScale(info.weight, info.name, '🍗');
   } else {
     const info = PART_INFO[partId + '|chicken'];
     if (!info) return;
 
-    el.classList.add('selected-part');
+    const targetEl = getSVGElements(partId)[0];
+    if (targetEl) targetEl.classList.add('selected-part');
+    
     selectedLegSide = null;
-    document.getElementById('harvestBtnContainer').style.display = 'none';
-    animateScale(info.weight, info.name, el.dataset.emoji || '🥩');
+    currentScalePartId = partId;
+    currentScaleWeight = info.weight;
+
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Cut & Harvest ${info.name}`;
+    
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+    
+    animateScale(info.weight, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
   }
+}
+
+function setPartScaleWeight(weight) {
+  currentScaleWeight = parseInt(weight) || 250;
+  document.getElementById('weightDisplay').textContent = currentScaleWeight.toLocaleString();
+  document.getElementById('inputCustomWeight').value = currentScaleWeight;
+}
+
+function onCustomWeightInput(weightVal) {
+  const weight = parseInt(weightVal) || 0;
+  if (weight >= 50 && weight <= 5000) {
+    currentScaleWeight = weight;
+    document.getElementById('weightDisplay').textContent = currentScaleWeight.toLocaleString();
+  }
+}
+
+function harvestSelectedPart() {
+  if (!currentScalePartId) {
+    alert("Please select a part of the chicken to cut & harvest!");
+    return;
+  }
+
+  const partId = currentScalePartId;
+  const isWholeLeg = partId.startsWith('leg_whole_');
+  const side = isWholeLeg ? (partId.endsWith('_l') ? 'l' : 'r') : null;
+
+  if (isWholeLeg) {
+    if (severedParts[`thigh_${side}`] || severedParts[`leg_${side}`]) {
+      alert("Part of this leg has already been cut or harvested!");
+      return;
+    }
+  } else {
+    if (severedParts[partId]) {
+      alert("This part has already been cut or harvested!");
+      return;
+    }
+  }
+
+  let info, emoji;
+  if (isWholeLeg) {
+    info = PART_INFO[partId + '|chicken'];
+    emoji = '🍗';
+  } else {
+    info = PART_INFO[partId + '|chicken'];
+    emoji = getSVGElements(partId)[0]?.dataset.emoji || '🥩';
+  }
+
+  if (!info) return;
+
+  if (isWholeLeg) {
+    severedParts[`thigh_${side}`] = true;
+    severedParts[`leg_${side}`] = true;
+    severPart(`thigh_${side}`);
+    severPart(`leg_${side}`);
+    syncPartTo3D(`thigh_${side}`, false);
+    syncPartTo3D(`leg_${side}`, false);
+  } else {
+    severedParts[partId] = true;
+    severPart(partId);
+    syncPartTo3D(partId, false);
+  }
+
+  const baseWeight = PART_WEIGHTS[partId] || 250;
+  const basePrice = PART_PRICES[partId] || 2.0;
+  const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
+
+  sessionCuts.push({
+    id: partId + '_cut_' + Date.now(),
+    partId: partId,
+    name: info.name,
+    baseWeight: currentScaleWeight,
+    basePrice: computedPrice,
+    weight: currentScaleWeight,
+    price: computedPrice,
+    emoji: emoji,
+    qty: 1,
+    size: 'Medium',
+    isCustom: true
+  });
+
+  actionHistory.push({ type: 'harvest', partId: partId });
+
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  document.getElementById('harvestBtnContainer').style.display = 'none';
+  document.getElementById('weightSelectorSection').style.display = 'none';
+  currentScalePartId = null;
+
+  animateScale(currentScaleWeight, info.name, emoji);
+  renderSessionCuts();
 }
 
 // ════════════════════════════════════════════════════
@@ -1968,6 +2119,8 @@ function cut2DPart(el, cx, cy) {
       id: partId + '_cut_' + Date.now(),
       partId: partId,
       name: info.name,
+      baseWeight: info.weight,
+      basePrice: info.price,
       weight: info.weight,
       price: info.price,
       emoji: emoji,
@@ -2005,6 +2158,26 @@ function spawnBloodParticles(cx, cy, baseAngle) {
   }
 }
 
+function splitLeg(side, cx, cy) {
+  legStates[side] = 'split';
+  spawn2DSlash(cx, cy);
+
+  [`thigh_${side}`, `leg_${side}`].forEach(p => {
+    getSVGElements(p).forEach(el => {
+      el.classList.add('cutting');
+      setTimeout(() => el.classList.remove('cutting'), 420);
+    });
+    syncPartTo3D(p, true);
+  });
+
+  const tooltip = document.getElementById('tooltip');
+  tooltip.textContent = `Leg split into Thigh & Drumstick!`;
+  tooltip.classList.add('visible');
+  setTimeout(() => tooltip.classList.remove('visible'), 1800);
+
+  actionHistory.push({ type: 'split', side: side });
+}
+
 // ═══════════════════════════════════════════════════
 // THREE.JS  3D CHICKEN ENGINE
 // ═══════════════════════════════════════════════════
@@ -2012,16 +2185,16 @@ let scene3, camera3, renderer3, chickenGroup, raycaster, mouse;
 const parts3D = {};
 
 const colors3D = {
-  back: 0xFFB74D,       // Creamy orange
-  breast_l: 0xFFF8E1,   // Bright cream-yellow
-  breast_r: 0xFFF8E1,   // Bright cream-yellow
-  wing_l: 0xFFCC80,     // Warm yellow-orange
-  wing_r: 0xFFCC80,     // Warm yellow-orange
-  thigh_l: 0xFF8A65,    // Clean orange
-  thigh_r: 0xFF8A65,    // Clean orange
-  leg_l: 0xFF7043,      // Deeper orange
-  leg_r: 0xFF7043,      // Deeper orange
-  neck: 0xFF8A65        // Clean orange
+  back: 0xFFB74D,       
+  breast_l: 0xFFF8E1,   
+  breast_r: 0xFFF8E1,   
+  wing_l: 0xFFCC80,     
+  wing_r: 0xFFCC80,     
+  thigh_l: 0xFF8A65,    
+  thigh_r: 0xFF8A65,    
+  leg_l: 0xFF7043,      
+  leg_r: 0xFF7043,      
+  neck: 0xFF8A65        
 };
 
 function init3D() {
@@ -2231,11 +2404,13 @@ function on3DHover(e) {
   raycaster.setFromCamera(mouse, camera3);
   
   const clickableMeshes = [];
-  chickenGroup.children.forEach(group => {
-    if (group.visible) {
-      group.traverse(child => { if (child.isMesh) clickableMeshes.push(child); });
-    }
-  });
+  if (chickenGroup) {
+    chickenGroup.children.forEach(group => {
+      if (group.visible) {
+        group.traverse(child => { if (child.isMesh) clickableMeshes.push(child); });
+      }
+    });
+  }
 
   const hits = raycaster.intersectObjects(clickableMeshes);
   
@@ -2297,23 +2472,12 @@ function on3DClick(e) {
       cut3DPart(group, e.clientX, e.clientY);
     }
   } else {
-    // Select mode click in 3D
-    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-    if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
-      selectedLegSide = side;
-      document.getElementById('harvestBtnContainer').style.display = 'block';
-      animateScale(320, side === 'l' ? 'Left Chicken Leg' : 'Right Chicken Leg', '🍗');
-
-      [`thigh_${side}`, `leg_${side}`].forEach(p => {
-        const grp = parts3D[p];
-        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
-      });
-    } else {
-      selectedLegSide = null;
-      document.getElementById('harvestBtnContainer').style.display = 'none';
-      animateScale(data.weight, data.name, data.emoji);
-      group.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
-    }
+    inspectPart(pId);
+    
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      const grp = parts3D[p];
+      if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
+    });
   }
 }
 
@@ -2341,6 +2505,8 @@ function cut3DPart(group, cx, cy) {
         id: partId + '_cut_' + Date.now(),
         partId: partId,
         name: data.name,
+        baseWeight: data.weight,
+        basePrice: data.price,
         weight: data.weight,
         price: data.price,
         emoji: data.emoji,
@@ -2366,9 +2532,19 @@ function syncPartTo3D(partId, visible) {
   if (group) {
     if (visible) {
       group.visible = true;
-      const origPos = group.userData.origPos;
-      if (origPos) group.position.copy(origPos);
       group.scale.set(1, 1, 1);
+      
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'split') {
+        const offset = thigh => {
+          if (side === 'l') return thigh ? {x:-0.12, y:0.06} : {x:-0.06, y:-0.12};
+          return thigh ? {x:0.12, y:0.06} : {x:0.06, y:-0.12};
+        };
+        const off = offset(partId.startsWith('thigh'));
+        group.position.set(group.userData.origPos.x + off.x, group.userData.origPos.y + off.y, group.userData.origPos.z);
+      } else {
+        group.position.copy(group.userData.origPos);
+      }
     } else {
       group.visible = false;
     }
@@ -2391,22 +2567,14 @@ function spawn2DSlash(cx, cy) {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// WORKSHOP DATA SYNC & CHECKOUT
-// ═══════════════════════════════════════════════════
 function saveCustomCutsToCart() {
   if (sessionCuts.length === 0) {
     alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
     return;
   }
 
-  // Save cuts in localStorage
   localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
-  
-  // Clear local
   sessionCuts.length = 0;
-  
-  // Return to storefront
   window.location.href = 'index.html';
 }
 
