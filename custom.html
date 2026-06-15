@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SwiftCuts — Interactive Custom Cuts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Three.js Library CDN with fallback -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<!-- Three.js Library with CDN fallbacks -->
+<script src="three.min.js"></script>
+<script>
+  if (typeof THREE === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></s' + 'cript>');
+  }
+</script>
 <script>
   if (typeof THREE === 'undefined') {
     document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></s' + 'cript>');
@@ -592,16 +597,24 @@ body {
     </div>
 
     <!-- 2D SVG Diagram (Chicken Ventral) -->
-    ﻿    <div class="meat-diagram active" id="diag-chicken">
+    <div class="meat-diagram active" id="diag-chicken">
       <div class="diagram-label" style="display:none"></div>
       <div style="width:100%;height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:auto">
         <svg viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
              style="width:auto;height:calc(100vh - 112px);max-height:900px;min-height:560px">
           <defs>
 
-            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            <!-- Clip paths for Back splitting -->
+            <clipPath id="clipBackUpper">
+              <rect x="0" y="0" width="640" height="380"/>
+            </clipPath>
+            <clipPath id="clipBackLower">
+              <rect x="0" y="380" width="640" height="600"/>
+            </clipPath>
+
+            <!-- â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
                  ORGANIC SKIN TEXTURE FILTERS
-            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+            â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  -->
             <filter id="fSkin" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
               <feTurbulence type="fractalNoise" baseFrequency="0.048 0.036" numOctaves="7" seed="12" result="n"/>
               <feColorMatrix type="matrix" in="n"
@@ -771,11 +784,13 @@ body {
             font-family="'DM Mono',monospace" font-size="7.5" fill="#9A6820"
             letter-spacing="0.22em" opacity="0.60">GALLUS GALLUS DOMESTICUS</text>
 
-          <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          <!-- â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
                BODY / CARCASS â€” very wide bulky torso
-          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-          <g class="cut-part skin-layer" id="el-chicken-back" data-part="back" data-meat="chicken"
-             data-weight="380" data-price="1.20" data-emoji="🍗" filter="url(#sh3d)">
+          â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  -->
+          
+          <!-- Upper Back (Ribs) -->
+          <g class="cut-part skin-layer" id="el-chicken-back_upper" data-part="back_upper" data-meat="chicken"
+             data-weight="200" data-price="0.65" data-emoji="🦴" filter="url(#sh3d)" clip-path="url(#clipBackUpper)">
             <path class="part-fill part-outline"
               d="M320 126
                  C290 126 260 140 244 167 C229 190 228 220 232 244
@@ -804,6 +819,30 @@ body {
               <path d="M276 264 C260 292 255 324 258 356"/>
               <path d="M364 264 C380 292 385 324 382 356"/>
             </g>
+          </g>
+
+          <!-- Lower Back -->
+          <g class="cut-part skin-layer" id="el-chicken-back_lower" data-part="back_lower" data-meat="chicken"
+             data-weight="180" data-price="0.55" data-emoji="🍗" filter="url(#sh3d)" clip-path="url(#clipBackLower)">
+            <path class="part-fill part-outline"
+              d="M320 126
+                 C290 126 260 140 244 167 C229 190 228 220 232 244
+                 C204 237 170 244 148 270 C124 298 122 342 140 366
+                 C159 390 190 394 213 381
+                 C208 410 205 444 212 476 C220 508 240 533 268 543
+                 L268 563 C246 575 232 600 234 630
+                 C236 658 256 678 280 676 L360 676
+                 C384 676 404 658 406 630 C408 600 394 575 372 563
+                 L372 543 C400 533 420 508 428 476 C435 444 432 410 427 381
+                 C450 394 481 390 500 366 C518 342 516 298 492 270
+                 C470 244 436 237 408 244 C412 220 411 190 396 167
+                 C380 140 350 126 320 126 Z"
+              fill="url(#gBody)" stroke="#3A1C00" stroke-width="2.2"/>
+            <path d="M320 126 C290 126 260 140 244 167 C229 190 228 220 232 244 C204 237 170 244 148 270 C124 298 122 342 140 366 C159 390 190 394 213 381 C208 410 205 444 212 476 C220 508 240 533 268 543 L268 563 C246 575 232 600 234 630 C236 658 256 678 280 676 L360 676 C384 676 404 658 406 630 C408 600 394 575 372 563 L372 543 C400 533 420 508 428 476 C435 444 432 410 427 381 C450 394 481 390 500 366 C518 342 516 298 492 270 C470 244 436 237 408 244 C412 220 411 190 396 167 C380 140 350 126 320 126 Z"
+              fill="none" filter="url(#fSkin)" opacity="0.80" pointer-events="none"/>
+            <!-- SPINE ridge -->
+            <path d="M320 140 C318 205 316 278 315 348 C315 410 316 472 318 544"
+              stroke="#C0940C" stroke-width="3" fill="none" opacity="0.28" pointer-events="none"/>
             <!-- Hip fat pads -->
             <ellipse cx="278" cy="512" rx="32" ry="16" fill="#F4E080" opacity="0.42" pointer-events="none"/>
             <ellipse cx="362" cy="512" rx="32" ry="16" fill="#F4E080" opacity="0.42" pointer-events="none"/>
@@ -1258,15 +1297,15 @@ body {
           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
           <g font-family="'DM Mono',monospace" fill="#1A0C00" pointer-events="none">
             <text x="320" y="26" text-anchor="middle" font-size="8.5" letter-spacing="0.16em" opacity="0.56">NECK</text>
-            <text x="248" y="310" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">BREAST L</text>
-            <text x="392" y="310" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">BREAST R</text>
+            <text x="248" y="310" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">BREAST</text>
+            <text x="392" y="310" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">BREAST</text>
             <text x="320" y="376" text-anchor="middle" font-size="8.5" letter-spacing="0.08em" opacity="0.38">BACK</text>
-            <text x="176" y="295" text-anchor="middle" font-size="8"  letter-spacing="0.08em" opacity="0.72">WING L</text>
-            <text x="464" y="295" text-anchor="middle" font-size="8"  letter-spacing="0.08em" opacity="0.72">WING R</text>
-            <text x="234" y="618" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">THIGH L</text>
-            <text x="406" y="618" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">THIGH R</text>
-            <text x="252" y="750" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">LEG L</text>
-            <text x="388" y="750" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">LEG R</text>
+            <text x="176" y="295" text-anchor="middle" font-size="8"  letter-spacing="0.08em" opacity="0.72">WING</text>
+            <text x="464" y="295" text-anchor="middle" font-size="8"  letter-spacing="0.08em" opacity="0.72">WING</text>
+            <text x="234" y="618" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">THIGH</text>
+            <text x="406" y="618" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">THIGH</text>
+            <text x="252" y="750" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">DRUMSTICK</text>
+            <text x="388" y="750" text-anchor="middle" font-size="9" letter-spacing="0.10em" opacity="0.74">DRUMSTICK</text>
           </g>
 
           <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1359,8 +1398,8 @@ body {
             <!-- Internal labels -->
             <g font-family="'DM Mono',monospace" font-size="7" fill="#F8F0C0" opacity="0.70">
               <text x="320" y="132" text-anchor="middle">SPINE</text>
-              <text x="272" y="200" text-anchor="middle">RIB L</text>
-              <text x="368" y="200" text-anchor="middle">RIB R</text>
+              <text x="272" y="200" text-anchor="middle">RIB</text>
+              <text x="368" y="200" text-anchor="middle">RIB</text>
               <text x="174" y="280" text-anchor="middle">WING BONE</text>
               <text x="466" y="280" text-anchor="middle">WING BONE</text>
               <text x="276" y="504" text-anchor="middle">FEMUR</text>
@@ -1401,27 +1440,28 @@ let selectedLegSide = null; // 'l' or 'r'
 let activeCutsListIdx = null;
 
 const PART_WEIGHTS = {
-  back: 380, breast_l: 255, breast_r: 255, neck: 115, wing_l: 95, wing_r: 95,
+  back_upper: 200, back_lower: 180, breast_l: 255, breast_r: 255, neck: 115, wing_l: 95, wing_r: 95,
   thigh_l: 172, thigh_r: 172, leg_l: 148, leg_r: 148, leg_whole_l: 320, leg_whole_r: 320
 };
 const PART_PRICES = {
-  back: 1.20, breast_l: 3.50, breast_r: 3.50, neck: 0.90, wing_l: 1.80, wing_r: 1.80,
+  back_upper: 0.65, back_lower: 0.55, breast_l: 3.50, breast_r: 3.50, neck: 0.90, wing_l: 1.80, wing_r: 1.80,
   thigh_l: 2.20, thigh_r: 2.20, leg_l: 1.60, leg_r: 1.60, leg_whole_l: 3.80, leg_whole_r: 3.80
 };
 
 const PART_INFO = {
-  'back|chicken': { name:'Back / Carcass', weight:380, price:1.20, tip:'Backbone is gold for deep stock. Roast first at 220°C then simmer 3 hours.' },
-  'breast_l|chicken': { name:'Left Breast', weight:255, price:3.50, tip:'Lean white pectoral meat. Cut along sternum, slide blade flat along ribcage.' },
-  'breast_r|chicken': { name:'Right Breast', weight:255, price:3.50, tip:'Mirror of left. Butterfly by slicing 3/4 through horizontally, then open flat.' },
-  'neck|chicken': { name:'Neck', weight:115, price:0.90, tip:'Best part for gelatinous stock. Rich in cartilage and flavor.' },
-  'wing_l|chicken': { name:'Left Wing', weight:95, price:1.80, tip:'3 sections: drumette, flat, tip. Drumette and flat for cooking; tip for stock.' },
-  'wing_r|chicken': { name:'Right Wing', weight:95, price:1.80, tip:'Score skin before marinating. High heat ensures crispy skin.' },
-  'thigh_l|chicken': { name:'Left Thigh', weight:172, price:2.20, tip:'Most flavorful dark meat. Higher fat keeps it moist at high temps.' },
-  'thigh_r|chicken': { name:'Right Thigh', weight:172, price:2.20, tip:'Perfect for braising, curries, and slow cooks.' },
-  'leg_l|chicken': { name:'Left Drumstick', weight:148, price:1.60, tip:'Score 2-3 diagonal cuts to bone. Cook to 80°C+ internal.' },
-  'leg_r|chicken': { name:'Right Drumstick', weight:148, price:1.60, tip:'French-cut: scrape meat toward one end to expose bone.' },
-  'leg_whole_l|chicken': { name:'Left Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
-  'leg_whole_r|chicken': { name:'Right Whole Leg', weight:320, price:3.80, tip:'Whole thigh and drumstick attached. Excellent for roasting whole or barbecue.' },
+  'back_upper|chicken': { name:'Ribs', weight:200, price:0.65, emoji:'🦴', tip:'Rib cage carcass. Rich bones for clean chicken broth.' },
+  'back_lower|chicken': { name:'Lower Back', weight:180, price:0.55, emoji:'🍗', tip:'Lower back carcass bones. Excellent for soup stock.' },
+  'breast_l|chicken': { name:'Breast', weight:255, price:3.50, tip:'Lean white breast meat.' },
+  'breast_r|chicken': { name:'Breast', weight:255, price:3.50, tip:'Lean white breast meat.' },
+  'neck|chicken': { name:'Neck', weight:115, price:0.90, tip:'Cartilage rich chicken neck stump.' },
+  'wing_l|chicken': { name:'Wing', weight:95, price:1.80, tip:'Chicken wing (drumette & flat).' },
+  'wing_r|chicken': { name:'Wing', weight:95, price:1.80, tip:'Chicken wing (drumette & flat).' },
+  'thigh_l|chicken': { name:'Thigh', weight:172, price:2.20, tip:'Juicy chicken thigh.' },
+  'thigh_r|chicken': { name:'Thigh', weight:172, price:2.20, tip:'Juicy chicken thigh.' },
+  'leg_l|chicken': { name:'Drumstick', weight:148, price:1.60, tip:'Chicken drumstick leg.' },
+  'leg_r|chicken': { name:'Drumstick', weight:148, price:1.60, tip:'Chicken drumstick leg.' },
+  'leg_whole_l|chicken': { name:'Whole Leg', weight:320, price:3.80, tip:'Whole chicken leg.' },
+  'leg_whole_r|chicken': { name:'Whole Leg', weight:320, price:3.80, tip:'Whole chicken leg.' },
 };
 
 const OFFAL_DATA = [
@@ -1489,12 +1529,75 @@ function renderSessionCuts() {
   }).join('');
 }
 
+function addCutToSession(partId, name, weight, price, emoji, size = 'Medium') {
+  const existing = sessionCuts.find(c => c.name === name && c.size === size);
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+    if (!existing.partIds) {
+      existing.partIds = [existing.partId];
+    }
+    existing.partIds.push(partId);
+  } else {
+    sessionCuts.push({
+      id: partId + '_cut_' + Date.now(),
+      partId: partId,
+      partIds: [partId],
+      name: name,
+      baseWeight: weight,
+      basePrice: price,
+      weight: weight,
+      price: price,
+      emoji: emoji,
+      qty: 1,
+      size: size,
+      isCustom: true
+    });
+  }
+}
+
 function adjustCutQty(idx, amount) {
   const item = sessionCuts[idx];
-  item.qty = (item.qty || 1) + amount;
-  if (item.qty <= 0) {
-    removeSessionCut(idx);
-  } else {
+  if (!item) return;
+
+  if (amount === -1) {
+    if (item.qty > 1) {
+      item.qty -= 1;
+      const poppedId = item.partIds.pop();
+      if (poppedId) {
+        let aIdx = -1;
+        for (let i = actionHistory.length - 1; i >= 0; i--) {
+          if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === poppedId) {
+            aIdx = i;
+            break;
+          }
+        }
+        if (aIdx !== -1) {
+          actionHistory.splice(aIdx, 1);
+        }
+
+        if (poppedId.startsWith('leg_whole_')) {
+          const side = poppedId.endsWith('_l') ? 'l' : 'r';
+          delete severedParts[`thigh_${side}`];
+          delete severedParts[`leg_${side}`];
+          restorePart(`thigh_${side}`);
+          restorePart(`leg_${side}`);
+          syncPartTo3D(`thigh_${side}`, true);
+          syncPartTo3D(`leg_${side}`, true);
+        } else {
+          delete severedParts[poppedId];
+          restorePart(poppedId);
+          syncPartTo3D(poppedId, true);
+        }
+      }
+      renderSessionCuts();
+    } else {
+      removeSessionCut(idx);
+    }
+  } else if (amount === 1) {
+    item.qty += 1;
+    if (item.partIds && item.partIds.length > 0) {
+      item.partIds.push(item.partIds[0]);
+    }
     renderSessionCuts();
   }
 }
@@ -1521,30 +1624,42 @@ function removeSessionCut(idx) {
   if (!item) return;
   
   if (!item.id.startsWith('offal_')) {
-    const partId = item.partId;
-    
-    // Remove from actionHistory
-    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === partId);
-    if (aIdx !== -1) {
-      actionHistory.splice(aIdx, 1);
-    }
+    const ids = item.partIds || [item.partId];
+    ids.forEach(pId => {
+      let aIdx = -1;
+      for (let i = actionHistory.length - 1; i >= 0; i--) {
+        if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === pId) {
+          aIdx = i;
+          break;
+        }
+      }
+      if (aIdx !== -1) {
+        actionHistory.splice(aIdx, 1);
+      }
 
-    if (partId.startsWith('leg_whole_')) {
-      const side = partId.endsWith('_l') ? 'l' : 'r';
-      delete severedParts[`thigh_${side}`];
-      delete severedParts[`leg_${side}`];
-      
-      restorePart(`thigh_${side}`);
-      restorePart(`leg_${side}`);
-      syncPartTo3D(`thigh_${side}`, true);
-      syncPartTo3D(`leg_${side}`, true);
-    } else {
-      delete severedParts[partId];
-      restorePart(partId);
-      syncPartTo3D(partId, true);
-    }
+      if (pId.startsWith('leg_whole_')) {
+        const side = pId.endsWith('_l') ? 'l' : 'r';
+        delete severedParts[`thigh_${side}`];
+        delete severedParts[`leg_${side}`];
+        
+        restorePart(`thigh_${side}`);
+        restorePart(`leg_${side}`);
+        syncPartTo3D(`thigh_${side}`, true);
+        syncPartTo3D(`leg_${side}`, true);
+      } else {
+        delete severedParts[pId];
+        restorePart(pId);
+        syncPartTo3D(pId, true);
+      }
+    });
   } else {
-    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === item.partId);
+    let aIdx = -1;
+    for (let i = actionHistory.length - 1; i >= 0; i--) {
+      if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === item.partId) {
+        aIdx = i;
+        break;
+      }
+    }
     if (aIdx !== -1) {
       actionHistory.splice(aIdx, 1);
     }
@@ -1570,9 +1685,30 @@ function undoLastCut() {
   }
   const lastAction = actionHistory.pop();
   if (lastAction.type === 'harvest') {
-    const idx = sessionCuts.findIndex(item => item.partId === lastAction.partId);
+    const idx = sessionCuts.findIndex(item => (item.partIds || [item.partId]).includes(lastAction.partId));
     if (idx !== -1) {
-      removeSessionCut(idx);
+      const item = sessionCuts[idx];
+      if (item.qty > 1) {
+        item.qty -= 1;
+        item.partIds = item.partIds.filter(id => id !== lastAction.partId);
+        
+        if (lastAction.partId.startsWith('leg_whole_')) {
+          const side = lastAction.partId.endsWith('_l') ? 'l' : 'r';
+          delete severedParts[`thigh_${side}`];
+          delete severedParts[`leg_${side}`];
+          restorePart(`thigh_${side}`);
+          restorePart(`leg_${side}`);
+          syncPartTo3D(`thigh_${side}`, true);
+          syncPartTo3D(`leg_${side}`, true);
+        } else {
+          delete severedParts[lastAction.partId];
+          restorePart(lastAction.partId);
+          syncPartTo3D(lastAction.partId, true);
+        }
+        renderSessionCuts();
+      } else {
+        removeSessionCut(idx);
+      }
     }
   } else if (lastAction.type === 'split') {
     const side = lastAction.side;
@@ -1595,16 +1731,13 @@ function animateScale(targetWeight, partName, emoji) {
   const partLabel = document.getElementById('scalePartName');
   const emojiEl = document.getElementById('scaleEmoji');
 
-  // Scale dip animation
   pan.classList.remove('weighing');
   void pan.offsetWidth;
   pan.classList.add('weighing');
 
-  // Show emoji floating above pan
   emojiEl.textContent = emoji || '🥩';
   emojiEl.style.opacity = '1';
 
-  // Digital counter animation
   const duration = 600;
   const steps = 30;
   const step = targetWeight / steps;
@@ -1643,7 +1776,8 @@ const PART_DIRS = {
   breast_l:   { dx:-32, dy:-12, rot: -9, scale:0.88 },
   breast_r:   { dx: 32, dy:-12, rot:  9, scale:0.88 },
   neck:       { dx:  0, dy:-70, rot:  0, scale:0.78 },
-  back:       { dx:  0, dy: 18, rot:  2, scale:0.92 },
+  back_upper: { dx:  0, dy:-15, rot:  0, scale:0.90 },
+  back_lower: { dx:  0, dy: 45, rot:  0, scale:0.90 }
 };
 
 function getDir(partId) {
@@ -1791,20 +1925,7 @@ function harvestOffal(name, weight, price, emoji) {
   box.style.background = 'rgba(184,40,24,0.1)';
   setTimeout(() => box.style.background = '', 200);
 
-  sessionCuts.push({
-    id: 'offal_' + name.toLowerCase(),
-    partId: 'offal_' + name.toLowerCase(),
-    name: name,
-    baseWeight: weight,
-    basePrice: price,
-    weight: weight,
-    price: price,
-    emoji: emoji,
-    qty: 1,
-    size: 'Medium',
-    isCustom: true
-  });
-  
+  addCutToSession('offal_' + name.toLowerCase(), name, weight, price, emoji);
   actionHistory.push({ type: 'harvest', partId: 'offal_' + name.toLowerCase() });
   animateScale(weight, name, emoji);
   renderSessionCuts();
@@ -1837,7 +1958,7 @@ function setupSVGInteractions() {
     const emoji    = el.dataset.emoji || '🥩';
     const dir      = getDir(partId);
 
-    el.addEventListener('mouseenter', () => {
+    el.addEventListener('mouseenter', e => {
       let displayName = '';
       let displayWeight = weight;
       let displayPrice = price;
@@ -1911,6 +2032,7 @@ function setupSVGInteractions() {
 
     el.addEventListener('click', e => {
       const side = partId.endsWith('_l') ? 'l' : 'r';
+      
       if (currentTool === 'knife') {
         if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
           splitLeg(side, e.clientX, e.clientY);
@@ -1918,7 +2040,7 @@ function setupSVGInteractions() {
           cut2DPart(el, e.clientX, e.clientY);
         }
       } else {
-        inspectPart(el);
+        inspectPart(partId);
       }
     });
   });
@@ -1926,14 +2048,15 @@ function setupSVGInteractions() {
 
 function inspectPart(el) {
   let partId;
-  if (el.dataset && el.dataset.part) {
+  if (el && el.dataset && el.dataset.part) {
     partId = el.dataset.part;
   } else if (typeof el === 'string') {
     partId = el;
-  } else {
+  } else if (el) {
     partId = el.getAttribute('data-part');
   }
 
+  if (!partId) return;
   const side = partId.endsWith('_l') ? 'l' : 'r';
   
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
@@ -2046,19 +2169,7 @@ function harvestSelectedPart() {
   const basePrice = PART_PRICES[partId] || 2.0;
   const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
 
-  sessionCuts.push({
-    id: partId + '_cut_' + Date.now(),
-    partId: partId,
-    name: info.name,
-    baseWeight: currentScaleWeight,
-    basePrice: computedPrice,
-    weight: currentScaleWeight,
-    price: computedPrice,
-    emoji: emoji,
-    qty: 1,
-    size: 'Medium',
-    isCustom: true
-  });
+  addCutToSession(partId, info.name, currentScaleWeight, computedPrice, emoji);
 
   actionHistory.push({ type: 'harvest', partId: partId });
 
@@ -2118,26 +2229,13 @@ function cut2DPart(el, cx, cy) {
   setTimeout(() => {
     fly.style.display = 'none';
     animateScale(info.weight, info.name, emoji);
-    
-    sessionCuts.push({
-      id: partId + '_cut_' + Date.now(),
-      partId: partId,
-      name: info.name,
-      baseWeight: info.weight,
-      basePrice: info.price,
-      weight: info.weight,
-      price: info.price,
-      emoji: emoji,
-      qty: 1,
-      size: 'Medium',
-      isCustom: true
-    });
-    
+    addCutToSession(partId, info.name, info.weight, info.price, emoji);
     actionHistory.push({ type: 'harvest', partId: partId });
     renderSessionCuts();
     syncPartTo3D(partId, false);
   }, 740);
 }
+
 
 function spawnBloodParticles(cx, cy, baseAngle) {
   for (let i = 0; i < 6; i++) {
@@ -2202,46 +2300,61 @@ const colors3D = {
 };
 
 function init3D() {
-  const container = document.getElementById('canvas3d-container');
-  const canvas    = document.getElementById('canvas3d');
-  let W = container.clientWidth;
-  let H = container.clientHeight;
-  if (!W || !H) {
-    const rightPanel = document.getElementById('customRightPanel');
-    W = rightPanel.clientWidth || window.innerWidth - 320;
-    H = rightPanel.clientHeight || window.innerHeight;
+  try {
+    if (typeof THREE === 'undefined') {
+      throw new Error("Three.js library is not loaded. Please check your browser tracking prevention or internet settings.");
+    }
+    
+    const container = document.getElementById('canvas3d-container');
+    const canvas    = document.getElementById('canvas3d');
+    let W = container.clientWidth;
+    let H = container.clientHeight;
+    if (W < 100 || H < 100) {
+      const rightPanel = document.getElementById('customRightPanel');
+      W = rightPanel.clientWidth || (window.innerWidth - 320);
+      H = rightPanel.clientHeight || window.innerHeight;
+    }
+
+    scene3 = new THREE.Scene();
+    scene3.background = new THREE.Color(0xDCD8D0);
+
+    camera3 = new THREE.PerspectiveCamera(40, W/H, 0.1, 50);
+    camera3.position.set(0, 0, 5.0);
+
+    renderer3 = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer3.setSize(W, H);
+    renderer3.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    scene3.add(new THREE.AmbientLight(0xffffff, 0.75));
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(2.5, 4.0, 3.5);
+    scene3.add(dirLight);
+
+    const fillLight = new THREE.DirectionalLight(0xFFE0B2, 0.45);
+    fillLight.position.set(-3.0, 1.0, 2.0);
+    scene3.add(fillLight);
+
+    buildChicken3D();
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    canvas.addEventListener('click', on3DClick);
+    canvas.addEventListener('mousemove', on3DHover);
+    window.addEventListener('resize', onWindowResize);
+
+    animate3D();
+  } catch (err) {
+    console.error("3D Canvas Initialization failed:", err);
+    const container = document.getElementById('canvas3d-container');
+    container.innerHTML = `<div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; color:var(--red); background: #E8D8C4; border: 2px solid var(--border); border-radius:8px; font-family:'Outfit', sans-serif;">
+      <span style="font-size:2rem; margin-bottom:12px;">⚠️</span>
+      <h3 style="font-family:'Playfair Display', serif; margin-bottom:8px;">3D Model Failed to Load</h3>
+      <p style="font-size:0.75rem; color:var(--ink-light); max-width:300px; margin-bottom:12px;">${err.message}</p>
+      <button onclick="window.location.reload()" style="background:var(--brand-primary); color:white; border:none; padding:6px 16px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">Reload Page</button>
+    </div>`;
   }
-
-  scene3 = new THREE.Scene();
-  scene3.background = new THREE.Color(0xDCD8D0);
-
-  camera3 = new THREE.PerspectiveCamera(40, W/H, 0.1, 50);
-  camera3.position.set(0, 0, 5.0);
-
-  renderer3 = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer3.setSize(W, H);
-  renderer3.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  scene3.add(new THREE.AmbientLight(0xffffff, 0.75));
-  
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(2.5, 4.0, 3.5);
-  scene3.add(dirLight);
-
-  const fillLight = new THREE.DirectionalLight(0xFFE0B2, 0.45);
-  fillLight.position.set(-3.0, 1.0, 2.0);
-  scene3.add(fillLight);
-
-  buildChicken3D();
-
-  raycaster = new THREE.Raycaster();
-  mouse = new THREE.Vector2();
-
-  canvas.addEventListener('click', on3DClick);
-  canvas.addEventListener('mousemove', on3DHover);
-  window.addEventListener('resize', onWindowResize);
-
-  animate3D();
 }
 
 function buildChicken3D() {
@@ -2254,14 +2367,26 @@ function buildChicken3D() {
     });
   }
 
-  const backGroup = new THREE.Group();
-  const backMesh = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 24), materials.back);
-  backMesh.scale.set(0.9, 1.25, 0.85);
-  backGroup.add(backMesh);
-  backGroup.userData = { partId: 'back', name: 'Back / Carcass', weight: 380, price: 1.20, emoji: '🍗' };
-  backGroup.userData.origPos = backGroup.position.clone();
-  parts3D.back = backGroup;
-  chickenGroup.add(backGroup);
+  // Split Back 3D Parts (Upper Ribs and Lower Back)
+  const buGroup = new THREE.Group();
+  const buMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 24), materials.back);
+  buMesh.scale.set(0.95, 0.85, 0.9);
+  buGroup.position.set(0, 0.45, -0.05);
+  buGroup.add(buMesh);
+  buGroup.userData = { partId: 'back_upper', name: 'Ribs', weight: 200, price: 0.65, emoji: '🦴' };
+  buGroup.userData.origPos = buGroup.position.clone();
+  parts3D.back_upper = buGroup;
+  chickenGroup.add(buGroup);
+
+  const bloGroup = new THREE.Group();
+  const bloMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 24), materials.back);
+  bloMesh.scale.set(0.95, 0.85, 0.9);
+  bloGroup.position.set(0, -0.35, -0.05);
+  bloGroup.add(bloMesh);
+  bloGroup.userData = { partId: 'back_lower', name: 'Lower Back', weight: 180, price: 0.55, emoji: '🍗' };
+  bloGroup.userData.origPos = bloGroup.position.clone();
+  parts3D.back_lower = bloGroup;
+  chickenGroup.add(bloGroup);
 
   const blGroup = new THREE.Group();
   const blMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 32, 24), materials.breast_l);
@@ -2269,7 +2394,7 @@ function buildChicken3D() {
   blGroup.position.set(-0.42, 0.22, 0.48);
   blGroup.rotation.set(0.08, 0.08, -0.12);
   blGroup.add(blMesh);
-  blGroup.userData = { partId: 'breast_l', name: 'Left Breast', weight: 255, price: 3.50, emoji: '🥩' };
+  blGroup.userData = { partId: 'breast_l', name: 'Breast', weight: 255, price: 3.50, emoji: '🥩' };
   blGroup.userData.origPos = blGroup.position.clone();
   parts3D.breast_l = blGroup;
   chickenGroup.add(blGroup);
@@ -2280,7 +2405,7 @@ function buildChicken3D() {
   brGroup.position.set(0.42, 0.22, 0.48);
   brGroup.rotation.set(0.08, -0.08, 0.12);
   brGroup.add(brMesh);
-  brGroup.userData = { partId: 'breast_r', name: 'Right Breast', weight: 255, price: 3.50, emoji: '🥩' };
+  brGroup.userData = { partId: 'breast_r', name: 'Breast', weight: 255, price: 3.50, emoji: '🥩' };
   brGroup.userData.origPos = brGroup.position.clone();
   parts3D.breast_r = brGroup;
   chickenGroup.add(brGroup);
@@ -2308,7 +2433,7 @@ function buildChicken3D() {
   wlFlat.rotation.set(0.25, 0.25, -0.55);
   wlGroup.add(wlFlat);
   
-  wlGroup.userData = { partId: 'wing_l', name: 'Left Wing', weight: 95, price: 1.80, emoji: '🍗' };
+  wlGroup.userData = { partId: 'wing_l', name: 'Wing', weight: 95, price: 1.80, emoji: '🍗' };
   wlGroup.userData.origPos = wlGroup.position.clone();
   parts3D.wing_l = wlGroup;
   chickenGroup.add(wlGroup);
@@ -2326,7 +2451,7 @@ function buildChicken3D() {
   wrFlat.rotation.set(0.25, -0.25, 0.55);
   wrGroup.add(wrFlat);
   
-  wrGroup.userData = { partId: 'wing_r', name: 'Right Wing', weight: 95, price: 1.80, emoji: '🍗' };
+  wrGroup.userData = { partId: 'wing_r', name: 'Wing', weight: 95, price: 1.80, emoji: '🍗' };
   wrGroup.userData.origPos = wrGroup.position.clone();
   parts3D.wing_r = wrGroup;
   chickenGroup.add(wrGroup);
@@ -2337,7 +2462,7 @@ function buildChicken3D() {
   tlMesh.scale.set(0.85, 1.12, 0.85);
   tlMesh.rotation.set(0.08, 0.08, -0.08);
   tlGroup.add(tlMesh);
-  tlGroup.userData = { partId: 'thigh_l', name: 'Left Thigh', weight: 172, price: 2.20, emoji: '🍗' };
+  tlGroup.userData = { partId: 'thigh_l', name: 'Thigh', weight: 172, price: 2.20, emoji: '🍗' };
   tlGroup.userData.origPos = tlGroup.position.clone();
   parts3D.thigh_l = tlGroup;
   chickenGroup.add(tlGroup);
@@ -2348,7 +2473,7 @@ function buildChicken3D() {
   trMesh.scale.set(0.85, 1.12, 0.85);
   trMesh.rotation.set(0.08, -0.08, 0.08);
   trGroup.add(trMesh);
-  trGroup.userData = { partId: 'thigh_r', name: 'Right Thigh', weight: 172, price: 2.20, emoji: '🍗' };
+  trGroup.userData = { partId: 'thigh_r', name: 'Thigh', weight: 172, price: 2.20, emoji: '🍗' };
   trGroup.userData.origPos = trGroup.position.clone();
   parts3D.thigh_r = trGroup;
   chickenGroup.add(trGroup);
@@ -2358,7 +2483,7 @@ function buildChicken3D() {
   const dlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_l);
   dlMesh.rotation.set(0.18, 0.08, -0.10);
   dlGroup.add(dlMesh);
-  dlGroup.userData = { partId: 'leg_l', name: 'Left Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
+  dlGroup.userData = { partId: 'leg_l', name: 'Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
   dlGroup.userData.origPos = dlGroup.position.clone();
   parts3D.leg_l = dlGroup;
   chickenGroup.add(dlGroup);
@@ -2368,7 +2493,7 @@ function buildChicken3D() {
   const drMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_r);
   drMesh.rotation.set(0.18, -0.08, 0.10);
   drGroup.add(drMesh);
-  drGroup.userData = { partId: 'leg_r', name: 'Right Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
+  drGroup.userData = { partId: 'leg_r', name: 'Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
   drGroup.userData.origPos = drGroup.position.clone();
   parts3D.leg_r = drGroup;
   chickenGroup.add(drGroup);
@@ -2380,8 +2505,15 @@ function buildChicken3D() {
 function onWindowResize() {
   if (!renderer3) return;
   const container = document.getElementById('canvas3d-container');
-  renderer3.setSize(container.clientWidth, container.clientHeight);
-  camera3.aspect = container.clientWidth / container.clientHeight;
+  let W = container.clientWidth;
+  let H = container.clientHeight;
+  if (W < 100 || H < 100) {
+    const rightPanel = document.getElementById('customRightPanel');
+    W = rightPanel.clientWidth || (window.innerWidth - 320);
+    H = rightPanel.clientHeight || window.innerHeight;
+  }
+  renderer3.setSize(W, H);
+  camera3.aspect = W / H;
   camera3.updateProjectionMatrix();
 }
 
@@ -2482,10 +2614,15 @@ function on3DClick(e) {
   } else {
     inspectPart(pId);
     
-    [`thigh_${side}`, `leg_${side}`].forEach(p => {
-      const grp = parts3D[p];
+    if (pId.startsWith('back_')) {
+      const grp = parts3D[pId];
       if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
-    });
+    } else {
+      [`thigh_${side}`, `leg_${side}`].forEach(p => {
+        const grp = parts3D[p];
+        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
+      });
+    }
   }
 }
 
@@ -2509,19 +2646,7 @@ function cut3DPart(group, cx, cy) {
     if (t >= 1) {
       group.visible = false;
       animateScale(data.weight, data.name, data.emoji);
-      sessionCuts.push({
-        id: partId + '_cut_' + Date.now(),
-        partId: partId,
-        name: data.name,
-        baseWeight: data.weight,
-        basePrice: data.price,
-        weight: data.weight,
-        price: data.price,
-        emoji: data.emoji,
-        qty: 1,
-        size: 'Medium',
-        isCustom: true
-      });
+      addCutToSession(partId, data.name, data.weight, data.price, data.emoji);
       actionHistory.push({ type: 'harvest', partId: partId });
       renderSessionCuts();
       severPart(partId);
