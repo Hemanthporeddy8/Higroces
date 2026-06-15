@@ -684,9 +684,9 @@ body {
     <!-- 2D SVG Diagram (Chicken Ventral) -->
         <div class="meat-diagram active" id="diag-chicken">
       <div class="diagram-label" style="display:none"></div>
-      <div style="width:100%;height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:hidden;padding-top:70px;box-sizing:border-box">
+      <div style="width:100%;height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:hidden;padding-top:80px;box-sizing:border-box">
         <svg viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
-             style="width:auto;height:calc(100vh - 112px);max-height:900px;min-height:560px">
+             style="width:auto;height:calc(100vh - 220px);max-height:650px;min-height:440px">
           <defs>
 
             <!-- Clip paths for Back splitting -->
@@ -1585,12 +1585,18 @@ class Object3D {
     this.userData = {};
   }
   add(obj) {
-    obj.parent = this;
-    this.children.push(obj);
+    if (obj) {
+      obj.parent = this;
+      this.children.push(obj);
+    }
   }
   traverse(cb) {
     cb(this);
-    this.children.forEach(child => child.traverse(cb));
+    this.children.forEach(child => {
+      if (child && typeof child.traverse === 'function') {
+        child.traverse(cb);
+      }
+    });
   }
 }
 
@@ -1635,12 +1641,15 @@ class Mesh extends Object3D {
   }
 }
 
-class AmbientLight {
-  constructor(color, intensity) {}
+class AmbientLight extends Object3D {
+  constructor(color, intensity) {
+    super();
+  }
 }
 
-class DirectionalLight {
+class DirectionalLight extends Object3D {
   constructor(color, intensity) {
+    super();
     this.position = new Vector3();
   }
 }

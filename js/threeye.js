@@ -64,12 +64,18 @@ class Object3D {
     this.userData = {};
   }
   add(obj) {
-    obj.parent = this;
-    this.children.push(obj);
+    if (obj) {
+      obj.parent = this;
+      this.children.push(obj);
+    }
   }
   traverse(cb) {
     cb(this);
-    this.children.forEach(child => child.traverse(cb));
+    this.children.forEach(child => {
+      if (child && typeof child.traverse === 'function') {
+        child.traverse(cb);
+      }
+    });
   }
 }
 
@@ -114,12 +120,15 @@ class Mesh extends Object3D {
   }
 }
 
-class AmbientLight {
-  constructor(color, intensity) {}
+class AmbientLight extends Object3D {
+  constructor(color, intensity) {
+    super();
+  }
 }
 
-class DirectionalLight {
+class DirectionalLight extends Object3D {
   constructor(color, intensity) {
+    super();
     this.position = new Vector3();
   }
 }
