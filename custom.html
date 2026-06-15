@@ -6,7 +6,7 @@
 <title>SwiftCuts — Interactive Custom Cuts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Three.js Library with CDN fallbacks -->
-<script src="three.min.js"></script>
+<script src="three.min.js?v=1.0.1"></script>
 <script>
   if (typeof THREE === 'undefined') {
     document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></s' + 'cript>');
@@ -481,7 +481,6 @@ body {
   display: none;
   transform: translate(-6px, -30px);
 }
-
 </style>
 </head>
 <body>
@@ -1423,9 +1422,10 @@ body {
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// STATE MANAGEMENT
-// ═══════════════════════════════════════════════════
+// ==========================================
+// MODULE: state.js
+// ==========================================
+// State Management
 const sessionCuts = [];
 const actionHistory = [];
 const legStates = { l: 'whole', r: 'whole' };
@@ -1470,261 +1470,18 @@ const OFFAL_DATA = [
   { n: 'Chicken Gizzard', w: 35, p: 0.60, e: '🥘' }
 ];
 
-function renderSessionCuts() {
-  const container = document.getElementById('sessionCutsList');
-  if (sessionCuts.length === 0) {
-    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>';
-    return;
-  }
-  
-  container.innerHTML = sessionCuts.map((item, idx) => {
-    if (item.id.startsWith('offal_')) {
-      return `
-        <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.2rem;">${item.emoji}</span>
-            <div>
-              <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink);">${item.name}</div>
-              <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • $${item.price.toFixed(2)}</div>
-            </div>
-          </div>
-          <button class="sci-remove" onclick="removeSessionCut(${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
-        </div>
-      `;
-    }
+function setViewModeState(val) { viewMode = val; }
+function setToolState(val) { currentTool = val; }
+function setIsAnimatingState(val) { isAnimating = val; }
+function setCurrentScalePartIdState(val) { currentScalePartId = val; }
+function setCurrentScaleWeightState(val) { currentScaleWeight = val; }
+function setSelectedLegSideState(val) { selectedLegSide = val; }
 
-    const sizes = ['Small', 'Medium', 'Large'];
-    const currentSize = item.size || 'Medium';
 
-    const sizeSelector = `
-      <select onchange="setCutSize(${idx}, this.value); event.stopPropagation();" onclick="event.stopPropagation();" style="background:white; border:1px solid var(--border); border-radius:4px; padding:2px 4px; font-size:0.65rem; font-family:'Outfit',sans-serif; color:var(--ink); cursor:pointer; margin-right:4px;">
-        ${sizes.map(s => `<option value="${s}" ${s === currentSize ? 'selected' : ''}>${s}</option>`).join('')}
-      </select>
-    `;
+// ==========================================
+// MODULE: scale.js
+// ==========================================
 
-    const qtyControls = `
-      <div style="display:inline-flex; align-items:center; gap:4px; margin-right:8px; background:white; border:1px solid var(--border); border-radius:4px; padding:1px 3px;" onclick="event.stopPropagation();">
-        <button onclick="adjustCutQty(${idx}, -1); event.stopPropagation();" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">-</button>
-        <span style="font-family:'DM Mono',monospace; font-size:0.75rem; min-width:12px; text-align:center;">${item.qty || 1}</span>
-        <button onclick="adjustCutQty(${idx}, 1); event.stopPropagation();" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">+</button>
-      </div>
-    `;
-
-    return `
-      <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
-        <div style="display:flex; align-items:center; gap:8px; max-width:160px;">
-          <span style="font-size:1.2rem;">${item.emoji}</span>
-          <div>
-            <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</div>
-            <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight * (item.qty || 1)}g • $${((item.price || 0) * (item.qty || 1)).toFixed(2)}</div>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center;">
-          ${sizeSelector}
-          ${qtyControls}
-          <button class="sci-remove" onclick="removeSessionCut(${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function addCutToSession(partId, name, weight, price, emoji, size = 'Medium') {
-  const existing = sessionCuts.find(c => c.name === name && c.size === size);
-  if (existing) {
-    existing.qty = (existing.qty || 1) + 1;
-    if (!existing.partIds) {
-      existing.partIds = [existing.partId];
-    }
-    existing.partIds.push(partId);
-  } else {
-    sessionCuts.push({
-      id: partId + '_cut_' + Date.now(),
-      partId: partId,
-      partIds: [partId],
-      name: name,
-      baseWeight: weight,
-      basePrice: price,
-      weight: weight,
-      price: price,
-      emoji: emoji,
-      qty: 1,
-      size: size,
-      isCustom: true
-    });
-  }
-}
-
-function adjustCutQty(idx, amount) {
-  const item = sessionCuts[idx];
-  if (!item) return;
-
-  if (amount === -1) {
-    if (item.qty > 1) {
-      item.qty -= 1;
-      const poppedId = item.partIds.pop();
-      if (poppedId) {
-        let aIdx = -1;
-        for (let i = actionHistory.length - 1; i >= 0; i--) {
-          if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === poppedId) {
-            aIdx = i;
-            break;
-          }
-        }
-        if (aIdx !== -1) {
-          actionHistory.splice(aIdx, 1);
-        }
-
-        if (poppedId.startsWith('leg_whole_')) {
-          const side = poppedId.endsWith('_l') ? 'l' : 'r';
-          delete severedParts[`thigh_${side}`];
-          delete severedParts[`leg_${side}`];
-          restorePart(`thigh_${side}`);
-          restorePart(`leg_${side}`);
-          syncPartTo3D(`thigh_${side}`, true);
-          syncPartTo3D(`leg_${side}`, true);
-        } else {
-          delete severedParts[poppedId];
-          restorePart(poppedId);
-          syncPartTo3D(poppedId, true);
-        }
-      }
-      renderSessionCuts();
-    } else {
-      removeSessionCut(idx);
-    }
-  } else if (amount === 1) {
-    item.qty += 1;
-    if (item.partIds && item.partIds.length > 0) {
-      item.partIds.push(item.partIds[0]);
-    }
-    renderSessionCuts();
-  }
-}
-
-function setCutSize(idx, size) {
-  const item = sessionCuts[idx];
-  item.size = size;
-  
-  const baseWeight = item.baseWeight || PART_WEIGHTS[item.partId] || 150;
-  const basePrice = item.basePrice || PART_PRICES[item.partId] || 2.0;
-
-  let mult = 1.0;
-  if (size === 'Small') mult = 0.8;
-  if (size === 'Large') mult = 1.25;
-
-  item.weight = Math.round(baseWeight * mult);
-  item.price = parseFloat((basePrice * mult).toFixed(2));
-
-  renderSessionCuts();
-}
-
-function removeSessionCut(idx) {
-  const item = sessionCuts[idx];
-  if (!item) return;
-  
-  if (!item.id.startsWith('offal_')) {
-    const ids = item.partIds || [item.partId];
-    ids.forEach(pId => {
-      let aIdx = -1;
-      for (let i = actionHistory.length - 1; i >= 0; i--) {
-        if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === pId) {
-          aIdx = i;
-          break;
-        }
-      }
-      if (aIdx !== -1) {
-        actionHistory.splice(aIdx, 1);
-      }
-
-      if (pId.startsWith('leg_whole_')) {
-        const side = pId.endsWith('_l') ? 'l' : 'r';
-        delete severedParts[`thigh_${side}`];
-        delete severedParts[`leg_${side}`];
-        
-        restorePart(`thigh_${side}`);
-        restorePart(`leg_${side}`);
-        syncPartTo3D(`thigh_${side}`, true);
-        syncPartTo3D(`leg_${side}`, true);
-      } else {
-        delete severedParts[pId];
-        restorePart(pId);
-        syncPartTo3D(pId, true);
-      }
-    });
-  } else {
-    let aIdx = -1;
-    for (let i = actionHistory.length - 1; i >= 0; i--) {
-      if (actionHistory[i].type === 'harvest' && actionHistory[i].partId === item.partId) {
-        aIdx = i;
-        break;
-      }
-    }
-    if (aIdx !== -1) {
-      actionHistory.splice(aIdx, 1);
-    }
-  }
-
-  sessionCuts.splice(idx, 1);
-  
-  if (sessionCuts.length > 0) {
-    const prev = sessionCuts[sessionCuts.length - 1];
-    animateScale(prev.weight, prev.name, prev.emoji);
-  } else {
-    document.getElementById('weightDisplay').textContent = '0';
-    document.getElementById('scalePartName').textContent = '— empty —';
-  }
-
-  renderSessionCuts();
-}
-
-function undoLastCut() {
-  if (actionHistory.length === 0) {
-    alert("No actions to undo!");
-    return;
-  }
-  const lastAction = actionHistory.pop();
-  if (lastAction.type === 'harvest') {
-    const idx = sessionCuts.findIndex(item => (item.partIds || [item.partId]).includes(lastAction.partId));
-    if (idx !== -1) {
-      const item = sessionCuts[idx];
-      if (item.qty > 1) {
-        item.qty -= 1;
-        item.partIds = item.partIds.filter(id => id !== lastAction.partId);
-        
-        if (lastAction.partId.startsWith('leg_whole_')) {
-          const side = lastAction.partId.endsWith('_l') ? 'l' : 'r';
-          delete severedParts[`thigh_${side}`];
-          delete severedParts[`leg_${side}`];
-          restorePart(`thigh_${side}`);
-          restorePart(`leg_${side}`);
-          syncPartTo3D(`thigh_${side}`, true);
-          syncPartTo3D(`leg_${side}`, true);
-        } else {
-          delete severedParts[lastAction.partId];
-          restorePart(lastAction.partId);
-          syncPartTo3D(lastAction.partId, true);
-        }
-        renderSessionCuts();
-      } else {
-        removeSessionCut(idx);
-      }
-    }
-  } else if (lastAction.type === 'split') {
-    const side = lastAction.side;
-    legStates[side] = 'whole';
-    [`thigh_${side}`, `leg_${side}`].forEach(p => {
-      syncPartTo3D(p, true);
-    });
-    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-    document.getElementById('weightDisplay').textContent = '0';
-    document.getElementById('scalePartName').textContent = '— empty —';
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// SCALE COUNTER ANIMATION
-// ═══════════════════════════════════════════════════
 function animateScale(targetWeight, partName, emoji) {
   const pan = document.getElementById('scalePan');
   const display = document.getElementById('weightDisplay');
@@ -1763,9 +1520,114 @@ function animateScale(targetWeight, partName, emoji) {
   }, duration + 100);
 }
 
-// ════════════════════════════════════════════════════
-// DIRECTIONAL CUT MAP
-// ════════════════════════════════════════════════════
+function setPartScaleWeight(weight) {
+  setCurrentScaleWeightState(parseInt(weight) || 250);
+  document.getElementById('weightDisplay').textContent = weight.toLocaleString();
+  document.getElementById('inputCustomWeight').value = weight;
+}
+
+function onCustomWeightInput(weightVal) {
+  const weight = parseInt(weightVal) || 0;
+  if (weight >= 50 && weight <= 5000) {
+    setCurrentScaleWeightState(weight);
+    document.getElementById('weightDisplay').textContent = weight.toLocaleString();
+  }
+}
+
+function addCutToSession(partId, name, weight, price, emoji, size = 'Medium') {
+  const existing = sessionCuts.find(c => c.name === name && c.size === size);
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+    if (!existing.partIds) {
+      existing.partIds = [existing.partId];
+    }
+    existing.partIds.push(partId);
+  } else {
+    sessionCuts.push({
+      id: partId + '_cut_' + Date.now(),
+      partId: partId,
+      partIds: [partId],
+      name: name,
+      baseWeight: weight,
+      basePrice: price,
+      weight: weight,
+      price: price,
+      emoji: emoji,
+      qty: 1,
+      size: size,
+      isCustom: true
+    });
+  }
+}
+
+function harvestSelectedPart() {
+  if (!currentScalePartId) {
+    alert("Please select a part of the chicken to cut & harvest!");
+    return;
+  }
+
+  const partId = currentScalePartId;
+  const isWholeLeg = partId.startsWith('leg_whole_');
+  const side = isWholeLeg ? (partId.endsWith('_l') ? 'l' : 'r') : null;
+
+  if (isWholeLeg) {
+    if (severedParts[`thigh_${side}`] || severedParts[`leg_${side}`]) {
+      alert("Part of this leg has already been cut or harvested!");
+      return;
+    }
+  } else {
+    if (severedParts[partId]) {
+      alert("This part has already been cut or harvested!");
+      return;
+    }
+  }
+
+  let info, emoji;
+  if (isWholeLeg) {
+    info = PART_INFO[partId + '|chicken'];
+    emoji = '🍗';
+  } else {
+    info = PART_INFO[partId + '|chicken'];
+    emoji = getSVGElements(partId)[0]?.dataset.emoji || '🥩';
+  }
+
+  if (!info) return;
+
+  if (isWholeLeg) {
+    severedParts[`thigh_${side}`] = true;
+    severedParts[`leg_${side}`] = true;
+    severPart(`thigh_${side}`);
+    severPart(`leg_${side}`);
+    syncPartTo3D(`thigh_${side}`, false);
+    syncPartTo3D(`leg_${side}`, false);
+  } else {
+    severedParts[partId] = true;
+    severPart(partId);
+    syncPartTo3D(partId, false);
+  }
+
+  const baseWeight = PART_WEIGHTS[partId] || 250;
+  const basePrice = PART_PRICES[partId] || 2.0;
+  const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
+
+  addCutToSession(partId, info.name, currentScaleWeight, computedPrice, emoji);
+
+  actionHistory.push({ type: 'harvest', partId: partId });
+
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  document.getElementById('harvestBtnContainer').style.display = 'none';
+  document.getElementById('weightSelectorSection').style.display = 'none';
+  setCurrentScalePartIdState(null);
+
+  animateScale(currentScaleWeight, info.name, emoji);
+  renderSessionCuts();
+}
+
+
+// ==========================================
+// MODULE: svgInteractions.js
+// ==========================================
+
 const PART_DIRS = {
   wing_l:     { dx:-72, dy:-14, rot:-22, scale:0.80 },
   wing_r:     { dx: 72, dy:-14, rot: 22, scale:0.80 },
@@ -1784,9 +1646,6 @@ function getDir(partId) {
   return PART_DIRS[partId] || { dx:0, dy:20, rot:0, scale:0.90 };
 }
 
-// ════════════════════════════════════════════════════
-// COMPOSED TRANSFORM SYSTEM (2D)
-// ════════════════════════════════════════════════════
 function applyPartTransform(el, transition = '') {
   const dx  = parseFloat(el.dataset.dragPx || '0');
   const dy  = parseFloat(el.dataset.dragPy || '0');
@@ -1853,102 +1712,115 @@ function restorePart(partId) {
   });
 }
 
-// ═══════════════════════════════════════════════════
-// WORKSHOP NAVIGATION
-// ═══════════════════════════════════════════════════
-function setViewMode(mode) {
-  viewMode = mode;
-  document.getElementById('btn2D').classList.toggle('active', mode === '2d');
-  document.getElementById('btn3D').classList.toggle('active', mode === '3d');
-
-  const diagSvg = document.getElementById('diag-chicken');
-  const container3D = document.getElementById('canvas3d-container');
-
-  if (mode === '2d') {
-    diagSvg.style.display = 'block';
-    container3D.style.display = 'none';
-  } else {
-    diagSvg.style.display = 'none';
-    container3D.style.display = 'block';
-    setTimeout(() => {
-      if (!renderer3) {
-        init3D();
-      } else {
-        onWindowResize();
-        if (!isAnimating) {
-          animate3D();
-        }
-      }
-    }, 50);
-  }
-}
-
-function setTool(tool) {
-  currentTool = tool;
-  document.getElementById('wsBtnSelect').classList.toggle('active', tool === 'select');
-  document.getElementById('wsBtnKnife').classList.toggle('active', tool === 'knife');
-  
-  const rightPanel = document.getElementById('customRightPanel');
-  rightPanel.classList.toggle('knife-active', tool === 'knife');
-  
-  document.getElementById('wsModeHint').textContent =
-    tool === 'knife'
-    ? '🔪 Knife Active — click any part to cut it'
-    : '▶ Select Tool — click a part to inspect details';
-}
-
-function initOffalBox() {
-  const box = document.getElementById('internalPartsBox');
-  box.innerHTML = '';
-  OFFAL_DATA.forEach(p => {
-    const tag = document.createElement('div');
-    tag.style.cssText = `
-      background: white; border: 1px solid var(--border); border-radius: 4px;
-      padding: 5px 10px; font-size: 0.72rem; cursor: pointer; display: flex;
-      align-items: center; gap: 6px; transition: all 0.15s; color: var(--ink);
+function spawnBloodParticles(cx, cy, baseAngle) {
+  for (let i = 0; i < 6; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'blood-drop';
+    const sz = 4 + Math.random() * 6;
+    const spreadR = 50 + Math.random() * 30;
+    const spreadA = baseAngle + (Math.random() * 120 - 60);
+    const spreadRad = spreadA * Math.PI / 180;
+    drop.style.cssText = `
+      left:${cx + (Math.random()-0.5)*16}px;
+      top:${cy + (Math.random()-0.5)*12}px;
+      width:${sz}px; height:${sz}px;
+      --fx:${Math.cos(spreadRad)*spreadR}px;
+      --fy:${Math.sin(spreadRad)*spreadR + 20}px;
+      --fs:${0.2 + Math.random()*0.3};
+      --dur:${0.45 + Math.random()*0.25}s;
+      animation-delay:${i*25}ms;
     `;
-    tag.innerHTML = `<span style="font-size:0.9rem;">${p.e}</span> <span>${p.n}</span>`;
-    tag.onmouseenter = () => { tag.style.borderColor = 'var(--red)'; tag.style.background = 'var(--paper-dark)'; };
-    tag.onmouseleave = () => { tag.style.borderColor = 'var(--border)'; tag.style.background = 'white'; };
-    tag.onclick = () => harvestOffal(p.n, p.w, p.p, p.e);
-    box.appendChild(tag);
+    document.body.appendChild(drop);
+    setTimeout(() => drop.remove(), 800);
+  }
+}
+
+function cut2DPart(el, cx, cy) {
+  const partId = el.dataset.part;
+  const info = PART_INFO[partId + '|chicken'];
+  if (!info) return;
+  if (severedParts[partId]) return;
+
+  severedParts[partId] = true;
+  const dir = getDir(partId);
+  const emoji = el.dataset.emoji || '🥩';
+
+  el.classList.add('cutting');
+  setTimeout(() => el.classList.remove('cutting'), 420);
+
+  const ring = document.createElement('div');
+  ring.className = 'cut-ring';
+  ring.style.left = cx + 'px';
+  ring.style.top  = cy + 'px';
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 550);
+
+  const baseAngle = Math.atan2(dir.dy || 1, dir.dx || 1) * 180 / Math.PI;
+  spawnBloodParticles(cx, cy, baseAngle);
+
+  setTimeout(() => severPart(partId), 85);
+
+  const fly = document.getElementById('flyPiece');
+  fly.textContent = emoji;
+  fly.style.cssText = `display:block;left:${cx-18}px;top:${cy-18}px;opacity:1;transform:scale(1.5) rotate(0deg);transition:none;font-size:2.2rem;`;
+
+  const scaleRect = document.querySelector('.scale-display').getBoundingClientRect();
+  const tx = scaleRect.left + scaleRect.width/2 - 18;
+  const ty = scaleRect.top;
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    fly.style.transition = 'left 0.72s cubic-bezier(0.4,0,0.15,1), top 0.72s cubic-bezier(0.4,0,0.15,1), transform 0.72s ease, opacity 0.2s ease 0.55s';
+    fly.style.left      = tx + 'px';
+    fly.style.top       = ty + 'px';
+    fly.style.transform = 'scale(0.65) rotate(420deg)';
+    fly.style.opacity   = '0';
+  }));
+
+  setTimeout(() => {
+    fly.style.display = 'none';
+    animateScale(info.weight, info.name, emoji);
+    addCutToSession(partId, info.name, info.weight, info.price, emoji);
+    actionHistory.push({ type: 'harvest', partId: partId });
+    renderSessionCuts();
+    syncPartTo3D(partId, false);
+  }, 740);
+}
+
+function splitLeg(side, cx, cy) {
+  legStates[side] = 'split';
+  spawn2DSlash(cx, cy);
+
+  [`thigh_${side}`, `leg_${side}`].forEach(p => {
+    getSVGElements(p).forEach(el => {
+      el.classList.add('cutting');
+      setTimeout(() => el.classList.remove('cutting'), 420);
+    });
+    syncPartTo3D(p, true);
   });
+
+  const tooltip = document.getElementById('tooltip');
+  tooltip.textContent = `Leg split into Thigh & Drumstick!`;
+  tooltip.classList.add('visible');
+  setTimeout(() => tooltip.classList.remove('visible'), 1800);
+
+  actionHistory.push({ type: 'split', side: side });
 }
 
-function harvestOffal(name, weight, price, emoji) {
-  if (sessionCuts.some(c => c.name === name)) {
-    alert(`${name} has already been harvested!`);
-    return;
+function spawn2DSlash(cx, cy) {
+  const slash = document.createElement('div');
+  slash.className = 'knife-slash';
+  slash.style.cssText = `left:${cx-45}px;top:${cy-1}px;--a:${Math.random()*30-15}deg;`;
+  document.body.appendChild(slash);
+  setTimeout(() => slash.remove(), 520);
+  
+  for (let i=0; i<5; i++) {
+    const d = document.createElement('div');
+    d.className = 'blood-drop';
+    d.style.cssText = `left:${cx+(Math.random()-0.5)*16}px;top:${cy+(Math.random()-0.5)*12}px;width:5px;height:5px;--fx:${(Math.random()-0.5)*50}px;--fy:${Math.random()*40+10}px;--fs:0.3;--dur:0.5s;animation-delay:${i*20}ms;`;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 750);
   }
-
-  const box = document.getElementById('internalPartsBox');
-  box.style.background = 'rgba(184,40,24,0.1)';
-  setTimeout(() => box.style.background = '', 200);
-
-  addCutToSession('offal_' + name.toLowerCase(), name, weight, price, emoji);
-  actionHistory.push({ type: 'harvest', partId: 'offal_' + name.toLowerCase() });
-  animateScale(weight, name, emoji);
-  renderSessionCuts();
 }
-
-// ═══════════════════════════════════════════════════
-// SVG INTERACTIONS (2D)
-// ═══════════════════════════════════════════════════
-const knifeCursor = document.getElementById('knifeCursor');
-
-document.getElementById('customRightPanel').addEventListener('mousemove', e => {
-  if (currentTool === 'knife') {
-    knifeCursor.style.display = 'block';
-    knifeCursor.style.left = e.clientX + 'px';
-    knifeCursor.style.top = e.clientY + 'px';
-  } else {
-    knifeCursor.style.display = 'none';
-  }
-});
-
-document.getElementById('customRightPanel').addEventListener('mouseleave', () => {
-  knifeCursor.style.display = 'none';
-});
 
 function setupSVGInteractions() {
   document.querySelectorAll('.cut-part').forEach(el => {
@@ -2046,247 +1918,15 @@ function setupSVGInteractions() {
   });
 }
 
-function inspectPart(el) {
-  let partId;
-  if (el && el.dataset && el.dataset.part) {
-    partId = el.dataset.part;
-  } else if (typeof el === 'string') {
-    partId = el;
-  } else if (el) {
-    partId = el.getAttribute('data-part');
-  }
 
-  if (!partId) return;
-  const side = partId.endsWith('_l') ? 'l' : 'r';
-  
-  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  activeCutsListIdx = null;
+// ==========================================
+// MODULE: threeEngine.js
+// ==========================================
 
-  if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
-    const wholeLegId = `leg_whole_${side}`;
-    const info = PART_INFO[wholeLegId + '|chicken'];
-    if (!info) return;
-
-    [`thigh_${side}`, `leg_${side}`].forEach(p => {
-      getSVGElements(p).forEach(elPart => elPart.classList.add('selected-part'));
-    });
-
-    selectedLegSide = side;
-    currentScalePartId = wholeLegId;
-    currentScaleWeight = info.weight;
-    
-    document.getElementById('harvestBtnContainer').style.display = 'block';
-    document.getElementById('btnHarvestSelect').textContent = `Harvest Whole Leg`;
-    
-    document.getElementById('weightSelectorSection').style.display = 'block';
-    document.getElementById('inputCustomWeight').value = info.weight;
-    setPartScaleWeight(info.weight);
-    
-    animateScale(info.weight, info.name, '🍗');
-  } else {
-    const info = PART_INFO[partId + '|chicken'];
-    if (!info) return;
-
-    const targetEl = getSVGElements(partId)[0];
-    if (targetEl) targetEl.classList.add('selected-part');
-    
-    selectedLegSide = null;
-    currentScalePartId = partId;
-    currentScaleWeight = info.weight;
-
-    document.getElementById('harvestBtnContainer').style.display = 'block';
-    document.getElementById('btnHarvestSelect').textContent = `Cut & Harvest ${info.name}`;
-    
-    document.getElementById('weightSelectorSection').style.display = 'block';
-    document.getElementById('inputCustomWeight').value = info.weight;
-    setPartScaleWeight(info.weight);
-    
-    animateScale(info.weight, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
-  }
-}
-
-function setPartScaleWeight(weight) {
-  currentScaleWeight = parseInt(weight) || 250;
-  document.getElementById('weightDisplay').textContent = currentScaleWeight.toLocaleString();
-  document.getElementById('inputCustomWeight').value = currentScaleWeight;
-}
-
-function onCustomWeightInput(weightVal) {
-  const weight = parseInt(weightVal) || 0;
-  if (weight >= 50 && weight <= 5000) {
-    currentScaleWeight = weight;
-    document.getElementById('weightDisplay').textContent = currentScaleWeight.toLocaleString();
-  }
-}
-
-function harvestSelectedPart() {
-  if (!currentScalePartId) {
-    alert("Please select a part of the chicken to cut & harvest!");
-    return;
-  }
-
-  const partId = currentScalePartId;
-  const isWholeLeg = partId.startsWith('leg_whole_');
-  const side = isWholeLeg ? (partId.endsWith('_l') ? 'l' : 'r') : null;
-
-  if (isWholeLeg) {
-    if (severedParts[`thigh_${side}`] || severedParts[`leg_${side}`]) {
-      alert("Part of this leg has already been cut or harvested!");
-      return;
-    }
-  } else {
-    if (severedParts[partId]) {
-      alert("This part has already been cut or harvested!");
-      return;
-    }
-  }
-
-  let info, emoji;
-  if (isWholeLeg) {
-    info = PART_INFO[partId + '|chicken'];
-    emoji = '🍗';
-  } else {
-    info = PART_INFO[partId + '|chicken'];
-    emoji = getSVGElements(partId)[0]?.dataset.emoji || '🥩';
-  }
-
-  if (!info) return;
-
-  if (isWholeLeg) {
-    severedParts[`thigh_${side}`] = true;
-    severedParts[`leg_${side}`] = true;
-    severPart(`thigh_${side}`);
-    severPart(`leg_${side}`);
-    syncPartTo3D(`thigh_${side}`, false);
-    syncPartTo3D(`leg_${side}`, false);
-  } else {
-    severedParts[partId] = true;
-    severPart(partId);
-    syncPartTo3D(partId, false);
-  }
-
-  const baseWeight = PART_WEIGHTS[partId] || 250;
-  const basePrice = PART_PRICES[partId] || 2.0;
-  const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
-
-  addCutToSession(partId, info.name, currentScaleWeight, computedPrice, emoji);
-
-  actionHistory.push({ type: 'harvest', partId: partId });
-
-  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  document.getElementById('harvestBtnContainer').style.display = 'none';
-  document.getElementById('weightSelectorSection').style.display = 'none';
-  currentScalePartId = null;
-
-  animateScale(currentScaleWeight, info.name, emoji);
-  renderSessionCuts();
-}
-
-// ════════════════════════════════════════════════════
-// 2D CUTTING ACTION
-// ════════════════════════════════════════════════════
-function cut2DPart(el, cx, cy) {
-  const partId = el.dataset.part;
-  const info = PART_INFO[partId + '|chicken'];
-  if (!info) return;
-  if (severedParts[partId]) return;
-
-  severedParts[partId] = true;
-  const dir = getDir(partId);
-  const emoji = el.dataset.emoji || '🥩';
-
-  el.classList.add('cutting');
-  setTimeout(() => el.classList.remove('cutting'), 420);
-
-  const ring = document.createElement('div');
-  ring.className = 'cut-ring';
-  ring.style.left = cx + 'px';
-  ring.style.top  = cy + 'px';
-  document.body.appendChild(ring);
-  setTimeout(() => ring.remove(), 550);
-
-  const baseAngle = Math.atan2(dir.dy || 1, dir.dx || 1) * 180 / Math.PI;
-  spawnBloodParticles(cx, cy, baseAngle);
-
-  setTimeout(() => severPart(partId), 85);
-
-  const fly = document.getElementById('flyPiece');
-  fly.textContent = emoji;
-  fly.style.cssText = `display:block;left:${cx-18}px;top:${cy-18}px;opacity:1;transform:scale(1.5) rotate(0deg);transition:none;font-size:2.2rem;`;
-
-  const scaleRect = document.querySelector('.scale-display').getBoundingClientRect();
-  const tx = scaleRect.left + scaleRect.width/2 - 18;
-  const ty = scaleRect.top;
-
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    fly.style.transition = 'left 0.72s cubic-bezier(0.4,0,0.15,1), top 0.72s cubic-bezier(0.4,0,0.15,1), transform 0.72s ease, opacity 0.2s ease 0.55s';
-    fly.style.left      = tx + 'px';
-    fly.style.top       = ty + 'px';
-    fly.style.transform = 'scale(0.65) rotate(420deg)';
-    fly.style.opacity   = '0';
-  }));
-
-  setTimeout(() => {
-    fly.style.display = 'none';
-    animateScale(info.weight, info.name, emoji);
-    addCutToSession(partId, info.name, info.weight, info.price, emoji);
-    actionHistory.push({ type: 'harvest', partId: partId });
-    renderSessionCuts();
-    syncPartTo3D(partId, false);
-  }, 740);
-}
-
-
-function spawnBloodParticles(cx, cy, baseAngle) {
-  for (let i = 0; i < 6; i++) {
-    const drop = document.createElement('div');
-    drop.className = 'blood-drop';
-    const sz = 4 + Math.random() * 6;
-    const spreadR = 50 + Math.random() * 30;
-    const spreadA = baseAngle + (Math.random() * 120 - 60);
-    const spreadRad = spreadA * Math.PI / 180;
-    drop.style.cssText = `
-      left:${cx + (Math.random()-0.5)*16}px;
-      top:${cy + (Math.random()-0.5)*12}px;
-      width:${sz}px; height:${sz}px;
-      --fx:${Math.cos(spreadRad)*spreadR}px;
-      --fy:${Math.sin(spreadRad)*spreadR + 20}px;
-      --fs:${0.2 + Math.random()*0.3};
-      --dur:${0.45 + Math.random()*0.25}s;
-      animation-delay:${i*25}ms;
-    `;
-    document.body.appendChild(drop);
-    setTimeout(() => drop.remove(), 800);
-  }
-}
-
-function splitLeg(side, cx, cy) {
-  legStates[side] = 'split';
-  spawn2DSlash(cx, cy);
-
-  [`thigh_${side}`, `leg_${side}`].forEach(p => {
-    getSVGElements(p).forEach(el => {
-      el.classList.add('cutting');
-      setTimeout(() => el.classList.remove('cutting'), 420);
-    });
-    syncPartTo3D(p, true);
-  });
-
-  const tooltip = document.getElementById('tooltip');
-  tooltip.textContent = `Leg split into Thigh & Drumstick!`;
-  tooltip.classList.add('visible');
-  setTimeout(() => tooltip.classList.remove('visible'), 1800);
-
-  actionHistory.push({ type: 'split', side: side });
-}
-
-// ═══════════════════════════════════════════════════
-// THREE.JS  3D CHICKEN ENGINE
-// ═══════════════════════════════════════════════════
 let scene3, camera3, renderer3, chickenGroup, raycaster, mouse;
 const parts3D = {};
 
-const colors3D = {
+const colorValues = {
   back: 0xFFB74D,       
   breast_l: 0xFFF8E1,   
   breast_r: 0xFFF8E1,   
@@ -2361,7 +2001,7 @@ function buildChicken3D() {
   chickenGroup = new THREE.Group();
 
   const materials = {};
-  for (const [part, hex] of Object.entries(colors3D)) {
+  for (const [part, hex] of Object.entries(colorValues)) {
     materials[part] = new THREE.MeshToonMaterial({
       color: hex
     });
@@ -2519,10 +2159,10 @@ function onWindowResize() {
 
 function animate3D() {
   if (viewMode !== '3d') {
-    isAnimating = false;
+    setIsAnimatingState(false);
     return;
   }
-  isAnimating = true;
+  setIsAnimatingState(true);
   requestAnimationFrame(animate3D);
   if (chickenGroup) {
     chickenGroup.rotation.y = Math.sin(Date.now() * 0.0006) * 0.22;
@@ -2626,6 +2266,7 @@ function on3DClick(e) {
   }
 }
 
+
 function cut3DPart(group, cx, cy) {
   const data = group.userData;
   const partId = data.partId;
@@ -2684,48 +2325,270 @@ function syncPartTo3D(partId, visible) {
   }
 }
 
-function spawn2DSlash(cx, cy) {
-  const slash = document.createElement('div');
-  slash.className = 'knife-slash';
-  slash.style.cssText = `left:${cx-45}px;top:${cy-1}px;--a:${Math.random()*30-15}deg;`;
-  document.body.appendChild(slash);
-  setTimeout(() => slash.remove(), 520);
+
+// ==========================================
+// MODULE: ui.js
+// ==========================================
+
+function renderSessionCuts() {
+  const container = document.getElementById('sessionCutsList');
+  if (sessionCuts.length === 0) {
+    container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the chicken.</div>';
+    return;
+  }
   
-  for (let i=0; i<5; i++) {
-    const d = document.createElement('div');
-    d.className = 'blood-drop';
-    d.style.cssText = `left:${cx+(Math.random()-0.5)*16}px;top:${cy+(Math.random()-0.5)*12}px;width:5px;height:5px;--fx:${(Math.random()-0.5)*50}px;--fy:${Math.random()*40+10}px;--fs:0.3;--dur:0.5s;animation-delay:${i*20}ms;`;
-    document.body.appendChild(d);
-    setTimeout(() => d.remove(), 750);
+  container.innerHTML = sessionCuts.map((item, idx) => {
+    if (item.id.startsWith('offal_')) {
+      return `
+        <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.2rem;">${item.emoji}</span>
+            <div>
+              <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink);">${item.name}</div>
+              <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • $${item.price.toFixed(2)}</div>
+            </div>
+          </div>
+          <button class="sci-remove" data-idx="${idx}" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+        </div>
+      `;
+    }
+
+    const sizes = ['Small', 'Medium', 'Large'];
+    const currentSize = item.size || 'Medium';
+
+    const sizeSelector = `
+      <select data-idx="${idx}" class="sci-size-select" style="background:white; border:1px solid var(--border); border-radius:4px; padding:2px 4px; font-size:0.65rem; font-family:'Outfit',sans-serif; color:var(--ink); cursor:pointer; margin-right:4px;">
+        ${sizes.map(s => `<option value="${s}" ${s === currentSize ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+    `;
+
+    const qtyControls = `
+      <div style="display:inline-flex; align-items:center; gap:4px; margin-right:8px; background:white; border:1px solid var(--border); border-radius:4px; padding:1px 3px;">
+        <button class="sci-qty-btn-minus" data-idx="${idx}" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">-</button>
+        <span style="font-family:'DM Mono',monospace; font-size:0.75rem; min-width:12px; text-align:center;">${item.qty || 1}</span>
+        <button class="sci-qty-btn-plus" data-idx="${idx}" style="border:none; background:none; cursor:pointer; font-size:0.75rem; width:14px; height:14px; display:flex; align-items:center; justify-content:center; color:var(--ink-light); font-weight:bold;">+</button>
+      </div>
+    `;
+
+    return `
+      <div class="session-cut-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--paper-mid);">
+        <div style="display:flex; align-items:center; gap:8px; max-width:160px;">
+          <span style="font-size:1.2rem;">${item.emoji}</span>
+          <div>
+            <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</div>
+            <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight * (item.qty || 1)}g • $${((item.price || 0) * (item.qty || 1)).toFixed(2)}</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center;">
+          ${sizeSelector}
+          ${qtyControls}
+          <button class="sci-remove" data-idx="${idx}" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Bind click handlers to prevent global scope onclick dependencies
+  container.querySelectorAll('.sci-remove').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      removeSessionCut(parseInt(btn.dataset.idx));
+    };
+  });
+
+  container.querySelectorAll('.sci-size-select').forEach(sel => {
+    sel.onchange = (e) => {
+      e.stopPropagation();
+      setCutSize(parseInt(sel.dataset.idx), sel.value);
+    };
+    sel.onclick = (e) => e.stopPropagation();
+  });
+
+  container.querySelectorAll('.sci-qty-btn-minus').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      adjustCutQty(parseInt(btn.dataset.idx), -1);
+    };
+  });
+
+  container.querySelectorAll('.sci-qty-btn-plus').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      adjustCutQty(parseInt(btn.dataset.idx), 1);
+    };
+  });
+}
+
+function inspectPart(el) {
+  let partId;
+  if (el && el.dataset && el.dataset.part) {
+    partId = el.dataset.part;
+  } else if (typeof el === 'string') {
+    partId = el;
+  } else if (el) {
+    partId = el.getAttribute('data-part');
+  }
+
+  if (!partId) return;
+  const side = partId.endsWith('_l') ? 'l' : 'r';
+  
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  activeCutsListIdx = null;
+
+  if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
+    const wholeLegId = `leg_whole_${side}`;
+    const info = PART_INFO[wholeLegId + '|chicken'];
+    if (!info) return;
+
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      getSVGElements(p).forEach(elPart => elPart.classList.add('selected-part'));
+    });
+
+    setSelectedLegSideState(side);
+    setCurrentScalePartIdState(wholeLegId);
+    
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Harvest Whole Leg`;
+    
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+    
+    animateScale(info.weight, info.name, '🍗');
+  } else {
+    const info = PART_INFO[partId + '|chicken'];
+    if (!info) return;
+
+    const targetEl = getSVGElements(partId)[0];
+    if (targetEl) targetEl.classList.add('selected-part');
+    
+    setSelectedLegSideState(null);
+    setCurrentScalePartIdState(partId);
+
+    document.getElementById('harvestBtnContainer').style.display = 'block';
+    document.getElementById('btnHarvestSelect').textContent = `Cut & Harvest ${info.name}`;
+    
+    document.getElementById('weightSelectorSection').style.display = 'block';
+    document.getElementById('inputCustomWeight').value = info.weight;
+    setPartScaleWeight(info.weight);
+    
+    animateScale(info.weight, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
   }
 }
 
-function saveCustomCutsToCart() {
+function initOffalBox() {
+  const box = document.getElementById('internalPartsBox');
+  box.innerHTML = '';
+  OFFAL_DATA.forEach(p => {
+    const tag = document.createElement('div');
+    tag.style.cssText = `
+      background: white; border: 1px solid var(--border); border-radius: 4px;
+      padding: 5px 10px; font-size: 0.72rem; cursor: pointer; display: flex;
+      align-items: center; gap: 6px; transition: all 0.15s; color: var(--ink);
+    `;
+    tag.innerHTML = `<span style="font-size:0.9rem;">${p.e}</span> <span>${p.n}</span>`;
+    tag.onmouseenter = () => { tag.style.borderColor = 'var(--red)'; tag.style.background = 'var(--paper-dark)'; };
+    tag.onmouseleave = () => { tag.style.borderColor = 'var(--border)'; tag.style.background = 'white'; };
+    tag.onclick = () => harvestOffal(p.n, p.w, p.p, p.e);
+    box.appendChild(tag);
+  });
+}
+
+function harvestOffal(name, weight, price, emoji) {
+  if (sessionCuts.some(c => c.name === name)) {
+    alert(`${name} has already been harvested!`);
+    return;
+  }
+
+  const box = document.getElementById('internalPartsBox');
+  box.style.background = 'rgba(184,40,24,0.1)';
+  setTimeout(() => box.style.background = '', 200);
+
+  addCutToSession('offal_' + name.toLowerCase(), name, weight, price, emoji);
+  actionHistory.push({ type: 'harvest', partId: 'offal_' + name.toLowerCase() });
+  animateScale(weight, name, emoji);
+  renderSessionCuts();
+}
+
+
+// ==========================================
+// MODULE: main.js
+// ==========================================
+
+// Bind to window for global inline HTML onclick support
+window.setViewMode = function(mode) {
+  setViewModeState(mode);
+  document.getElementById('btn2D').classList.toggle('active', mode === '2d');
+  document.getElementById('btn3D').classList.toggle('active', mode === '3d');
+
+  const diagSvg = document.getElementById('diag-chicken');
+  const container3D = document.getElementById('canvas3d-container');
+
+  if (mode === '2d') {
+    diagSvg.style.display = 'block';
+    container3D.style.display = 'none';
+  } else {
+    diagSvg.style.display = 'none';
+    container3D.style.display = 'block';
+    setTimeout(() => {
+      // Import threejs lazily or start loop
+      import('./threeEngine.js').then(({ renderer3, init3D, onWindowResize, animate3D }) => {
+        if (!renderer3) {
+          init3D();
+        } else {
+          onWindowResize();
+          animate3D();
+        }
+      });
+    }, 50);
+  }
+};
+
+window.setTool = function(tool) {
+  setToolState(tool);
+  document.getElementById('wsBtnSelect').classList.toggle('active', tool === 'select');
+  document.getElementById('wsBtnKnife').classList.toggle('active', tool === 'knife');
+  
+  const rightPanel = document.getElementById('customRightPanel');
+  rightPanel.classList.toggle('knife-active', tool === 'knife');
+  
+  document.getElementById('wsModeHint').textContent =
+    tool === 'knife'
+    ? '🔪 Knife Active — click any part to cut it'
+    : '▶ Select Tool — click a part to inspect details';
+};
+
+window.setPartScaleWeight = setPartScaleWeight;
+window.onCustomWeightInput = onCustomWeightInput;
+window.harvestSelectedPart = harvestSelectedPart;
+window.undoLastCut = undoLastCut;
+
+window.saveCustomCutsToCart = function() {
   if (sessionCuts.length === 0) {
     alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
     return;
   }
-
   localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
   sessionCuts.length = 0;
   window.location.href = 'index.html';
-}
+};
 
-function goBackToStorefront() {
+window.goBackToStorefront = function() {
   if (sessionCuts.length > 0) {
     if (!confirm("Are you sure you want to exit? Your custom carved cuts will be discarded.")) {
       return;
     }
   }
   window.location.href = 'index.html';
-}
+};
 
-// ═══════════════════════════════════════════════════
-// INITIALIZATION
-// ═══════════════════════════════════════════════════
-setViewMode('2d');
-initOffalBox();
-setupSVGInteractions();
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  window.setViewMode('2d');
+  initOffalBox();
+  setupSVGInteractions();
+});
+
 </script>
 </body>
 </html>
