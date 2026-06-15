@@ -222,7 +222,7 @@ export function buildChicken3D() {
   parts3D.leg_r = drGroup;
   chickenGroup.add(drGroup);
 
-  chickenGroup.position.y = 0.2;
+  chickenGroup.position.y = -0.15;
   scene3.add(chickenGroup);
 }
 
