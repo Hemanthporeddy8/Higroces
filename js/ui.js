@@ -1,7 +1,9 @@
 import { 
   sessionCuts, actionHistory, legStates, severedParts, currentScalePartId,
+  baseScaleWeight, isBoneless, isSkinless,
   PART_WEIGHTS, PART_PRICES, PART_INFO, OFFAL_DATA,
-  setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState
+  setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState,
+  setBaseScaleWeightState
 } from './state.js';
 import { setPartScaleWeight, adjustCutQty, setCutSize, removeSessionCut, animateScale } from './scale.js';
 import { getSVGElements } from './svgInteractions.js';
@@ -109,7 +111,11 @@ export function inspectPart(el) {
   const side = partId.endsWith('_l') ? 'l' : 'r';
   
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  activeCutsListIdx = null;
+  
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
 
   if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
     const wholeLegId = `leg_whole_${side}`;
@@ -130,7 +136,12 @@ export function inspectPart(el) {
     document.getElementById('inputCustomWeight').value = info.weight;
     setPartScaleWeight(info.weight);
     
-    animateScale(info.weight, info.name, '🍗');
+    let adjusted = info.weight;
+    if (activeB) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+    
+    animateScale(adjusted, info.name, '🍗');
   } else {
     const info = PART_INFO[partId + '|chicken'];
     if (!info) return;
@@ -148,7 +159,16 @@ export function inspectPart(el) {
     document.getElementById('inputCustomWeight').value = info.weight;
     setPartScaleWeight(info.weight);
     
-    animateScale(info.weight, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
+    let adjusted = info.weight;
+    if (activeB) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+    
+    animateScale(adjusted, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
+  }
+
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
   }
 }
 
@@ -184,4 +204,63 @@ function harvestOffal(name, weight, price, emoji) {
   actionHistory.push({ type: 'harvest', partId: 'offal_' + name.toLowerCase() });
   animateScale(weight, name, emoji);
   renderSessionCuts();
+}
+
+export function renderQuickSelectSidebar() {
+  const listContainer = document.getElementById('qssList');
+  if (!listContainer) return;
+  
+  const items = [
+    { id: 'breast_l', name: 'Breast (Left)', emoji: '🥩', weight: 255 },
+    { id: 'breast_r', name: 'Breast (Right)', emoji: '🥩', weight: 255 },
+    { id: 'wing_l', name: 'Wing (Left)', emoji: '🍗', weight: 95 },
+    { id: 'wing_r', name: 'Wing (Right)', emoji: '🍗', weight: 95 },
+    { id: 'thigh_l', name: 'Thigh (Left)', emoji: '🍗', weight: 172 },
+    { id: 'thigh_r', name: 'Thigh (Right)', emoji: '🍗', weight: 172 },
+    { id: 'leg_l', name: 'Drumstick (Left)', emoji: '🍗', weight: 148 },
+    { id: 'leg_r', name: 'Drumstick (Right)', emoji: '🍗', weight: 148 },
+    { id: 'back_upper', name: 'Ribs (Upper Back)', emoji: '🦴', weight: 200 },
+    { id: 'back_lower', name: 'Lower Back', emoji: '🍗', weight: 180 },
+    { id: 'neck', name: 'Neck', emoji: '🦴', weight: 115 }
+  ];
+  
+  listContainer.innerHTML = items.map(item => {
+    const isHarvested = severedParts[item.id] || 
+      (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
+      (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
+      
+    const isActive = currentScalePartId === item.id || 
+      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && (item.id.startsWith('thigh') || item.id.startsWith('leg')));
+      
+    const classes = ['qss-item'];
+    if (isHarvested) classes.push('harvested');
+    if (isActive && !isHarvested) classes.push('active');
+    
+    return `
+      <div class="${classes.join(' ')}" data-id="${item.id}">
+        <div class="qss-name-box">
+          <span>${item.emoji}</span>
+          <span>${item.name}</span>
+        </div>
+        <span class="qss-weight">${item.weight}g</span>
+      </div>
+    `;
+  }).join('');
+  
+  // Bind clicks
+  listContainer.querySelectorAll('.qss-item').forEach(el => {
+    el.onclick = (e) => {
+      const partId = el.dataset.id;
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      const isLegPart = partId.startsWith('thigh') || partId.startsWith('leg');
+      
+      const targetId = (isLegPart && legStates[side] === 'whole') ? `leg_whole_${side}` : partId;
+      
+      if (severedParts[targetId] || severedParts[partId]) {
+        return; // already harvested
+      }
+      
+      inspectPart(targetId);
+    };
+  });
 }

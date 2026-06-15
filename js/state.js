@@ -9,6 +9,9 @@ export let isAnimating = false;
 
 export let currentScalePartId = null;
 export let currentScaleWeight = 0;
+export let baseScaleWeight = 0;
+export let isBoneless = false;
+export let isSkinless = false;
 export let selectedLegSide = null; // 'l' or 'r'
 export let activeCutsListIdx = null;
 
@@ -49,3 +52,6 @@ export function setIsAnimatingState(val) { isAnimating = val; }
 export function setCurrentScalePartIdState(val) { currentScalePartId = val; }
 export function setCurrentScaleWeightState(val) { currentScaleWeight = val; }
 export function setSelectedLegSideState(val) { selectedLegSide = val; }
+export function setBaseScaleWeightState(val) { baseScaleWeight = val; }
+export function setIsBonelessState(val) { isBoneless = val; }
+export function setIsSkinlessState(val) { isSkinless = val; }

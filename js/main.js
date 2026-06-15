@@ -2,10 +2,10 @@ import {
   viewMode, setViewModeState, setToolState, isAnimating,
   sessionCuts, actionHistory, legStates, severedParts
 } from './state.js';
-import { setPartScaleWeight, onCustomWeightInput, harvestSelectedPart, undoLastCut } from './scale.js';
+import { setPartScaleWeight, onCustomWeightInput, harvestSelectedPart, undoLastCut, toggleMeatOption } from './scale.js';
 import { setupSVGInteractions } from './svgInteractions.js';
-import { init3D, onWindowResize, animate3D } from './threeEngine.js';
-import { initOffalBox } from './ui.js';
+import { init3D, onWindowResize, animate3D, renderer3 } from './threeEngine.js';
+import { initOffalBox, renderQuickSelectSidebar } from './ui.js';
 
 // Bind to window for global inline HTML onclick support
 window.setViewMode = function(mode) {
@@ -23,15 +23,14 @@ window.setViewMode = function(mode) {
     diagSvg.style.display = 'none';
     container3D.style.display = 'block';
     setTimeout(() => {
-      // Import threejs lazily or start loop
-      import('./threeEngine.js').then(({ renderer3, init3D, onWindowResize, animate3D }) => {
+      if (typeof init3D === 'function') {
         if (!renderer3) {
           init3D();
         } else {
           onWindowResize();
           animate3D();
         }
-      });
+      }
     }, 50);
   }
 };
@@ -54,13 +53,19 @@ window.setPartScaleWeight = setPartScaleWeight;
 window.onCustomWeightInput = onCustomWeightInput;
 window.harvestSelectedPart = harvestSelectedPart;
 window.undoLastCut = undoLastCut;
+window.toggleMeatOption = toggleMeatOption;
+window.renderQuickSelectSidebar = renderQuickSelectSidebar;
 
 window.saveCustomCutsToCart = function() {
   if (sessionCuts.length === 0) {
     alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
     return;
   }
-  localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
+  try {
+    localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
+  } catch (e) {
+    console.error("Failed to write to localStorage", e);
+  }
   sessionCuts.length = 0;
   window.location.href = 'index.html';
 };
@@ -79,4 +84,5 @@ document.addEventListener('DOMContentLoaded', () => {
   window.setViewMode('2d');
   initOffalBox();
   setupSVGInteractions();
+  renderQuickSelectSidebar();
 });

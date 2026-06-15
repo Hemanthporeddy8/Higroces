@@ -323,6 +323,12 @@ body {
 }
 .tooltip.visible { opacity: 1; }
 
+.meat-diagram, #diag-chicken {
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+}
+
 /* ── STIPPLE TEXTURE PATTERNS ── */
 .texture-overlay { pointer-events: none; }
 
@@ -460,4 +466,83 @@ body {
   z-index: 9500;
   display: none;
   transform: translate(-6px, -30px);
+}
+
+/* Quick Select Sidebar */
+.quick-select-sidebar {
+  position: absolute;
+  right: 18px;
+  top: 74px;
+  width: 215px;
+  background: rgba(250, 244, 236, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 8px 20px var(--shadow);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+.qss-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 5px;
+  text-align: center;
+}
+.qss-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.qss-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.qss-item:hover:not(.harvested) {
+  border-color: var(--brand-primary);
+  background: var(--paper-mid);
+  transform: translateX(-2px);
+}
+.qss-item.active {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: white;
+}
+.qss-item.active .qss-weight {
+  color: rgba(255,255,255,0.85);
+}
+.qss-item.harvested {
+  opacity: 0.45;
+  text-decoration: line-through;
+  background: var(--paper-dark);
+  cursor: not-allowed;
+}
+.qss-name-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.qss-weight {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--ink-light);
 }

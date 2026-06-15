@@ -873,7 +873,12 @@ function closeSuccessOverlay() {
 
 // On page load, check if there are custom cuts from custom.html
 window.addEventListener('DOMContentLoaded', () => {
-  const customCutsStr = localStorage.getItem('custom_chicken_cuts');
+  let customCutsStr = null;
+  try {
+    customCutsStr = localStorage.getItem('custom_chicken_cuts');
+  } catch (e) {
+    console.error("Failed to access localStorage", e);
+  }
   if (customCutsStr) {
     try {
       const customCuts = JSON.parse(customCutsStr);
@@ -896,7 +901,11 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.error("Failed to parse custom cuts", e);
     }
-    localStorage.removeItem('custom_chicken_cuts');
+    try {
+      localStorage.removeItem('custom_chicken_cuts');
+    } catch (e) {
+      console.error("Failed to remove item from localStorage", e);
+    }
   }
 });
 </script>

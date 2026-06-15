@@ -1,10 +1,12 @@
 import { 
   sessionCuts, actionHistory, legStates, severedParts, 
   currentScalePartId, currentScaleWeight, selectedLegSide,
+  baseScaleWeight, isBoneless, isSkinless,
   PART_WEIGHTS, PART_PRICES, PART_INFO,
-  setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState
+  setCurrentScalePartIdState, setCurrentScaleWeightState, setSelectedLegSideState,
+  setBaseScaleWeightState, setIsBonelessState, setIsSkinlessState
 } from './state.js';
-import { renderSessionCuts } from './ui.js';
+import { renderSessionCuts, renderQuickSelectSidebar } from './ui.js';
 import { severPart, restorePart, syncPartTo3D, getSVGElements } from './svgInteractions.js';
 
 export function animateScale(targetWeight, partName, emoji) {
@@ -45,17 +47,53 @@ export function animateScale(targetWeight, partName, emoji) {
   }, duration + 100);
 }
 
+export function updateAdjustedScaleWeight() {
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
+  
+  setIsBonelessState(activeB);
+  setIsSkinlessState(activeS);
+  
+  let adjusted = baseScaleWeight;
+  if (activeB) adjusted *= 0.8;
+  if (activeS) adjusted *= 0.95;
+  adjusted = Math.round(adjusted);
+  
+  setCurrentScaleWeightState(adjusted);
+  
+  const display = document.getElementById('weightDisplay');
+  if (display) {
+    display.textContent = adjusted.toLocaleString();
+  }
+}
+
 export function setPartScaleWeight(weight) {
-  setCurrentScaleWeightState(parseInt(weight) || 250);
-  document.getElementById('weightDisplay').textContent = weight.toLocaleString();
-  document.getElementById('inputCustomWeight').value = weight;
+  setBaseScaleWeightState(parseInt(weight) || 250);
+  updateAdjustedScaleWeight();
+  const inputEl = document.getElementById('inputCustomWeight');
+  if (inputEl) inputEl.value = baseScaleWeight;
 }
 
 export function onCustomWeightInput(weightVal) {
   const weight = parseInt(weightVal) || 0;
   if (weight >= 50 && weight <= 5000) {
-    setCurrentScaleWeightState(weight);
-    document.getElementById('weightDisplay').textContent = weight.toLocaleString();
+    setBaseScaleWeightState(weight);
+    updateAdjustedScaleWeight();
+  }
+}
+
+export function toggleMeatOption(type) {
+  updateAdjustedScaleWeight();
+  if (currentScalePartId) {
+    const info = PART_INFO[currentScalePartId + '|chicken'] || PART_INFO[currentScalePartId];
+    if (info) {
+      const display = document.getElementById('weightDisplay');
+      if (display) {
+        display.textContent = currentScaleWeight.toLocaleString();
+      }
+    }
   }
 }
 
@@ -133,9 +171,24 @@ export function harvestSelectedPart() {
 
   const baseWeight = PART_WEIGHTS[partId] || 250;
   const basePrice = PART_PRICES[partId] || 2.0;
-  const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
 
-  addCutToSession(partId, info.name, currentScaleWeight, computedPrice, emoji);
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
+
+  let priceFactor = 1.0;
+  if (activeB) priceFactor *= 1.15;
+  if (activeS) priceFactor *= 1.05;
+
+  const computedPrice = parseFloat((basePrice * (baseScaleWeight / baseWeight) * priceFactor).toFixed(2));
+
+  let displayName = info.name;
+  if (activeB && activeS) displayName += " (Boneless, Skinless)";
+  else if (activeB) displayName += " (Boneless)";
+  else if (activeS) displayName += " (Skinless)";
+
+  addCutToSession(partId, displayName, currentScaleWeight, computedPrice, emoji);
 
   actionHistory.push({ type: 'harvest', partId: partId });
 
@@ -144,6 +197,113 @@ export function harvestSelectedPart() {
   document.getElementById('weightSelectorSection').style.display = 'none';
   setCurrentScalePartIdState(null);
 
-  animateScale(currentScaleWeight, info.name, emoji);
+  animateScale(currentScaleWeight, displayName, emoji);
   renderSessionCuts();
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
+}
+
+export function removeSessionCut(idx) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  
+  if (!item.id.startsWith('offal_')) {
+    const partId = item.partId;
+    
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
+    }
+
+    if (partId.startsWith('leg_whole_')) {
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      delete severedParts[`thigh_${side}`];
+      delete severedParts[`leg_${side}`];
+      
+      restorePart(`thigh_${side}`);
+      restorePart(`leg_${side}`);
+      syncPartTo3D(`thigh_${side}`, true);
+      syncPartTo3D(`leg_${side}`, true);
+    } else {
+      delete severedParts[partId];
+      restorePart(partId);
+      syncPartTo3D(partId, true);
+    }
+  } else {
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === item.partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
+    }
+  }
+
+  sessionCuts.splice(idx, 1);
+  
+  if (sessionCuts.length > 0) {
+    const prev = sessionCuts[sessionCuts.length - 1];
+    animateScale(prev.weight, prev.name, prev.emoji);
+  } else {
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
+
+  renderSessionCuts();
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
+}
+
+export function adjustCutQty(idx, amount) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  item.qty = (item.qty || 1) + amount;
+  if (item.qty <= 0) {
+    removeSessionCut(idx);
+  } else {
+    renderSessionCuts();
+  }
+}
+
+export function setCutSize(idx, size) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  item.size = size;
+  
+  const baseWeight = item.baseWeight || PART_WEIGHTS[item.partId] || 150;
+  const basePrice = item.basePrice || PART_PRICES[item.partId] || 2.0;
+
+  let mult = 1.0;
+  if (size === 'Small') mult = 0.8;
+  if (size === 'Large') mult = 1.25;
+
+  item.weight = Math.round(baseWeight * mult);
+  item.price = parseFloat((basePrice * mult).toFixed(2));
+
+  renderSessionCuts();
+}
+
+export function undoLastCut() {
+  if (actionHistory.length === 0) {
+    alert("No actions to undo!");
+    return;
+  }
+  const lastAction = actionHistory.pop();
+  if (lastAction.type === 'harvest') {
+    const idx = sessionCuts.findIndex(item => item.partId === lastAction.partId);
+    if (idx !== -1) {
+      removeSessionCut(idx);
+    }
+  } else if (lastAction.type === 'split') {
+    const side = lastAction.side;
+    legStates[side] = 'whole';
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      syncPartTo3D(p, true);
+    });
+    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
 }

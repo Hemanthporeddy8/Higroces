@@ -5,18 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SwiftCuts — Interactive Custom Cuts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Three.js Library with CDN fallbacks -->
-<script src="three.min.js?v=1.0.1"></script>
-<script>
-  if (typeof THREE === 'undefined') {
-    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></s' + 'cript>');
-  }
-</script>
-<script>
-  if (typeof THREE === 'undefined') {
-    document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></s' + 'cript>');
-  }
-</script>
+<!-- Custom canvas-based 3D renderer loaded in the bundle -->
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -343,6 +332,12 @@ body {
 }
 .tooltip.visible { opacity: 1; }
 
+.meat-diagram, #diag-chicken {
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+}
+
 /* ── STIPPLE TEXTURE PATTERNS ── */
 .texture-overlay { pointer-events: none; }
 
@@ -481,6 +476,85 @@ body {
   display: none;
   transform: translate(-6px, -30px);
 }
+
+/* Quick Select Sidebar */
+.quick-select-sidebar {
+  position: absolute;
+  right: 18px;
+  top: 74px;
+  width: 215px;
+  background: rgba(250, 244, 236, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 8px 20px var(--shadow);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+.qss-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 5px;
+  text-align: center;
+}
+.qss-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.qss-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.qss-item:hover:not(.harvested) {
+  border-color: var(--brand-primary);
+  background: var(--paper-mid);
+  transform: translateX(-2px);
+}
+.qss-item.active {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: white;
+}
+.qss-item.active .qss-weight {
+  color: rgba(255,255,255,0.85);
+}
+.qss-item.harvested {
+  opacity: 0.45;
+  text-decoration: line-through;
+  background: var(--paper-dark);
+  cursor: not-allowed;
+}
+.qss-name-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.qss-weight {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--ink-light);
+}
 </style>
 </head>
 <body>
@@ -515,6 +589,18 @@ body {
         <div class="display-unit">grams</div>
         <div class="display-part-name" id="scalePartName">— empty —</div>
       </div>
+    </div>
+
+    <!-- Boneless & Skinless options -->
+    <div id="meatOptionsSection" style="margin-bottom: 12px; background: var(--paper-dark); border-radius: 6px; padding: 10px; border: 1px solid var(--border); width: 100%; display: flex; justify-content: space-around; gap: 8px;">
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--ink); cursor: pointer; user-select: none;">
+        <input type="checkbox" id="checkBoneless" onchange="toggleMeatOption('boneless')" style="width: 14px; height: 14px; accent-color: var(--brand-primary); cursor: pointer;">
+        Boneless (-20% wt)
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--ink); cursor: pointer; user-select: none;">
+        <input type="checkbox" id="checkSkinless" onchange="toggleMeatOption('skinless')" style="width: 14px; height: 14px; accent-color: var(--brand-primary); cursor: pointer;">
+        Skinless (-5% wt)
+      </label>
     </div>
 
     <!-- Weight selector section (quick weight presets and custom text input) -->
@@ -596,9 +682,9 @@ body {
     </div>
 
     <!-- 2D SVG Diagram (Chicken Ventral) -->
-    <div class="meat-diagram active" id="diag-chicken">
+        <div class="meat-diagram active" id="diag-chicken">
       <div class="diagram-label" style="display:none"></div>
-      <div style="width:100%;height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:auto">
+      <div style="width:100%;height:calc(100vh - 100px);display:flex;align-items:center;justify-content:center;background:#EEEAE4;overflow:hidden">
         <svg viewBox="0 0 640 920" xmlns="http://www.w3.org/2000/svg"
              style="width:auto;height:calc(100vh - 112px);max-height:900px;min-height:560px">
           <defs>
@@ -1417,11 +1503,410 @@ body {
       <canvas id="canvas3d"></canvas>
     </div>
 
+    <!-- Quick Select Sidebar -->
+    <div class="quick-select-sidebar" id="quickSelectSidebar">
+      <div class="qss-title">📋 Chicken Parts List</div>
+      <div class="qss-list" id="qssList">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
   </div>
 
 </div>
 
 <script>
+// ==========================================
+// MODULE: threeye.js
+// ==========================================
+// threeye.js — Custom Lightweight 3D Canvas Projection Engine
+
+class Vector3 {
+  constructor(x = 0, y = 0, z = 0) {
+    this.x = x; this.y = y; this.z = z;
+  }
+  set(x, y, z) {
+    this.x = x; this.y = y; this.z = z;
+    return this;
+  }
+  clone() {
+    return new Vector3(this.x, this.y, this.z);
+  }
+  copy(v) {
+    this.x = v.x; this.y = v.y; this.z = v.z;
+    return this;
+  }
+  lerpVectors(v1, v2, t) {
+    this.x = v1.x + (v2.x - v1.x) * t;
+    this.y = v1.y + (v2.y - v1.y) * t;
+    this.z = v1.z + (v2.z - v1.z) * t;
+    return this;
+  }
+}
+
+class Vector2 {
+  constructor(x = 0, y = 0) {
+    this.x = x; this.y = y;
+  }
+}
+
+class Color {
+  constructor(val) {
+    this.set(val);
+  }
+  set(val) {
+    if (typeof val === 'number') {
+      this.hexStr = '#' + val.toString(16).padStart(6, '0');
+    } else {
+      this.hexStr = val;
+    }
+  }
+  setHex(hex) {
+    this.set(hex);
+  }
+}
+
+class Euler {
+  constructor(x = 0, y = 0, z = 0) {
+    this.x = x; this.y = y; this.z = z;
+  }
+  set(x, y, z) {
+    this.x = x; this.y = y; this.z = z;
+  }
+}
+
+class Object3D {
+  constructor() {
+    this.position = new Vector3();
+    this.rotation = new Euler();
+    this.scale = new Vector3(1, 1, 1);
+    this.children = [];
+    this.visible = true;
+    this.userData = {};
+  }
+  add(obj) {
+    obj.parent = this;
+    this.children.push(obj);
+  }
+  traverse(cb) {
+    cb(this);
+    this.children.forEach(child => child.traverse(cb));
+  }
+}
+
+class Scene extends Object3D {
+  constructor() {
+    super();
+    this.background = new Color(0xffffff);
+  }
+}
+
+class Group extends Object3D {}
+
+class SphereGeometry {
+  constructor(radius = 1, widthSegments = 8, heightSegments = 6) {
+    this.type = 'sphere';
+    this.radius = radius;
+  }
+}
+
+class CylinderGeometry {
+  constructor(radiusTop = 1, radiusBottom = 1, height = 1, radialSegments = 8) {
+    this.type = 'cylinder';
+    this.radiusTop = radiusTop;
+    this.radiusBottom = radiusBottom;
+    this.height = height;
+  }
+}
+
+class MeshToonMaterial {
+  constructor(params = {}) {
+    this.color = new Color(params.color || 0xffffff);
+    this.emissive = new Color(0x000000);
+  }
+}
+
+class Mesh extends Object3D {
+  constructor(geometry, material) {
+    super();
+    this.geometry = geometry;
+    this.material = material;
+    this.isMesh = true;
+  }
+}
+
+class AmbientLight {
+  constructor(color, intensity) {}
+}
+
+class DirectionalLight {
+  constructor(color, intensity) {
+    this.position = new Vector3();
+  }
+}
+
+class PerspectiveCamera {
+  constructor(fov, aspect, near, far) {
+    this.position = new Vector3(0, 0, 5);
+  }
+  updateProjectionMatrix() {}
+}
+
+class Raycaster {
+  constructor() {
+    this.camera = null;
+    this.mouse = null;
+  }
+  setFromCamera(mouse, camera) {
+    this.mouse = mouse;
+    this.camera = camera;
+  }
+  intersectObjects(objects) {
+    if (!this.mouse || !window.renderer3) return [];
+    
+    const W = window.renderer3.width;
+    const H = window.renderer3.height;
+    
+    // Convert NDC (-1 to 1) back to canvas coordinates
+    const mx_canvas = ((this.mouse.x + 1) / 2) * W;
+    const my_canvas = ((1 - this.mouse.y) / 2) * H;
+    
+    const hits = [];
+    objects.forEach(mesh => {
+      if (mesh.visible && mesh._lastScreenPos) {
+        const dx = mx_canvas - mesh._lastScreenPos.x;
+        const dy = my_canvas - mesh._lastScreenPos.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        let clickRadius = Math.max(mesh._lastScreenPos.rx, mesh._lastScreenPos.ry);
+        if (mesh.geometry.type === 'cylinder') {
+          clickRadius = mesh._lastScreenPos.rx * 1.5; // adjust for cylinder click accuracy
+        }
+        
+        if (dist <= clickRadius) {
+          hits.push({
+            object: mesh,
+            distance: mesh._lastScreenPos.z // use depth Z for distance
+          });
+        }
+      }
+    });
+    
+    // Sort closest depth first (i.e. highest z value)
+    hits.sort((a, b) => b.distance - a.distance);
+    return hits;
+  }
+}
+
+// Color shader helpers
+function darkenColor(hex, percent) {
+  let num = parseInt(hex.replace("#",""), 16),
+  amt = Math.round(2.55 * percent * 100),
+  R = (num >> 16) - amt,
+  G = (num >> 8 & 0x00FF) - amt,
+  B = (num & 0x0000FF) - amt;
+  return "#" + (0x1000000 + (R<0?0:R>255?255:R)*0x10000 + (G<0?0:G>255?255:G)*0x100 + (B<0?0:B>255?255:B)).toString(16).slice(1);
+}
+
+// Escaping the # character in string formatters inside build script
+function lightenColor(hex, percent) {
+  let num = parseInt(hex.replace("#",""), 16),
+  amt = Math.round(2.55 * percent * 100),
+  R = (num >> 16) + amt,
+  G = (num >> 8 & 0x00FF) + amt,
+  B = (num & 0x0000FF) + amt;
+  return "#" + (0x1000000 + (R<0?0:R>255?255:R)*0x10000 + (G<0?0:G>255?255:G)*0x100 + (B<0?0:B>255?255:B)).toString(16).slice(1);
+}
+
+class WebGLRenderer {
+  constructor(params = {}) {
+    this.canvas = params.canvas;
+    this.ctx = this.canvas.getContext('2d');
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+    window.renderer3 = this; // store globally for raycaster
+  }
+  setSize(w, h) {
+    this.width = w;
+    this.height = h;
+    this.canvas.width = w;
+    this.canvas.height = h;
+  }
+  setPixelRatio() {}
+  
+  render(scene, camera) {
+    const ctx = this.ctx;
+    const W = this.width;
+    const H = this.height;
+    
+    // Clear canvas with scene background
+    ctx.fillStyle = scene.background.hexStr || '#DCD8D0';
+    ctx.fillRect(0, 0, W, H);
+    
+    // Collect all visible meshes
+    const meshes = [];
+    scene.traverse(node => {
+      if (node.isMesh && node.visible) {
+        meshes.push(node);
+      }
+    });
+    
+    const cameraZ = 5.0;
+    const fov = 350; // Perspective zoom
+    
+    meshes.forEach(mesh => {
+      let rotY = 0;
+      let parentPos = new Vector3();
+      
+      let p = mesh.parent;
+      while (p) {
+        rotY += p.rotation.y;
+        parentPos.x += p.position.x;
+        parentPos.y += p.position.y;
+        parentPos.z += p.position.z;
+        p = p.parent;
+      }
+      
+      // Rotate local coords around parent's Y axis
+      const lx = mesh.position.x;
+      const ly = mesh.position.y;
+      const lz = mesh.position.z;
+      
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      
+      const gx = lx * cosY - lz * sinY + parentPos.x;
+      const gy = ly + parentPos.y;
+      const gz = lx * sinY + lz * cosY + parentPos.z;
+      
+      // Project to 2D screen coords
+      const scale = fov / (cameraZ - gz);
+      const screenX = gx * scale + W / 2;
+      const screenY = -gy * scale + H / 2;
+      
+      const meshScaleX = mesh.scale.x;
+      const meshScaleY = mesh.scale.y;
+      
+      let rx = 0, ry = 0;
+      if (mesh.geometry.type === 'sphere') {
+        rx = mesh.geometry.radius * meshScaleX * scale;
+        ry = mesh.geometry.radius * meshScaleY * scale;
+      } else {
+        rx = mesh.geometry.radiusBottom * meshScaleX * scale;
+        ry = mesh.geometry.height * meshScaleY * scale;
+      }
+      
+      mesh._lastScreenPos = {
+        x: screenX,
+        y: screenY,
+        z: gz,
+        rx: rx,
+        ry: ry,
+        scale: scale,
+        rotY: rotY
+      };
+    });
+    
+    // Depth sorting (Z-buffer / Painter's Algorithm)
+    meshes.sort((a, b) => a._lastScreenPos.z - b._lastScreenPos.z);
+    
+    // Draw meshes
+    meshes.forEach(mesh => {
+      const proj = mesh._lastScreenPos;
+      const baseColor = mesh.material.color.hexStr;
+      
+      let glowHex = mesh.material.emissive.hexStr;
+      let isGlowing = (glowHex !== '#000000' && glowHex !== '#000');
+      
+      ctx.save();
+      
+      if (mesh.geometry.type === 'sphere') {
+        const rx = proj.rx;
+        const ry = proj.ry;
+        
+        ctx.beginPath();
+        ctx.ellipse(proj.x, proj.y, rx, ry, mesh.rotation.z, 0, 2 * Math.PI);
+        
+        let shadowColor = darkenColor(baseColor, 0.28);
+        let highlightColor = lightenColor(baseColor, 0.38);
+        
+        if (isGlowing) {
+          shadowColor = lightenColor(glowHex, 0.1);
+          highlightColor = lightenColor(glowHex, 0.45);
+        }
+        
+        const grad = ctx.createRadialGradient(
+          proj.x - rx * 0.25, proj.y - ry * 0.25, Math.min(rx, ry) * 0.1,
+          proj.x, proj.y, Math.max(rx, ry)
+        );
+        grad.addColorStop(0, highlightColor);
+        grad.addColorStop(0.3, isGlowing ? glowHex : baseColor);
+        grad.addColorStop(1, shadowColor);
+        
+        ctx.fillStyle = grad;
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 3;
+        ctx.fill();
+        
+        ctx.strokeStyle = darkenColor(baseColor, 0.45);
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+      } 
+      else if (mesh.geometry.type === 'cylinder') {
+        const rx = proj.rx;
+        const ry = proj.ry;
+        
+        const cx = proj.x;
+        const cy = proj.y;
+        
+        ctx.beginPath();
+        ctx.translate(cx, cy);
+        ctx.rotate(mesh.rotation.z);
+        
+        let shadowColor = darkenColor(baseColor, 0.28);
+        let highlightColor = lightenColor(baseColor, 0.3);
+        if (isGlowing) {
+          shadowColor = lightenColor(glowHex, 0.1);
+          highlightColor = lightenColor(glowHex, 0.45);
+        }
+        
+        const grad = ctx.createLinearGradient(-rx, 0, rx, 0);
+        grad.addColorStop(0, shadowColor);
+        grad.addColorStop(0.3, isGlowing ? glowHex : baseColor);
+        grad.addColorStop(1, shadowColor);
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(-rx, -ry/2, rx*2, ry);
+        
+        ctx.beginPath();
+        ctx.ellipse(0, -ry/2, rx, rx*0.35, 0, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.ellipse(0, ry/2, rx, rx*0.35, 0, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.strokeStyle = darkenColor(baseColor, 0.45);
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(-rx, -ry/2, rx*2, ry);
+      }
+      
+      ctx.restore();
+    });
+  }
+}
+
+// Bind to global scope
+window.THREE = {
+  Vector3, Vector2, Color, Euler, Object3D, Scene, Group,
+  SphereGeometry, CylinderGeometry, MeshToonMaterial, Mesh,
+  AmbientLight, DirectionalLight, PerspectiveCamera, WebGLRenderer, Raycaster
+};
+
+
 // ==========================================
 // MODULE: state.js
 // ==========================================
@@ -1436,6 +1921,9 @@ let isAnimating = false;
 
 let currentScalePartId = null;
 let currentScaleWeight = 0;
+let baseScaleWeight = 0;
+let isBoneless = false;
+let isSkinless = false;
 let selectedLegSide = null; // 'l' or 'r'
 let activeCutsListIdx = null;
 
@@ -1476,6 +1964,9 @@ function setIsAnimatingState(val) { isAnimating = val; }
 function setCurrentScalePartIdState(val) { currentScalePartId = val; }
 function setCurrentScaleWeightState(val) { currentScaleWeight = val; }
 function setSelectedLegSideState(val) { selectedLegSide = val; }
+function setBaseScaleWeightState(val) { baseScaleWeight = val; }
+function setIsBonelessState(val) { isBoneless = val; }
+function setIsSkinlessState(val) { isSkinless = val; }
 
 
 // ==========================================
@@ -1520,17 +2011,53 @@ function animateScale(targetWeight, partName, emoji) {
   }, duration + 100);
 }
 
+function updateAdjustedScaleWeight() {
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
+  
+  setIsBonelessState(activeB);
+  setIsSkinlessState(activeS);
+  
+  let adjusted = baseScaleWeight;
+  if (activeB) adjusted *= 0.8;
+  if (activeS) adjusted *= 0.95;
+  adjusted = Math.round(adjusted);
+  
+  setCurrentScaleWeightState(adjusted);
+  
+  const display = document.getElementById('weightDisplay');
+  if (display) {
+    display.textContent = adjusted.toLocaleString();
+  }
+}
+
 function setPartScaleWeight(weight) {
-  setCurrentScaleWeightState(parseInt(weight) || 250);
-  document.getElementById('weightDisplay').textContent = weight.toLocaleString();
-  document.getElementById('inputCustomWeight').value = weight;
+  setBaseScaleWeightState(parseInt(weight) || 250);
+  updateAdjustedScaleWeight();
+  const inputEl = document.getElementById('inputCustomWeight');
+  if (inputEl) inputEl.value = baseScaleWeight;
 }
 
 function onCustomWeightInput(weightVal) {
   const weight = parseInt(weightVal) || 0;
   if (weight >= 50 && weight <= 5000) {
-    setCurrentScaleWeightState(weight);
-    document.getElementById('weightDisplay').textContent = weight.toLocaleString();
+    setBaseScaleWeightState(weight);
+    updateAdjustedScaleWeight();
+  }
+}
+
+function toggleMeatOption(type) {
+  updateAdjustedScaleWeight();
+  if (currentScalePartId) {
+    const info = PART_INFO[currentScalePartId + '|chicken'] || PART_INFO[currentScalePartId];
+    if (info) {
+      const display = document.getElementById('weightDisplay');
+      if (display) {
+        display.textContent = currentScaleWeight.toLocaleString();
+      }
+    }
   }
 }
 
@@ -1608,9 +2135,24 @@ function harvestSelectedPart() {
 
   const baseWeight = PART_WEIGHTS[partId] || 250;
   const basePrice = PART_PRICES[partId] || 2.0;
-  const computedPrice = parseFloat((basePrice * (currentScaleWeight / baseWeight)).toFixed(2));
 
-  addCutToSession(partId, info.name, currentScaleWeight, computedPrice, emoji);
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
+
+  let priceFactor = 1.0;
+  if (activeB) priceFactor *= 1.15;
+  if (activeS) priceFactor *= 1.05;
+
+  const computedPrice = parseFloat((basePrice * (baseScaleWeight / baseWeight) * priceFactor).toFixed(2));
+
+  let displayName = info.name;
+  if (activeB && activeS) displayName += " (Boneless, Skinless)";
+  else if (activeB) displayName += " (Boneless)";
+  else if (activeS) displayName += " (Skinless)";
+
+  addCutToSession(partId, displayName, currentScaleWeight, computedPrice, emoji);
 
   actionHistory.push({ type: 'harvest', partId: partId });
 
@@ -1619,8 +2161,115 @@ function harvestSelectedPart() {
   document.getElementById('weightSelectorSection').style.display = 'none';
   setCurrentScalePartIdState(null);
 
-  animateScale(currentScaleWeight, info.name, emoji);
+  animateScale(currentScaleWeight, displayName, emoji);
   renderSessionCuts();
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
+}
+
+function removeSessionCut(idx) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  
+  if (!item.id.startsWith('offal_')) {
+    const partId = item.partId;
+    
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
+    }
+
+    if (partId.startsWith('leg_whole_')) {
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      delete severedParts[`thigh_${side}`];
+      delete severedParts[`leg_${side}`];
+      
+      restorePart(`thigh_${side}`);
+      restorePart(`leg_${side}`);
+      syncPartTo3D(`thigh_${side}`, true);
+      syncPartTo3D(`leg_${side}`, true);
+    } else {
+      delete severedParts[partId];
+      restorePart(partId);
+      syncPartTo3D(partId, true);
+    }
+  } else {
+    const aIdx = actionHistory.findIndex(a => a.type === 'harvest' && a.partId === item.partId);
+    if (aIdx !== -1) {
+      actionHistory.splice(aIdx, 1);
+    }
+  }
+
+  sessionCuts.splice(idx, 1);
+  
+  if (sessionCuts.length > 0) {
+    const prev = sessionCuts[sessionCuts.length - 1];
+    animateScale(prev.weight, prev.name, prev.emoji);
+  } else {
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
+
+  renderSessionCuts();
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
+}
+
+function adjustCutQty(idx, amount) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  item.qty = (item.qty || 1) + amount;
+  if (item.qty <= 0) {
+    removeSessionCut(idx);
+  } else {
+    renderSessionCuts();
+  }
+}
+
+function setCutSize(idx, size) {
+  const item = sessionCuts[idx];
+  if (!item) return;
+  item.size = size;
+  
+  const baseWeight = item.baseWeight || PART_WEIGHTS[item.partId] || 150;
+  const basePrice = item.basePrice || PART_PRICES[item.partId] || 2.0;
+
+  let mult = 1.0;
+  if (size === 'Small') mult = 0.8;
+  if (size === 'Large') mult = 1.25;
+
+  item.weight = Math.round(baseWeight * mult);
+  item.price = parseFloat((basePrice * mult).toFixed(2));
+
+  renderSessionCuts();
+}
+
+function undoLastCut() {
+  if (actionHistory.length === 0) {
+    alert("No actions to undo!");
+    return;
+  }
+  const lastAction = actionHistory.pop();
+  if (lastAction.type === 'harvest') {
+    const idx = sessionCuts.findIndex(item => item.partId === lastAction.partId);
+    if (idx !== -1) {
+      removeSessionCut(idx);
+    }
+  } else if (lastAction.type === 'split') {
+    const side = lastAction.side;
+    legStates[side] = 'whole';
+    [`thigh_${side}`, `leg_${side}`].forEach(p => {
+      syncPartTo3D(p, true);
+    });
+    document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+    document.getElementById('weightDisplay').textContent = '0';
+    document.getElementById('scalePartName').textContent = '— empty —';
+  }
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
+  }
 }
 
 
@@ -2433,7 +3082,11 @@ function inspectPart(el) {
   const side = partId.endsWith('_l') ? 'l' : 'r';
   
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
-  activeCutsListIdx = null;
+  
+  const checkB = document.getElementById('checkBoneless');
+  const checkS = document.getElementById('checkSkinless');
+  const activeB = checkB ? checkB.checked : false;
+  const activeS = checkS ? checkS.checked : false;
 
   if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
     const wholeLegId = `leg_whole_${side}`;
@@ -2454,7 +3107,12 @@ function inspectPart(el) {
     document.getElementById('inputCustomWeight').value = info.weight;
     setPartScaleWeight(info.weight);
     
-    animateScale(info.weight, info.name, '🍗');
+    let adjusted = info.weight;
+    if (activeB) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+    
+    animateScale(adjusted, info.name, '🍗');
   } else {
     const info = PART_INFO[partId + '|chicken'];
     if (!info) return;
@@ -2472,7 +3130,16 @@ function inspectPart(el) {
     document.getElementById('inputCustomWeight').value = info.weight;
     setPartScaleWeight(info.weight);
     
-    animateScale(info.weight, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
+    let adjusted = info.weight;
+    if (activeB) adjusted *= 0.8;
+    if (activeS) adjusted *= 0.95;
+    adjusted = Math.round(adjusted);
+    
+    animateScale(adjusted, info.name, (targetEl && targetEl.dataset.emoji) || '🥩');
+  }
+
+  if (typeof renderQuickSelectSidebar === 'function') {
+    renderQuickSelectSidebar();
   }
 }
 
@@ -2510,6 +3177,65 @@ function harvestOffal(name, weight, price, emoji) {
   renderSessionCuts();
 }
 
+function renderQuickSelectSidebar() {
+  const listContainer = document.getElementById('qssList');
+  if (!listContainer) return;
+  
+  const items = [
+    { id: 'breast_l', name: 'Breast (Left)', emoji: '🥩', weight: 255 },
+    { id: 'breast_r', name: 'Breast (Right)', emoji: '🥩', weight: 255 },
+    { id: 'wing_l', name: 'Wing (Left)', emoji: '🍗', weight: 95 },
+    { id: 'wing_r', name: 'Wing (Right)', emoji: '🍗', weight: 95 },
+    { id: 'thigh_l', name: 'Thigh (Left)', emoji: '🍗', weight: 172 },
+    { id: 'thigh_r', name: 'Thigh (Right)', emoji: '🍗', weight: 172 },
+    { id: 'leg_l', name: 'Drumstick (Left)', emoji: '🍗', weight: 148 },
+    { id: 'leg_r', name: 'Drumstick (Right)', emoji: '🍗', weight: 148 },
+    { id: 'back_upper', name: 'Ribs (Upper Back)', emoji: '🦴', weight: 200 },
+    { id: 'back_lower', name: 'Lower Back', emoji: '🍗', weight: 180 },
+    { id: 'neck', name: 'Neck', emoji: '🦴', weight: 115 }
+  ];
+  
+  listContainer.innerHTML = items.map(item => {
+    const isHarvested = severedParts[item.id] || 
+      (item.id.startsWith('thigh') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]) ||
+      (item.id.startsWith('leg') && severedParts[`leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}`]);
+      
+    const isActive = currentScalePartId === item.id || 
+      (currentScalePartId === `leg_whole_${item.id.endsWith('_l') ? 'l' : 'r'}` && (item.id.startsWith('thigh') || item.id.startsWith('leg')));
+      
+    const classes = ['qss-item'];
+    if (isHarvested) classes.push('harvested');
+    if (isActive && !isHarvested) classes.push('active');
+    
+    return `
+      <div class="${classes.join(' ')}" data-id="${item.id}">
+        <div class="qss-name-box">
+          <span>${item.emoji}</span>
+          <span>${item.name}</span>
+        </div>
+        <span class="qss-weight">${item.weight}g</span>
+      </div>
+    `;
+  }).join('');
+  
+  // Bind clicks
+  listContainer.querySelectorAll('.qss-item').forEach(el => {
+    el.onclick = (e) => {
+      const partId = el.dataset.id;
+      const side = partId.endsWith('_l') ? 'l' : 'r';
+      const isLegPart = partId.startsWith('thigh') || partId.startsWith('leg');
+      
+      const targetId = (isLegPart && legStates[side] === 'whole') ? `leg_whole_${side}` : partId;
+      
+      if (severedParts[targetId] || severedParts[partId]) {
+        return; // already harvested
+      }
+      
+      inspectPart(targetId);
+    };
+  });
+}
+
 
 // ==========================================
 // MODULE: main.js
@@ -2531,15 +3257,14 @@ window.setViewMode = function(mode) {
     diagSvg.style.display = 'none';
     container3D.style.display = 'block';
     setTimeout(() => {
-      // Import threejs lazily or start loop
-      import('./threeEngine.js').then(({ renderer3, init3D, onWindowResize, animate3D }) => {
+      if (typeof init3D === 'function') {
         if (!renderer3) {
           init3D();
         } else {
           onWindowResize();
           animate3D();
         }
-      });
+      }
     }, 50);
   }
 };
@@ -2562,13 +3287,19 @@ window.setPartScaleWeight = setPartScaleWeight;
 window.onCustomWeightInput = onCustomWeightInput;
 window.harvestSelectedPart = harvestSelectedPart;
 window.undoLastCut = undoLastCut;
+window.toggleMeatOption = toggleMeatOption;
+window.renderQuickSelectSidebar = renderQuickSelectSidebar;
 
 window.saveCustomCutsToCart = function() {
   if (sessionCuts.length === 0) {
     alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
     return;
   }
-  localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
+  try {
+    localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
+  } catch (e) {
+    console.error("Failed to write to localStorage", e);
+  }
   sessionCuts.length = 0;
   window.location.href = 'index.html';
 };
@@ -2587,6 +3318,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.setViewMode('2d');
   initOffalBox();
   setupSVGInteractions();
+  renderQuickSelectSidebar();
 });
 
 </script>
