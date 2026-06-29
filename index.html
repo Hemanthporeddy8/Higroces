@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwiftCuts — 10 Min Fresh Chicken & Custom Cuts</title>
+<title>HiGroces — Fresh Meat, Eggs & Groceries | Delivered Fast</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -16,6 +16,7 @@
   --text-dark: #1C2220;
   --text-muted: #606C66;
   --border-light: #E2E8E5;
+  --success: #0C513F;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -26,9 +27,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ════════════════════════════════════════════════
-   STOREFRONT HEADER
-   ════════════════════════════════════════════════ */
+/* ── HEADER ── */
 header {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
@@ -43,7 +42,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .logo {
   display: flex;
@@ -68,25 +68,24 @@ header {
   margin-left: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: 'Outfit', sans-serif;
 }
 .delivery-badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(12, 81, 63, 0.08);
-  border: 1px solid rgba(12, 81, 63, 0.12);
-  padding: 6px 12px;
+  background: rgba(12,81,63,0.08);
+  border: 1px solid rgba(12,81,63,0.14);
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--brand-primary);
   font-weight: 500;
+  white-space: nowrap;
 }
 .delivery-badge strong { color: var(--brand-accent); }
-
 .search-bar-container {
   flex: 1;
-  max-width: 500px;
+  max-width: 440px;
   position: relative;
 }
 .search-bar {
@@ -103,7 +102,7 @@ header {
 .search-bar:focus {
   background: white;
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(12, 81, 63, 0.1);
+  box-shadow: 0 0 0 3px rgba(12,81,63,0.1);
 }
 .search-icon {
   position: absolute;
@@ -113,7 +112,6 @@ header {
   font-size: 0.9rem;
   color: var(--text-muted);
 }
-
 .cart-widget {
   background: var(--brand-accent);
   color: white;
@@ -127,32 +125,27 @@ header {
   align-items: center;
   gap: 10px;
   transition: background 0.2s;
-  box-shadow: 0 4px 12px rgba(255, 94, 43, 0.2);
+  box-shadow: 0 4px 12px rgba(255,94,43,0.2);
+  white-space: nowrap;
 }
-.cart-widget:hover {
-  background: var(--brand-accent-hover);
-}
+.cart-widget:hover { background: var(--brand-accent-hover); }
 .cart-badge {
   background: white;
   color: var(--brand-accent);
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700;
 }
 
-/* ════════════════════════════════════════════════
-   STOREFRONT BODY
-   ════════════════════════════════════════════════ */
+/* ── STOREFRONT BODY ── */
 .storefront {
   max-width: 1200px;
   margin: 24px auto;
   padding: 0 24px;
 }
+
+/* ── HERO BANNER ── */
 .hero-banner {
   background: linear-gradient(135deg, var(--brand-primary) 0%, #157960 100%);
   border-radius: 16px;
@@ -161,22 +154,22 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 30px;
+  gap: 24px;
   margin-bottom: 30px;
-  box-shadow: 0 8px 24px rgba(12, 81, 63, 0.15);
+  box-shadow: 0 8px 24px rgba(12,81,63,0.15);
   position: relative;
   overflow: hidden;
+  flex-wrap: wrap;
 }
 .hero-banner::after {
-  content: "🐔";
+  content: "🥩";
   position: absolute;
-  right: -20px;
-  bottom: -30px;
+  right: -20px; bottom: -30px;
   font-size: 10rem;
-  opacity: 0.08;
+  opacity: 0.07;
   pointer-events: none;
 }
-.hero-text { max-width: 600px; }
+.hero-text { max-width: 580px; }
 .hero-tag {
   background: var(--brand-accent);
   color: white;
@@ -191,23 +184,25 @@ header {
 }
 .hero-text h1 {
   font-family: 'Playfair Display', serif;
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 900;
-  margin-bottom: 12px;
-  line-height: 1.2;
+  margin-bottom: 10px;
+  line-height: 1.25;
 }
 .hero-text p {
-  font-size: 0.95rem;
-  opacity: 0.9;
-  line-height: 1.5;
+  font-size: 0.92rem;
+  opacity: 0.88;
+  line-height: 1.55;
+  margin-bottom: 18px;
 }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .hero-action {
   background: white;
   color: var(--brand-primary);
   border: none;
-  padding: 12px 24px;
+  padding: 12px 22px;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -220,116 +215,124 @@ header {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
+.hero-action.butcher {
+  background: var(--brand-accent);
+  color: white;
+}
+.hero-action.butcher:hover { background: var(--brand-accent-hover); }
 
+/* ── SECTION TITLE ── */
 .section-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 900;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* Category selector tabs */
+/* ── CATEGORY TABS ── */
 .category-tabs {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   border-bottom: 1px solid var(--border-light);
   padding-bottom: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 .category-tab {
   background: none;
   border: none;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 7px 16px;
   border-radius: 20px;
   cursor: pointer;
   color: var(--text-muted);
   transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
 }
 .category-tab:hover {
   color: var(--text-dark);
-  background: rgba(0,0,0,0.03);
+  background: rgba(0,0,0,0.04);
 }
 .category-tab.active {
   background: var(--brand-primary);
   color: white;
 }
 
-/* Product grid */
+/* ── PRODUCT GRID ── */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
   margin-bottom: 48px;
 }
 .product-card {
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--border-light);
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all 0.2s;
+  transition: all 0.22s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.07);
 }
 .product-image {
-  height: 150px;
+  height: 130px;
   background: #F5F7F6;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 4rem;
-  margin-bottom: 16px;
+  font-size: 3.6rem;
+  margin-bottom: 14px;
   position: relative;
   overflow: hidden;
 }
 .card-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px; left: 8px;
   background: var(--brand-primary);
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.card-badge.custom {
-  background: var(--brand-accent);
-}
+.card-badge.fresh   { background: #2E7D32; }
+.card-badge.butcher { background: var(--brand-accent); }
+.card-badge.deal    { background: #7B1FA2; }
 .product-info h3 {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 700;
   margin-bottom: 4px;
   color: var(--text-dark);
+  line-height: 1.3;
 }
 .product-desc {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  line-height: 1.4;
-  margin-bottom: 12px;
-  height: 38px;
+  line-height: 1.45;
+  margin-bottom: 10px;
+  min-height: 34px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .product-meta {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -341,59 +344,68 @@ header {
   margin-top: 10px;
 }
 .product-price {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-dark);
 }
+.product-price .mrp {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 400;
+  margin-left: 4px;
+}
 .btn-add {
   background: white;
-  border: 1px solid var(--brand-primary);
+  border: 1.5px solid var(--brand-primary);
   color: var(--brand-primary);
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
 }
 .btn-add:hover {
   background: var(--brand-primary);
   color: white;
 }
-.btn-custom {
+.btn-add.added {
+  background: var(--brand-primary);
+  color: white;
+}
+.btn-butcher {
   background: var(--brand-accent);
   border: none;
   color: white;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
-.btn-custom:hover {
-  background: var(--brand-accent-hover);
-}
+.btn-butcher:hover { background: var(--brand-accent-hover); }
 
-/* ════════════════════════════════════════════════
-   CART SLIDE-OUT DRAWER
-   ════════════════════════════════════════════════ */
+/* ── CART DRAWER ── */
 .cart-drawer {
   position: fixed;
-  top: 0;
-  right: -420px;
-  width: 420px;
+  top: 0; right: -440px;
+  width: 440px;
   height: 100vh;
   background: white;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.15);
+  box-shadow: -10px 0 40px rgba(0,0,0,0.12);
   z-index: 500;
-  transition: right 0.30s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: right 0.30s cubic-bezier(0.25,1,0.5,1);
   display: flex;
   flex-direction: column;
 }
-.cart-drawer.open {
-  right: 0;
-}
+.cart-drawer.open { right: 0; }
 .drawer-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-light);
@@ -403,21 +415,19 @@ header {
 }
 .drawer-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 900;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 .drawer-close {
-  background: none;
-  border: none;
+  background: none; border: none;
   font-size: 1.6rem;
   cursor: pointer;
   color: var(--text-muted);
 }
 .drawer-close:hover { color: var(--text-dark); }
-
 .drawer-items {
   flex: 1;
   overflow-y: auto;
@@ -430,150 +440,366 @@ header {
   padding: 12px 0;
   border-bottom: 1px solid #F0F2F1;
 }
-.di-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.di-left { display: flex; align-items: center; gap: 12px; }
 .di-emoji { font-size: 1.5rem; }
-.di-name { font-weight: 600; font-size: 0.9rem; }
-.di-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-.di-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.di-name { font-weight: 600; font-size: 0.88rem; line-height: 1.3; }
+.di-meta { font-size: 0.73rem; color: var(--text-muted); margin-top: 2px; }
+.di-right { display: flex; align-items: center; gap: 10px; }
+.di-qty-control {
+  display: flex; align-items: center; gap: 6px;
+  background: #F4F6F5;
+  border-radius: 6px;
+  padding: 3px 6px;
 }
-.di-price { font-weight: 600; font-size: 0.9rem; font-family: 'DM Mono', monospace; }
-.di-qty { font-size: 0.8rem; color: var(--text-muted); }
+.di-qty-btn {
+  background: none; border: none;
+  font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; color: var(--brand-primary);
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.di-qty-num { font-size: 0.85rem; font-weight: 600; min-width: 16px; text-align: center; }
+.di-price { font-weight: 700; font-size: 0.9rem; min-width: 54px; text-align: right; }
 .di-remove {
-  background: none;
-  border: none;
-  color: #CC4040;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0 4px;
+  background: none; border: none;
+  color: #CC4040; font-size: 1.1rem;
+  cursor: pointer; padding: 0 2px;
 }
 .di-remove:hover { color: #FF4040; }
-
 .empty-cart-message {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-top: 80px;
-  line-height: 1.6;
+  text-align: center; color: var(--text-muted);
+  font-size: 0.9rem; margin-top: 80px; line-height: 1.7;
 }
-
 .drawer-footer {
-  padding: 24px;
+  padding: 20px 24px;
   border-top: 1px solid var(--border-light);
   background: #F9FAF9;
 }
 .bill-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+  display: flex; justify-content: space-between;
+  font-size: 0.84rem; color: var(--text-muted);
+  margin-bottom: 8px;
 }
 .bill-row.total {
-  font-size: 1.1rem;
-  color: var(--text-dark);
-  font-weight: 700;
-  margin-top: 14px;
-  padding-top: 14px;
+  font-size: 1.05rem; color: var(--text-dark);
+  font-weight: 700; margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
+}
+.cod-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(12,81,63,0.08);
+  border: 1px solid rgba(12,81,63,0.15);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  color: var(--brand-primary);
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 .btn-checkout {
   width: 100%;
   background: var(--brand-accent);
-  color: white;
-  border: none;
+  color: white; border: none;
   padding: 14px;
   border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1rem; font-weight: 700;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-top: 12px;
   transition: background 0.2s;
-  box-shadow: 0 4px 12px rgba(255, 94, 43, 0.2);
+  box-shadow: 0 4px 12px rgba(255,94,43,0.22);
+  font-family: 'Outfit', sans-serif;
 }
-.btn-checkout:hover {
-  background: var(--brand-accent-hover);
-}
+.btn-checkout:hover { background: var(--brand-accent-hover); }
 
 .drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.38);
   backdrop-filter: blur(2px);
-  z-index: 400;
-  display: none;
+  z-index: 400; display: none;
 }
 .drawer-overlay.active { display: block; }
 
-/* SUCCESS CHECKOUT OVERLAY */
+/* ── ORDER FORM MODAL ── */
+.order-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.order-modal-bg.open { display: flex; }
+.order-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.order-modal h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 900;
+  margin-bottom: 6px;
+  color: var(--text-dark);
+}
+.order-modal .subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s;
+  background: white;
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(12,81,63,0.1);
+}
+.form-group textarea { resize: vertical; min-height: 72px; }
+.modal-actions {
+  display: flex; gap: 10px; margin-top: 18px;
+}
+.btn-modal-cancel {
+  flex: 1; padding: 12px;
+  border: 1.5px solid var(--border-light);
+  background: white; color: var(--text-muted);
+  border-radius: 8px; font-size: 0.9rem;
+  font-weight: 600; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+}
+.btn-modal-cancel:hover { border-color: var(--text-muted); color: var(--text-dark); }
+.btn-modal-confirm {
+  flex: 2; padding: 12px;
+  background: #25D366; /* WhatsApp green */
+  color: white; border: none;
+  border-radius: 8px; font-size: 0.9rem;
+  font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  transition: background 0.2s;
+}
+.btn-modal-confirm:hover { background: #1EBE58; }
+
+/* ── SUCCESS OVERLAY ── */
 .success-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(12, 81, 63, 0.96);
+  position: fixed; inset: 0;
+  background: rgba(12,81,63,0.96);
   z-index: 1000;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
-  font-family: 'Outfit', sans-serif;
   text-align: center;
-  animation: fadeIn 0.3s ease;
+  padding: 24px;
+  animation: fadeInOv 0.3s ease;
 }
-@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeInOv { from { opacity:0; } to { opacity:1; } }
+.success-overlay.open { display: flex; }
 .success-checkmark {
   font-size: 5rem;
   margin-bottom: 20px;
-  animation: bounceCheck 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: bounceIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275);
 }
-@keyframes bounceCheck {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity:0; }
+  50%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity:1; }
+}
+.success-overlay h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+.success-overlay p {
+  font-size: 1rem;
+  opacity: 0.9;
+  max-width: 380px;
+  line-height: 1.65;
+  margin-bottom: 28px;
+}
+.btn-back-home {
+  background: white;
+  color: var(--brand-primary);
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-back-home:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 24px;
+  background: var(--brand-primary); color: white;
+  padding: 12px 22px; border-radius: 10px;
+  font-weight: 600; font-size: 0.9rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  z-index: 900;
+  animation: slideUpToast 0.3s ease, fadeOutToast 0.35s ease 2.2s forwards;
+}
+@keyframes slideUpToast {
+  from { transform: translateY(20px); opacity:0; }
+  to   { transform: translateY(0);    opacity:1; }
+}
+@keyframes fadeOutToast { to { opacity:0; } }
+
+/* ── BUTCHER MODE STRIP ── */
+.butcher-strip {
+  background: linear-gradient(90deg, #1a0a00, #3d1200, #1a0a00);
+  border-radius: 12px;
+  padding: 20px 28px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+.butcher-strip-text h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+.butcher-strip-text p {
+  font-size: 0.8rem;
+  opacity: 0.78;
+  max-width: 480px;
+  line-height: 1.5;
+}
+.butcher-strip-badge {
+  background: var(--brand-accent);
+  color: white;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+.btn-enter-butcher {
+  background: var(--brand-accent);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-enter-butcher:hover { background: var(--brand-accent-hover); }
 </style>
 </head>
 <body>
 
-<!-- SUCCESS CHECKOUT OVERLAY -->
+<!-- SUCCESS OVERLAY -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-checkmark">✅</div>
-  <h1 style="font-family:'Playfair Display',serif; font-size:2.4rem; margin-bottom:12px;">Order Confirmed!</h1>
-  <p style="font-size:1.1rem; opacity:0.9; margin-bottom:24px; max-width:400px; line-height:1.6;">
-    Your fresh custom cuts are being packed at the workshop. Our rider is on his way and will arrive in 10 minutes!
-  </p>
-  <button class="hero-action" onclick="closeSuccessOverlay()">Back to Storefront</button>
+  <h1>Order Placed!</h1>
+  <p>Your order has been sent to us on WhatsApp. Our rider will confirm and deliver to your door shortly. Pay cash on delivery.</p>
+  <button class="btn-back-home" onclick="closeSuccess()">← Back to Shop</button>
 </div>
 
+<!-- ORDER FORM MODAL -->
+<div class="order-modal-bg" id="orderModalBg">
+  <div class="order-modal">
+    <h2>📋 Confirm Your Order</h2>
+    <p class="subtitle">Fill your details — your order will be sent to us directly on WhatsApp. Pay cash when it arrives.</p>
+
+    <div class="form-group">
+      <label>Your Name *</label>
+      <input type="text" id="custName" placeholder="e.g. Ravi Kumar" required/>
+    </div>
+    <div class="form-group">
+      <label>Phone Number *</label>
+      <input type="tel" id="custPhone" placeholder="e.g. 9876543210" maxlength="10" required/>
+    </div>
+    <div class="form-group">
+      <label>Delivery Address *</label>
+      <textarea id="custAddress" placeholder="House no., Street, Landmark, Area..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Any Special Instructions? (optional)</label>
+      <input type="text" id="custNote" placeholder="e.g. Clean cut, no skin, ring the bell..."/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeOrderModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="submitOrderViaWhatsApp()">
+        📱 Send Order on WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
 <header>
   <div class="header-container">
     <a href="#" class="logo">
-      <span class="logo-icon">⚡</span>
+      <span class="logo-icon">🥬</span>
       <div>
-        <span class="logo-title">SwiftCuts</span>
-        <span class="logo-badge">10 mins</span>
+        <span class="logo-title">HiGroces</span>
+        <span class="logo-badge">Fresh & Fast</span>
       </div>
     </a>
-    
+
     <div class="delivery-badge">
-      <span>🛵 Delivery in <strong>10 mins</strong> to</span>
-      <strong>Home (HSR Sector 12)</strong>
+      🛵 Delivering to <strong id="deliveryArea">Your Location</strong>
     </div>
 
     <div class="search-bar-container">
       <span class="search-icon">🔍</span>
-      <input type="text" class="search-bar" placeholder="Search for fresh cuts, wings, rubs...">
+      <input type="text" class="search-bar" id="searchInput" placeholder="Search chicken, eggs, fish..." oninput="filterProducts(this.value)">
     </div>
 
     <button class="cart-widget" onclick="openCartDrawer()">
@@ -583,266 +809,422 @@ header {
   </div>
 </header>
 
+<!-- STOREFRONT -->
 <div class="storefront">
-  
+
   <!-- HERO BANNER -->
   <div class="hero-banner">
     <div class="hero-text">
-      <span class="hero-tag">Premium Specialty Poultry</span>
-      <h1>Interactive Custom Cuts</h1>
-      <p>Why settle for pre-packaged pieces? Choose our Whole Chicken and customize your cuts in real-time on our interactive block. We carve and deliver it exactly as you cut it — arriving at your door in 10 minutes flat.</p>
+      <span class="hero-tag">🌿 Fresh · Local · Fast</span>
+      <h1>Farm Fresh Meat, Eggs &amp; Groceries — Delivered to Your Door</h1>
+      <p>Fresh chicken, fish, eggs and daily essentials from local sources. Order now, pay cash on delivery. No minimum order.</p>
+      <div class="hero-actions">
+        <button class="hero-action" onclick="scrollToProducts()">🛒 Shop Now</button>
+        <button class="hero-action butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
+      </div>
     </div>
-    <button class="hero-action" onclick="window.location.href='custom.html'">
-      🎨 Customize Your Cut Now →
+  </div>
+
+  <!-- BUTCHER MODE STRIP -->
+  <div class="butcher-strip">
+    <div class="butcher-strip-text">
+      <span class="butcher-strip-badge">🔪 Exclusive Feature</span>
+      <h3>Butcher Mode — Customize Your Chicken &amp; Fish Cuts</h3>
+      <p>Select exactly which parts you want, choose boneless or skinless, set your weight. We cut it fresh as per your order — no one else does this.</p>
+    </div>
+    <button class="btn-enter-butcher" onclick="enterButcherMode()">
+      🔪 Enter Butcher Mode →
     </button>
   </div>
 
-  <div class="section-title">🛒 Fresh Chicken & Custom Cut Offerings</div>
-
+  <!-- CATEGORY TABS -->
+  <div class="section-title" id="productsSection">🛒 Fresh Products</div>
   <div class="category-tabs">
-    <button class="category-tab active">Fresh Cuts</button>
-    <button class="category-tab">Spices & rubs</button>
-    <button class="category-tab">Marinades</button>
+    <button class="category-tab active" onclick="filterCategory('all', this)">All Items</button>
+    <button class="category-tab" onclick="filterCategory('meat', this)">🍗 Meat</button>
+    <button class="category-tab" onclick="filterCategory('eggs', this)">🥚 Eggs</button>
+    <button class="category-tab" onclick="filterCategory('dairy', this)">🥛 Dairy</button>
+    <button class="category-tab" onclick="filterCategory('snacks', this)">🍟 Snacks</button>
+    <button class="category-tab" onclick="filterCategory('staples', this)">🛒 Staples</button>
   </div>
 
-  <div class="product-grid">
-    <!-- Whole Chicken Custom Cut -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">
-          🐔
-          <span class="card-badge custom">Interactive</span>
-        </div>
-        <div class="product-info">
-          <h3>Whole Chicken (Custom Cut Option)</h3>
-          <p class="product-desc">Carve breasts, wings, thighs, and drumsticks yourself on our virtual cutting board, and harvest offal (liver, heart) from the cavity.</p>
-          <div class="product-meta">⚖️ 1.4kg - 1.6kg</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$9.99</span>
-        <button class="btn-custom" onclick="window.location.href='custom.html'">🎨 Custom Cut (Free)</button>
-      </div>
-    </div>
-
-    <!-- Chicken Breast Pack -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">🥩</div>
-        <div class="product-info">
-          <h3>Premium Chicken Breast (Boneless)</h3>
-          <p class="product-desc">Tender, lean boneless chicken breast fillets. Perfect for grilling, roasting, or dicing for curries.</p>
-          <div class="product-meta">⚖️ 500g Pack</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$6.50</span>
-        <button class="btn-add" onclick="addStandardToCart('breast_pack', 'Premium Chicken Breast (Boneless)', 6.50, '500g', '🥩')">Add to Cart</button>
-      </div>
-    </div>
-
-    <!-- Chicken Drumsticks Pack -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">🍗</div>
-        <div class="product-info">
-          <h3>Fresh Chicken Drumsticks</h3>
-          <p class="product-desc">Meaty skin-on chicken drumsticks. Excellent for baking, frying, or slow cooking in marinades.</p>
-          <div class="product-meta">⚖️ 4pc (500g)</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$5.20</span>
-        <button class="btn-add" onclick="addStandardToCart('drum_pack', 'Fresh Chicken Drumsticks (4pc)', 5.20, '500g', '🍗')">Add to Cart</button>
-      </div>
-    </div>
-
-    <!-- Chicken Wings Pack -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">🍗</div>
-        <div class="product-info">
-          <h3>Crispy Chicken Wings (Skin-On)</h3>
-          <p class="product-desc">Plump chicken wings containing flats and drumettes. Perfect for hot wing recipes and barbecue.</p>
-          <div class="product-meta">⚖️ 500g Pack</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$4.50</span>
-        <button class="btn-add" onclick="addStandardToCart('wings_pack', 'Chicken Wings (Skin-On)', 4.50, '500g', '🍗')">Add to Cart</button>
-      </div>
-    </div>
-
-    <!-- BBQ Spice Rub -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">🌶️</div>
-        <div class="product-info">
-          <h3>Artisanal BBQ Spice Rub</h3>
-          <p class="product-desc">Our master butcher's blend of smoked paprika, garlic, brown sugar, and secret spices.</p>
-          <div class="product-meta">⚖️ 80g Shaker</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$1.99</span>
-        <button class="btn-add" onclick="addStandardToCart('bbq_rub', 'Artisanal BBQ Spice Rub', 1.99, '80g', '🌶️')">Add to Cart</button>
-      </div>
-    </div>
-
-    <!-- Tikka Marinade -->
-    <div class="product-card">
-      <div>
-        <div class="product-image">🍯</div>
-        <div class="product-info">
-          <h3>Spicy Tikka Glaze / Marinade</h3>
-          <p class="product-desc">Rich yogurt-based marinade infused with ginger, garlic, garam masala, and red chili.</p>
-          <div class="product-meta">⚖️ 150ml Packet</div>
-        </div>
-      </div>
-      <div class="product-price-row">
-        <span class="product-price">$2.50</span>
-        <button class="btn-add" onclick="addStandardToCart('tikka_glaze', 'Spicy Tikka Glaze (150ml)', 2.50, '150ml', '🍯')">Add to Cart</button>
-      </div>
-    </div>
-
+  <!-- PRODUCT GRID -->
+  <div class="product-grid" id="productGrid">
+    <!-- Populated by JS -->
   </div>
+
 </div>
 
+<!-- DRAWER OVERLAY -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeCartDrawer()"></div>
+
+<!-- CART DRAWER -->
 <div class="cart-drawer" id="cartDrawer">
   <div class="drawer-header">
     <span class="drawer-title">🛒 Your Basket</span>
     <button class="drawer-close" onclick="closeCartDrawer()">×</button>
   </div>
-  
   <div class="drawer-items" id="cartDrawerItems">
-    <!-- Rendered dynamically -->
+    <!-- Populated by JS -->
   </div>
-  
   <div class="drawer-footer">
     <div class="bill-row">
       <span>Subtotal</span>
-      <span id="billSubtotal">$0.00</span>
+      <span id="billSubtotal">₹0</span>
     </div>
     <div class="bill-row">
-      <span>Delivery Fee (10 min express)</span>
-      <span id="billDelivery">$1.50</span>
-    </div>
-    <div class="bill-row">
-      <span>Handling & Packaging</span>
-      <span id="billPackaging">$0.50</span>
+      <span>Delivery Charge</span>
+      <span id="billDelivery">₹0</span>
     </div>
     <div class="bill-row total">
       <span>Grand Total</span>
-      <span id="billTotal">$0.00</span>
+      <span id="billTotal">₹0</span>
     </div>
-    <button class="btn-checkout" onclick="checkoutCart()">
-      🚀 Place Express Order (10 min)
+    <div class="cod-badge">💵 Cash on Delivery only (for now)</div>
+    <button class="btn-checkout" onclick="openOrderModal()">
+      🚀 Place Order
     </button>
   </div>
 </div>
 
 <script>
-const mainCart = [];
+// ═══════════════════════════════════════════════
+// CONFIG — Change this to your WhatsApp number
+// ═══════════════════════════════════════════════
+const WHATSAPP_NUMBER = '919999999999'; // ← Replace with your number (91 + 10 digits)
+const DELIVERY_FEE = 20; // ₹20 flat delivery
 
-function addStandardToCart(id, name, price, weight, emoji) {
-  const existing = mainCart.find(i => i.id === id);
+// ═══════════════════════════════════════════════
+// PRODUCT CATALOGUE
+// ═══════════════════════════════════════════════
+const PRODUCTS = [
+  // ── MEAT ──
+  {
+    id: 'whole_chicken',
+    name: 'Whole Chicken (Butchered)',
+    desc: 'Fresh locally sourced whole chicken, cleaned and cut to order. Or enter Butcher Mode for custom cuts.',
+    price: 280,
+    unit: '~1kg',
+    emoji: '🐔',
+    category: 'meat',
+    badge: 'Fresh Today',
+    badgeClass: 'fresh',
+    isButcher: true
+  },
+  {
+    id: 'chicken_500',
+    name: 'Chicken (500g Pack)',
+    desc: 'Fresh cut chicken pieces — curry cut, ready to cook.',
+    price: 145,
+    unit: '500g',
+    emoji: '🍗',
+    category: 'meat',
+    badge: 'Fresh',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'chicken_1kg',
+    name: 'Chicken (1kg Pack)',
+    desc: 'Curry cut chicken pieces, freshly butchered. No preservatives.',
+    price: 285,
+    unit: '1kg',
+    emoji: '🍗',
+    category: 'meat',
+    badge: 'Best Value',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'fish_fresh',
+    name: 'Fresh Fish (Whole)',
+    desc: 'Locally caught fresh fish. Can be custom cut in Butcher Mode.',
+    price: 220,
+    unit: '~500g',
+    emoji: '🐟',
+    category: 'meat',
+    badge: 'Fresh',
+    badgeClass: 'fresh',
+    isButcher: true
+  },
+
+  // ── EGGS ──
+  {
+    id: 'eggs_6',
+    name: 'Farm Eggs (6 pcs)',
+    desc: 'Fresh desi eggs from local farms. Collected daily.',
+    price: 48,
+    unit: '6 pcs',
+    emoji: '🥚',
+    category: 'eggs',
+    badge: 'Farm Fresh',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'eggs_tray',
+    name: 'Egg Tray (30 pcs)',
+    desc: 'Full tray of fresh farm eggs. Best for weekly stock.',
+    price: 225,
+    mrp: 250,
+    unit: '30 pcs',
+    emoji: '🥚',
+    category: 'eggs',
+    badge: 'Best Deal',
+    badgeClass: 'deal'
+  },
+
+  // ── DAIRY ──
+  {
+    id: 'amul_butter',
+    name: 'Amul Butter (100g)',
+    desc: 'Salted butter, refrigerated and fresh. Perfect for rotis and toast.',
+    price: 57,
+    unit: '100g',
+    emoji: '🧈',
+    category: 'dairy'
+  },
+  {
+    id: 'curd_500',
+    name: 'Fresh Curd (500g)',
+    desc: 'Thick and creamy fresh set curd. Great with meals.',
+    price: 40,
+    unit: '500g',
+    emoji: '🥛',
+    category: 'dairy'
+  },
+
+  // ── SNACKS ──
+  {
+    id: 'lays',
+    name: "Lay's Chips (Classic)",
+    desc: 'Crispy salted potato chips. Family favourite.',
+    price: 20,
+    unit: '26g',
+    emoji: '🍟',
+    category: 'snacks'
+  },
+  {
+    id: 'parle_g',
+    name: 'Parle-G Biscuits',
+    desc: 'India\'s favourite glucose biscuits. Great with chai.',
+    price: 30,
+    unit: 'Big Pack',
+    emoji: '🍪',
+    category: 'snacks'
+  },
+  {
+    id: 'pepsi',
+    name: 'Pepsi (500ml)',
+    desc: 'Chilled cola drink. Perfect with a meal.',
+    price: 35,
+    unit: '500ml',
+    emoji: '🥤',
+    category: 'snacks'
+  },
+  {
+    id: 'maggi',
+    name: 'Maggi Noodles (Pack of 4)',
+    desc: '2-minute instant noodles. Classic masala flavour.',
+    price: 60,
+    unit: '4 × 70g',
+    emoji: '🍜',
+    category: 'snacks'
+  },
+
+  // ── STAPLES ──
+  {
+    id: 'bread',
+    name: 'Bread Loaf (400g)',
+    desc: 'Soft white sandwich bread, fresh and sliced.',
+    price: 42,
+    unit: '400g',
+    emoji: '🍞',
+    category: 'staples'
+  },
+  {
+    id: 'sunflower_oil',
+    name: 'Sunflower Oil (1L)',
+    desc: 'Refined sunflower oil for daily cooking. Light and healthy.',
+    price: 135,
+    unit: '1 Litre',
+    emoji: '🫙',
+    category: 'staples'
+  },
+];
+
+// ═══════════════════════════════════════════════
+// CART STATE
+// ═══════════════════════════════════════════════
+const cart = [];
+
+function getCartItem(id) { return cart.find(i => i.id === id); }
+
+function addToCart(id) {
+  const product = PRODUCTS.find(p => p.id === id);
+  if (!product) return;
+  const existing = getCartItem(id);
   if (existing) {
     existing.qty++;
   } else {
-    mainCart.push({
-      id: id,
-      name: name,
-      price: price,
-      weight: weight,
-      emoji: emoji,
-      qty: 1,
-      isCustom: false
-    });
+    cart.push({ ...product, qty: 1 });
   }
-  updateCartWidget();
-  showCartToast(name);
+  updateCartBadge();
+  renderProductGrid(currentCategory);
+  showToast(`🛒 ${product.name} added!`);
 }
 
-function updateCartWidget() {
-  const totalQty = mainCart.reduce((sum, item) => sum + item.qty, 0);
-  document.getElementById('cartCount').textContent = totalQty;
+function removeFromCart(id) {
+  const idx = cart.findIndex(i => i.id === id);
+  if (idx > -1) {
+    if (cart[idx].qty > 1) {
+      cart[idx].qty--;
+    } else {
+      cart.splice(idx, 1);
+    }
+  }
+  updateCartBadge();
+  renderCartItems();
+  renderProductGrid(currentCategory);
 }
 
-function showCartToast(name) {
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed; bottom: 20px; left: 20px;
-    background: var(--brand-primary); color: white;
-    padding: 12px 24px; border-radius: 8px; font-weight: 600;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 900;
-    animation: slideUp 0.3s ease, fadeOut 0.3s ease 2.2s forwards;
-  `;
-  toast.innerHTML = `🛒 Added ${name} to cart!`;
-  
-  if (!document.getElementById('toast-style')) {
-    const s = document.createElement('style');
-    s.id = 'toast-style';
-    s.innerHTML = `
-      @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
-      @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+function updateCartBadge() {
+  const total = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = total;
+}
+
+function calcSubtotal() {
+  return cart.reduce((s, i) => s + i.price * i.qty, 0);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER PRODUCTS
+// ═══════════════════════════════════════════════
+let currentCategory = 'all';
+let currentSearch   = '';
+
+function renderProductGrid(category = 'all', search = '') {
+  currentCategory = category;
+  currentSearch   = search;
+  const grid = document.getElementById('productGrid');
+  let list = PRODUCTS;
+  if (category !== 'all') list = list.filter(p => p.category === category);
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.desc.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+  }
+  if (list.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:60px 0; font-size:0.95rem;">No products found 😔</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p => {
+    const cartItem = getCartItem(p.id);
+    const qty = cartItem ? cartItem.qty : 0;
+    const mrpHTML = p.mrp ? `<span class="mrp">₹${p.mrp}</span>` : '';
+    const badgeHTML = p.badge ? `<span class="card-badge ${p.badgeClass||''}">${p.badge}</span>` : '';
+    const addBtn = p.isButcher
+      ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
+           <button class="btn-butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
+           ${qty > 0
+             ? `<div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
+                  <button class="di-qty-btn" onclick="removeFromCart('${p.id}')">−</button>
+                  <span class="di-qty-num">${qty}</span>
+                  <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
+                </div>`
+             : `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`
+           }
+         </div>`
+      : qty > 0
+        ? `<div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
+             <button class="di-qty-btn" onclick="removeFromCart('${p.id}');renderCartItems()">−</button>
+             <span class="di-qty-num">${qty}</span>
+             <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
+           </div>`
+        : `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`;
+    return `
+      <div class="product-card" data-category="${p.category}">
+        <div>
+          <div class="product-image">${p.emoji}${badgeHTML}</div>
+          <div class="product-info">
+            <h3>${p.name}</h3>
+            <p class="product-desc">${p.desc}</p>
+            <div class="product-meta">⚖️ ${p.unit}</div>
+          </div>
+        </div>
+        <div class="product-price-row">
+          <span class="product-price">₹${p.price}${mrpHTML}</span>
+          ${addBtn}
+        </div>
+      </div>
     `;
-    document.head.appendChild(s);
-  }
-
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2600);
+  }).join('');
 }
 
+function filterCategory(cat, btn) {
+  document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProductGrid(cat, currentSearch);
+}
+
+function filterProducts(q) {
+  renderProductGrid(currentCategory, q);
+}
+
+function scrollToProducts() {
+  document.getElementById('productsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════
+// CART DRAWER
+// ═══════════════════════════════════════════════
 function renderCartItems() {
   const container = document.getElementById('cartDrawerItems');
-  if (mainCart.length === 0) {
+  if (cart.length === 0) {
     container.innerHTML = `
       <div class="empty-cart-message">
         <div style="font-size:2.5rem; margin-bottom:10px;">🧺</div>
-        Your basket is empty.<br>Browse products or try out <strong>Custom Cut</strong> to start adding items!
-      </div>
-    `;
-    updateBillTotal(0);
+        Your basket is empty.<br>Add fresh items or try <strong>Butcher Mode</strong> for custom cuts!
+      </div>`;
+    updateBill(0);
     return;
   }
-
-  container.innerHTML = mainCart.map((item, idx) => `
+  container.innerHTML = cart.map((item, idx) => `
     <div class="drawer-item">
       <div class="di-left">
         <span class="di-emoji">${item.emoji}</span>
         <div>
           <div class="di-name">${item.name}</div>
-          <div class="di-meta">${item.weight} ${item.isCustom ? '• Custom Cut' : ''}</div>
+          <div class="di-meta">${item.unit}${item.isCustom ? ' • Custom Cut' : ''}</div>
         </div>
       </div>
       <div class="di-right">
-        <div class="di-qty">${item.qty > 1 ? 'Qty ' + item.qty : ''}</div>
-        <div class="di-price">$${(item.price * item.qty).toFixed(2)}</div>
-        <button class="di-remove" onclick="removeCartItem(${idx})">×</button>
+        <div class="di-qty-control">
+          <button class="di-qty-btn" onclick="removeFromCart('${item.id}');renderCartItems()">−</button>
+          <span class="di-qty-num">${item.qty}</span>
+          <button class="di-qty-btn" onclick="addToCart('${item.id}');renderCartItems()">+</button>
+        </div>
+        <div class="di-price">₹${item.price * item.qty}</div>
+        <button class="di-remove" onclick="removeAllOfItem('${item.id}')">×</button>
       </div>
     </div>
   `).join('');
-
-  const subtotal = mainCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  updateBillTotal(subtotal);
+  updateBill(calcSubtotal());
 }
 
-function removeCartItem(idx) {
-  mainCart.splice(idx, 1);
-  updateCartWidget();
+function removeAllOfItem(id) {
+  const idx = cart.findIndex(i => i.id === id);
+  if (idx > -1) cart.splice(idx, 1);
+  updateCartBadge();
   renderCartItems();
+  renderProductGrid(currentCategory, currentSearch);
 }
 
-function updateBillTotal(subtotal) {
-  const delivery = subtotal > 0 ? 1.50 : 0.00;
-  const packaging = subtotal > 0 ? 0.50 : 0.00;
-  const total = subtotal + delivery + packaging;
-
-  document.getElementById('billSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-  document.getElementById('billDelivery').textContent = `$${delivery.toFixed(2)}`;
-  document.getElementById('billPackaging').textContent = `$${packaging.toFixed(2)}`;
-  document.getElementById('billTotal').textContent = `$${total.toFixed(2)}`;
+function updateBill(subtotal) {
+  const delivery = subtotal > 0 ? DELIVERY_FEE : 0;
+  document.getElementById('billSubtotal').textContent = `₹${subtotal}`;
+  document.getElementById('billDelivery').textContent = `₹${delivery}`;
+  document.getElementById('billTotal').textContent    = `₹${subtotal + delivery}`;
 }
 
 function openCartDrawer() {
@@ -856,58 +1238,130 @@ function closeCartDrawer() {
   document.getElementById('drawerOverlay').classList.remove('active');
 }
 
-function checkoutCart() {
-  if (mainCart.length === 0) {
-    alert("Your cart is empty!");
+// ═══════════════════════════════════════════════
+// ORDER MODAL + WHATSAPP
+// ═══════════════════════════════════════════════
+function openOrderModal() {
+  if (cart.length === 0) {
+    alert('Your cart is empty! Add some items first.');
     return;
   }
   closeCartDrawer();
-  document.getElementById('successOverlay').style.display = 'flex';
-  mainCart.length = 0;
-  updateCartWidget();
+  document.getElementById('orderModalBg').classList.add('open');
 }
 
-function closeSuccessOverlay() {
-  document.getElementById('successOverlay').style.display = 'none';
+function closeOrderModal() {
+  document.getElementById('orderModalBg').classList.remove('open');
 }
 
-// On page load, check if there are custom cuts from custom.html
-window.addEventListener('DOMContentLoaded', () => {
-  let customCutsStr = null;
-  try {
-    customCutsStr = localStorage.getItem('custom_chicken_cuts');
-  } catch (e) {
-    console.error("Failed to access localStorage", e);
+function submitOrderViaWhatsApp() {
+  const name    = document.getElementById('custName').value.trim();
+  const phone   = document.getElementById('custPhone').value.trim();
+  const address = document.getElementById('custAddress').value.trim();
+  const note    = document.getElementById('custNote').value.trim();
+
+  if (!name || !phone || !address) {
+    alert('Please fill Name, Phone and Address to continue.');
+    return;
   }
-  if (customCutsStr) {
-    try {
-      const customCuts = JSON.parse(customCutsStr);
-      if (Array.isArray(customCuts) && customCuts.length > 0) {
-        customCuts.forEach(cut => {
-          const sizeSuffix = cut.size && cut.size !== 'Medium' ? ` (${cut.size})` : '';
-          mainCart.push({
-            id: cut.id,
-            name: "Custom: " + cut.name + sizeSuffix,
-            price: cut.price,
-            weight: cut.weight + "g",
-            emoji: cut.emoji,
-            qty: cut.qty || 1,
+  if (phone.length !== 10) {
+    alert('Please enter a valid 10-digit phone number.');
+    return;
+  }
+
+  const subtotal = calcSubtotal();
+  const delivery = DELIVERY_FEE;
+  const total    = subtotal + delivery;
+
+  const itemLines = cart.map(i =>
+    `• ${i.name} × ${i.qty} — ₹${i.price * i.qty}`
+  ).join('\n');
+
+  const msg = [
+    `🛒 *NEW ORDER — HiGroces*`,
+    ``,
+    `👤 *Name:* ${name}`,
+    `📱 *Phone:* ${phone}`,
+    `📍 *Address:* ${address}`,
+    note ? `📝 *Note:* ${note}` : null,
+    `💳 *Payment:* Cash on Delivery`,
+    ``,
+    `📦 *Order Items:*`,
+    itemLines,
+    ``,
+    `💰 Subtotal: ₹${subtotal}`,
+    `🛵 Delivery: ₹${delivery}`,
+    `✅ *Total to Collect: ₹${total}*`,
+  ].filter(Boolean).join('\n');
+
+  const waURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(waURL, '_blank');
+
+  // Clear cart and show success
+  cart.length = 0;
+  updateCartBadge();
+  closeOrderModal();
+  document.getElementById('orderModalBg').classList.remove('open');
+  document.getElementById('successOverlay').classList.add('open');
+}
+
+function closeSuccess() {
+  document.getElementById('successOverlay').classList.remove('open');
+  renderProductGrid(currentCategory, currentSearch);
+}
+
+// ═══════════════════════════════════════════════
+// BUTCHER MODE
+// ═══════════════════════════════════════════════
+function enterButcherMode() {
+  window.location.href = 'custom.html';
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  renderProductGrid('all');
+
+  // Pick up custom cuts from Butcher Mode (custom.html)
+  try {
+    const raw = localStorage.getItem('custom_chicken_cuts');
+    if (raw) {
+      const cuts = JSON.parse(raw);
+      if (Array.isArray(cuts) && cuts.length > 0) {
+        cuts.forEach(cut => {
+          cart.push({
+            id:       cut.id,
+            name:     'Custom: ' + cut.name + (cut.size && cut.size !== 'Medium' ? ` (${cut.size})` : ''),
+            price:    Math.round(cut.price * 80), // convert to ₹ roughly
+            unit:     cut.weight + 'g',
+            emoji:    cut.emoji || '🥩',
+            category: 'meat',
+            qty:      cut.qty || 1,
             isCustom: true
           });
         });
-        updateCartWidget();
+        updateCartBadge();
         openCartDrawer();
       }
-    } catch (e) {
-      console.error("Failed to parse custom cuts", e);
-    }
-    try {
       localStorage.removeItem('custom_chicken_cuts');
-    } catch (e) {
-      console.error("Failed to remove item from localStorage", e);
     }
+  } catch (e) {
+    console.error('Failed to load custom cuts:', e);
   }
 });
 </script>
+
 </body>
 </html>
