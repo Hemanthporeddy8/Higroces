@@ -1,42 +1,18 @@
 import { 
-  viewMode, setViewModeState, setToolState, isAnimating,
+  setViewModeState, setToolState,
   sessionCuts, actionHistory, legStates, severedParts,
   currentAnimal, setCurrentAnimalState
 } from './state.js';
 import { setPartScaleWeight, onCustomWeightInput, harvestSelectedPart, undoLastCut, toggleMeatOption } from './scale.js';
 import { setupSVGInteractions } from './svgInteractions.js';
-import { init3D, onWindowResize, animate3D, renderer3 } from './threeEngine.js';
 import { initOffalBox, renderQuickSelectSidebar, inspectPart } from './ui.js';
 
-// Bind to window for global inline HTML onclick support
+// Always 2D — 3D removed
 window.setViewMode = function(mode) {
-  setViewModeState(mode);
-  document.getElementById('btn2D').classList.toggle('active', mode === '2d');
-  document.getElementById('btn3D').classList.toggle('active', mode === '3d');
-
+  // Only 2D supported now — just ensure the right diagram is visible
+  setViewModeState('2d');
   const diagSvg = document.getElementById('diag-' + currentAnimal);
-  const container3D = document.getElementById('canvas3d-container');
-
-  if (mode === '2d') {
-    if (diagSvg) diagSvg.style.display = 'block';
-    container3D.style.display = 'none';
-  } else {
-    // Hide all diagram containers
-    document.querySelectorAll('.meat-diagram').forEach(d => d.style.display = 'none');
-    container3D.style.display = 'block';
-    // Force layout reflow so clientWidth/Height are available
-    container3D.getBoundingClientRect();
-    setTimeout(() => {
-      if (typeof init3D === 'function') {
-        if (!renderer3) {
-          init3D();
-        } else {
-          onWindowResize();
-          animate3D();
-        }
-      }
-    }, 200); // increased from 50ms to 200ms for reliable layout
-  }
+  if (diagSvg) diagSvg.style.display = 'block';
 };
 
 window.setTool = function(tool) {
@@ -63,10 +39,10 @@ window.setAnimal = function(animal) {
   if (btnChicken) btnChicken.classList.toggle('active', animal === 'chicken');
   if (btnFish)    btnFish.classList.toggle('active',    animal === 'fish');
 
-  // Show the right diagram, hide the other; also handle 3D toggle visibility
+  // Show the right diagram, hide all others
   document.querySelectorAll('.meat-diagram').forEach(d => { d.style.display = 'none'; });
   const activeDiag = document.getElementById('diag-' + animal);
-  if (activeDiag && viewMode === '2d') activeDiag.style.display = 'block';
+  if (activeDiag) activeDiag.style.display = 'block';
 
   // Reset left-panel state
   const weightDisplay = document.getElementById('weightDisplay');
@@ -121,7 +97,11 @@ window.goBackToStorefront = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  window.setViewMode('2d');
+  // Show chicken by default
+  document.querySelectorAll('.meat-diagram').forEach(d => { d.style.display = 'none'; });
+  const chickenDiag = document.getElementById('diag-chicken');
+  if (chickenDiag) chickenDiag.style.display = 'block';
+  
   initOffalBox();
   setupSVGInteractions();
   renderQuickSelectSidebar();

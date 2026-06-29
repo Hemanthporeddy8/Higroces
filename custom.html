@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SwiftCuts — Interactive Custom Cuts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Custom canvas-based 3D renderer loaded in the bundle -->
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -660,21 +659,11 @@ body {
     <div class="ws-toolbar">
       <!-- Animal type selector tabs -->
       <div class="toggle-group" style="margin-right:8px;">
-        <button class="ws-tool-btn active" id="diagAnimalChicken" onclick="setAnimal('chicken')" style="font-size:0.7rem;">
+        <button class="ws-tool-btn active" id="diagAnimalChicken" onclick="setAnimal('chicken')" style="font-size:0.72rem;">
           🐔 Chicken
         </button>
-        <button class="ws-tool-btn" id="diagAnimalFish" onclick="setAnimal('fish')" style="font-size:0.7rem;">
+        <button class="ws-tool-btn" id="diagAnimalFish" onclick="setAnimal('fish')" style="font-size:0.72rem;">
           🐟 Fish
-        </button>
-      </div>
-
-      <!-- View mode toggle -->
-      <div class="toggle-group" style="margin-right: 12px;">
-        <button class="ws-tool-btn active" id="btn2D" onclick="setViewMode('2d')">
-          2D Illustration
-        </button>
-        <button class="ws-tool-btn" id="btn3D" onclick="setViewMode('3d')">
-          3D Model
         </button>
       </div>
 
@@ -1511,285 +1500,271 @@ body {
     <!-- 2D SVG Diagram (Fish) -->
         <div class="meat-diagram" id="diag-fish" style="display:none">
       <div class="diagram-label" style="display:none"></div>
-      <div style="width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#D8EEF4;overflow:hidden;padding-top:65px;box-sizing:border-box">
-        <svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg"
-             style="width:auto;height:calc(100vh - 130px);max-height:580px;min-height:280px;display:block;">
+      <div style="width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#CBE8F0;overflow:hidden;padding-top:65px;box-sizing:border-box">
+        <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg"
+             style="width:auto;height:calc(100vh - 115px);max-height:600px;min-height:280px;display:block;">
           <defs>
-            <!-- Fish body gradient (silver iridescence) -->
-            <linearGradient id="gFishBodyMain" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stop-color="#E8F4F8"/>
-              <stop offset="30%"  stop-color="#C4DCE8"/>
-              <stop offset="60%"  stop-color="#A8C8DA"/>
-              <stop offset="100%" stop-color="#88A8BC"/>
+            <!-- Gradients -->
+            <linearGradient id="fgTop" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#F0F8FF"/>
+              <stop offset="40%"  stop-color="#C8DCE8"/>
+              <stop offset="100%" stop-color="#90A8B8"/>
             </linearGradient>
-            <linearGradient id="gFishBodyShine" x1="10%" y1="0%" x2="90%" y2="0%">
-              <stop offset="0%"   stop-color="#7890A0" stop-opacity="0.6"/>
-              <stop offset="20%"  stop-color="#F0F8FF" stop-opacity="0.9"/>
-              <stop offset="50%"  stop-color="#E0F0F8" stop-opacity="0.95"/>
-              <stop offset="80%"  stop-color="#F0F8FF" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="#7890A0" stop-opacity="0.6"/>
+            <linearGradient id="fgShine" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#607890" stop-opacity="0.7"/>
+              <stop offset="18%"  stop-color="#E8F4FF" stop-opacity="1"/>
+              <stop offset="50%"  stop-color="#F4FAFF" stop-opacity="1"/>
+              <stop offset="82%"  stop-color="#E8F4FF" stop-opacity="1"/>
+              <stop offset="100%" stop-color="#607890" stop-opacity="0.7"/>
             </linearGradient>
-            <radialGradient id="gFishHead" cx="30%" cy="40%" r="70%">
-              <stop offset="0%"   stop-color="#AABCC8"/>
-              <stop offset="60%"  stop-color="#8098A8"/>
-              <stop offset="100%" stop-color="#5A7888"/>
+            <radialGradient id="fgHead" cx="28%" cy="38%" r="68%">
+              <stop offset="0%"   stop-color="#A8C0CC"/>
+              <stop offset="55%"  stop-color="#7898A8"/>
+              <stop offset="100%" stop-color="#486878"/>
             </radialGradient>
-            <radialGradient id="gFishMidGrad" cx="50%" cy="30%" r="65%">
-              <stop offset="0%"   stop-color="#F8FDFF"/>
-              <stop offset="40%"  stop-color="#CCDCE8"/>
-              <stop offset="100%" stop-color="#8AACBC"/>
+            <radialGradient id="fgMid" cx="50%" cy="30%" r="65%">
+              <stop offset="0%"   stop-color="#FAFDFF"/>
+              <stop offset="35%"  stop-color="#D0E4EE"/>
+              <stop offset="100%" stop-color="#88AABB"/>
             </radialGradient>
-            <!-- Drop shadow -->
-            <filter id="fFishShadow" x="-8%" y="-10%" width="120%" height="130%">
-              <feDropShadow dx="4" dy="8" stdDeviation="10" flood-color="#1A3848" flood-opacity="0.3"/>
+            <radialGradient id="fgBack" cx="60%" cy="35%" r="65%">
+              <stop offset="0%"   stop-color="#D8EEF8"/>
+              <stop offset="60%"  stop-color="#A0BCCA"/>
+              <stop offset="100%" stop-color="#70909E"/>
+            </radialGradient>
+            <!-- Drop shadow for depth -->
+            <filter id="fFishDrop" x="-6%" y="-12%" width="118%" height="135%">
+              <feDropShadow dx="3" dy="10" stdDeviation="10" flood-color="#1A3040" flood-opacity="0.28"/>
             </filter>
-            <!-- Scale texture -->
-            <filter id="fScaleTexture">
-              <feTurbulence type="fractalNoise" baseFrequency="0.08 0.12" numOctaves="3" seed="5" result="n"/>
+            <!-- Scale texture overlay -->
+            <filter id="fScale">
+              <feTurbulence type="fractalNoise" baseFrequency="0.09 0.13" numOctaves="3" seed="8" result="n"/>
               <feColorMatrix type="matrix" in="n"
-                values="0 0 0 0 0.3  0 0 0 0 0.5  0 0 0 0 0.7  0 0 0 0.12 0" result="c"/>
+                values="0 0 0 0 0.2  0 0 0 0 0.4  0 0 0 0 0.6  0 0 0 0.11 0" result="c"/>
               <feComposite in="c" in2="SourceGraphic" operator="in" result="t"/>
               <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge>
             </filter>
 
-            <!-- Clip paths for fish sections -->
-            <clipPath id="clipHead">
-              <rect x="0"   y="0" width="190" height="420"/>
-            </clipPath>
-            <clipPath id="clipFront">
-              <rect x="190" y="0" width="130" height="420"/>
-            </clipPath>
-            <clipPath id="clipMid">
-              <rect x="320" y="0" width="140" height="420"/>
-            </clipPath>
-            <clipPath id="clipBack">
-              <rect x="460" y="0" width="110" height="420"/>
-            </clipPath>
-            <clipPath id="clipTail">
-              <rect x="570" y="0" width="130" height="420"/>
-            </clipPath>
+            <!-- CLIP PATHS — vertical slices of the fish body -->
+            <clipPath id="cpHead">  <rect x="0"   y="0" width="185" height="360"/></clipPath>
+            <clipPath id="cpFront"> <rect x="185" y="0" width="125" height="360"/></clipPath>
+            <clipPath id="cpMid">   <rect x="310" y="0" width="140" height="360"/></clipPath>
+            <clipPath id="cpBack">  <rect x="450" y="0" width="115" height="360"/></clipPath>
+            <clipPath id="cpTail">  <rect x="565" y="0" width="135" height="360"/></clipPath>
           </defs>
 
-          <!-- Background water effect -->
-          <rect width="700" height="420" fill="#D0E8F0"/>
-          <ellipse cx="350" cy="225" rx="310" ry="145" fill="none" stroke="#B0D4E0" stroke-width="1.5" opacity="0.5"/>
-          <ellipse cx="350" cy="225" rx="270" ry="125" fill="none" stroke="#B0D4E0" stroke-width="1" opacity="0.35"/>
-          <ellipse cx="350" cy="225" rx="220" ry="100" fill="none" stroke="#B0D4E0" stroke-width="0.8" opacity="0.25"/>
+          <!-- ── Background water ── -->
+          <rect width="700" height="360" fill="#C0E0EC"/>
+          <!-- Subtle ripple ellipses -->
+          <ellipse cx="350" cy="188" rx="300" ry="138" fill="none" stroke="#A8D4E0" stroke-width="1.5" opacity="0.45"/>
+          <ellipse cx="350" cy="188" rx="255" ry="115" fill="none" stroke="#A8D4E0" stroke-width="1" opacity="0.3"/>
 
-          <!-- ========= COMPLETE FISH BODY PATH (the outline used by all sections) ========= -->
-          <!-- Defined once; clipped per section for coloring -->
-          <!-- Tail prongs -->
-          <g filter="url(#fFishShadow)">
+          <!-- ════════════════════════════════════════════
+               THE FISH BODY — one big closed outline path
+               Nose at x=96, tail join at x=568
+               Top arc peaks at y≈128; bottom arc dips to y≈262
+               Total height at thickest ≈ 134 px
+               ════════════════════════════════════════════ -->
 
-            <!-- TAIL section -->
+          <!-- The complete fish outline (used for the full-body silhouette / shadow) -->
+          <g filter="url(#fFishDrop)">
+
+            <!-- ── TAIL section ── -->
             <g class="cut-part" id="el-fish-tail" data-part="fish_tail" data-meat="fish"
                data-weight="60" data-price="0.80" data-emoji="🐟"
-               clip-path="url(#clipTail)" style="cursor:pointer">
-              <path class="part-fill part-outline"
-                d="M110 220
-                   C200 215 310 215 430 220 C500 222 550 226 570 228
-                   L592 165 C598 145 605 118 612 100 C620 80 625 70 615 68
-                   C605 66 596 80 585 100 C574 120 566 148 558 168
-                   L570 228 L570 222
-                   C566 202 558 178 556 158 C550 132 545 114 535 110
-                   C520 104 510 118 504 136 C498 155 498 178 500 200
-                   L570 222 L570 228 L571 232 L570 238
-                   L500 260 C498 282 498 305 504 324 C510 342 520 356 535 350
-                   C545 346 550 328 556 302 C558 282 566 258 570 238
-                   L570 232
-                   C566 252 558 278 585 260 C596 270 605 280 615 282
-                   C625 280 620 270 612 250 C605 232 598 215 592 195
-                   L570 232 Z"
-                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="2" opacity="0"/>
-
-              <!-- Actual tail fork shapes -->
+               clip-path="url(#cpTail)" style="cursor:pointer">
               <!-- Top prong -->
               <path class="part-fill part-outline"
-                d="M570 210 C572 195 575 175 580 160 C586 140 595 118 610 98
-                   C618 87 622 72 612 70 C602 68 594 84 586 104 C577 124 572 152 570 175
-                   C568 188 567 200 568 210 Z"
-                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="1.8"/>
-
+                d="M565 178
+                   C572 162 578 144 586 126 C596 104 610 84 624 74
+                   C632 68 638 68 636 78 C632 90 620 110 610 132
+                   C600 154 578 170 568 186 Z"
+                fill="url(#fgTop)" stroke="#3A6070" stroke-width="2"/>
               <!-- Bottom prong -->
               <path class="part-fill part-outline"
-                d="M570 240 C568 256 568 270 570 285 C572 302 577 328 586 348
-                   C594 368 602 382 612 380 C622 378 618 363 610 352
-                   C596 332 587 308 580 288 C575 274 572 254 570 240 Z"
-                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="1.8"/>
-
-              <!-- Tail body connection -->
+                d="M565 202
+                   C578 218 600 234 610 256 C620 278 632 298 636 310
+                   C638 320 632 320 624 314 C610 304 596 284 586 262
+                   C578 244 572 226 568 202 Z"
+                fill="url(#fgTop)" stroke="#3A6070" stroke-width="2"/>
+              <!-- Tail body connector rectangle -->
               <path class="part-fill part-outline"
-                d="M540 205 C552 205 562 208 570 210
-                   L570 240 C562 242 552 245 540 245
-                   C528 245 520 242 514 238 C508 234 506 228 508 222
-                   C510 216 518 210 528 207 Z"
-                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="1.8"/>
-
-              <!-- Fin rays in tail -->
-              <line x1="570" y1="215" x2="610" y2="98"  stroke="#3A6078" stroke-width="1" opacity="0.3" pointer-events="none"/>
-              <line x1="570" y1="218" x2="600" y2="112" stroke="#3A6078" stroke-width="0.8" opacity="0.25" pointer-events="none"/>
-              <line x1="570" y1="235" x2="610" y2="352" stroke="#3A6078" stroke-width="1" opacity="0.3" pointer-events="none"/>
-              <line x1="570" y1="232" x2="600" y2="338" stroke="#3A6078" stroke-width="0.8" opacity="0.25" pointer-events="none"/>
+                d="M540 165 C550 165 560 170 568 178 L568 202 C560 210 550 215 540 215
+                   C528 215 518 210 510 204 C504 198 503 193 508 186
+                   C513 178 525 170 540 165 Z"
+                fill="url(#fgBack)" stroke="#3A6070" stroke-width="2"/>
+              <!-- Fin rays -->
+              <g stroke="#2A5060" stroke-width="0.9" opacity="0.28" pointer-events="none">
+                <line x1="568" y1="184" x2="624" y2="74"/>
+                <line x1="568" y1="188" x2="610" y2="84"/>
+                <line x1="568" y1="196" x2="610" y2="296"/>
+                <line x1="568" y1="200" x2="624" y2="314"/>
+              </g>
             </g>
 
-            <!-- BACK section -->
+            <!-- ── BACK section ── -->
             <g class="cut-part" id="el-fish-back" data-part="fish_back" data-meat="fish"
                data-weight="150" data-price="1.50" data-emoji="🐟"
-               clip-path="url(#clipBack)" style="cursor:pointer">
+               clip-path="url(#cpBack)" style="cursor:pointer">
               <path class="part-fill part-outline"
-                d="M110 220
-                   C180 215 260 210 320 210 C380 210 440 215 460 218
-                   C480 220 500 224 520 227 C540 230 555 232 570 235
-                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
-                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
-                fill="url(#gFishBodyMain)" stroke="#4A7088" stroke-width="2"/>
+                d="M96 188
+                   C130 152 190 128 270 120 C340 113 415 118 475 135
+                   C508 144 532 158 552 172 C560 177 566 183 568 188
+                   L568 192 C566 197 560 203 552 208
+                   C532 222 508 236 475 245 C415 262 340 267 270 260
+                   C190 252 130 228 96 192 Z"
+                fill="url(#fgBack)" stroke="#3A6070" stroke-width="2"/>
             </g>
 
-            <!-- MID section (premium) -->
+            <!-- ── MID section (premium thickest part) ── -->
             <g class="cut-part" id="el-fish-mid" data-part="fish_mid" data-meat="fish"
                data-weight="220" data-price="3.20" data-emoji="🐟"
-               clip-path="url(#clipMid)" style="cursor:pointer">
+               clip-path="url(#cpMid)" style="cursor:pointer">
               <path class="part-fill part-outline"
-                d="M110 220
-                   C180 215 260 210 320 210 C380 210 440 215 460 218
-                   C480 220 500 224 520 227 C540 230 555 232 570 235
-                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
-                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
-                fill="url(#gFishMidGrad)" stroke="#4A7088" stroke-width="2"/>
+                d="M96 188
+                   C130 152 190 128 270 120 C340 113 415 118 475 135
+                   C508 144 532 158 552 172 C560 177 566 183 568 188
+                   L568 192 C566 197 560 203 552 208
+                   C532 222 508 236 475 245 C415 262 340 267 270 260
+                   C190 252 130 228 96 192 Z"
+                fill="url(#fgMid)" stroke="#3A6070" stroke-width="2"/>
             </g>
 
-            <!-- FRONT section -->
+            <!-- ── FRONT section ── -->
             <g class="cut-part" id="el-fish-front" data-part="fish_front" data-meat="fish"
                data-weight="180" data-price="2.80" data-emoji="🐟"
-               clip-path="url(#clipFront)" style="cursor:pointer">
+               clip-path="url(#cpFront)" style="cursor:pointer">
               <path class="part-fill part-outline"
-                d="M110 220
-                   C180 215 260 210 320 210 C380 210 440 215 460 218
-                   C480 220 500 224 520 227 C540 230 555 232 570 235
-                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
-                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
-                fill="url(#gFishBodyShine)" stroke="#4A7088" stroke-width="2"/>
+                d="M96 188
+                   C130 152 190 128 270 120 C340 113 415 118 475 135
+                   C508 144 532 158 552 172 C560 177 566 183 568 188
+                   L568 192 C566 197 560 203 552 208
+                   C532 222 508 236 475 245 C415 262 340 267 270 260
+                   C190 252 130 228 96 192 Z"
+                fill="url(#fgShine)" stroke="#3A6070" stroke-width="2"/>
             </g>
 
-            <!-- HEAD section -->
+            <!-- ── HEAD section ── -->
             <g class="cut-part" id="el-fish-head" data-part="fish_head" data-meat="fish"
                data-weight="140" data-price="0.90" data-emoji="🐟"
-               clip-path="url(#clipHead)" style="cursor:pointer">
+               clip-path="url(#cpHead)" style="cursor:pointer">
               <path class="part-fill part-outline"
-                d="M110 220
-                   C180 215 260 210 320 210 C380 210 440 215 460 218
-                   C480 220 500 224 520 227 C540 230 555 232 570 235
-                   L570 215 C555 212 540 210 520 207 C500 204 480 200 460 198
-                   C440 195 380 190 320 190 C260 190 180 195 110 200 Z"
-                fill="url(#gFishHead)" stroke="#4A7088" stroke-width="2"/>
+                d="M96 188
+                   C130 152 190 128 270 120 C340 113 415 118 475 135
+                   C508 144 532 158 552 172 C560 177 566 183 568 188
+                   L568 192 C566 197 560 203 552 208
+                   C532 222 508 236 475 245 C415 262 340 267 270 260
+                   C190 252 130 228 96 192 Z"
+                fill="url(#fgHead)" stroke="#3A6070" stroke-width="2"/>
 
               <!-- Mouth -->
-              <path d="M112 218 C108 220 108 222 112 224"
-                fill="none" stroke="#2A5060" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
+              <path d="M98 186 C93 188 92 190 93 192 C94 194 97 194 99 192"
+                fill="none" stroke="#1A4050" stroke-width="2.8" stroke-linecap="round" pointer-events="none"/>
 
-              <!-- Eye -->
-              <circle cx="148" cy="208" r="14" fill="#F8FDFF" stroke="#2A5060" stroke-width="2" pointer-events="none"/>
-              <circle cx="151" cy="208" r="9"  fill="#1A2838" pointer-events="none"/>
-              <circle cx="148" cy="205" r="4"  fill="#0A1020" pointer-events="none"/>
-              <circle cx="144" cy="202" r="2.5" fill="white" opacity="0.85" pointer-events="none"/>
-              <circle cx="156" cy="212" r="1.5" fill="white" opacity="0.55" pointer-events="none"/>
+              <!-- Eye — white sclera -->
+              <circle cx="140" cy="168" r="15" fill="#F6FEFF" stroke="#1A4050" stroke-width="2" pointer-events="none"/>
+              <!-- Iris -->
+              <circle cx="143" cy="168" r="10" fill="#182028" pointer-events="none"/>
+              <!-- Pupil -->
+              <circle cx="141" cy="166" r="5"  fill="#0A1018" pointer-events="none"/>
+              <!-- Eye shine spots -->
+              <circle cx="136" cy="162" r="3"  fill="white" opacity="0.90" pointer-events="none"/>
+              <circle cx="148" cy="173" r="1.8" fill="white" opacity="0.55" pointer-events="none"/>
 
-              <!-- Gill arc -->
-              <path d="M182 196 C188 208 188 222 184 234 C180 244 175 250 170 253"
-                fill="none" stroke="#2A5060" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
-              <path d="M176 198 C182 210 182 224 178 236"
-                fill="none" stroke="#4A7090" stroke-width="1.2" opacity="0.45" pointer-events="none"/>
+              <!-- Gill arc (prominent) -->
+              <path d="M178 128 C186 148 190 168 190 188 C190 208 186 228 178 248 C174 258 170 264 165 268"
+                fill="none" stroke="#1A4050" stroke-width="3" stroke-linecap="round" pointer-events="none"/>
+              <path d="M172 130 C180 150 184 170 184 190 C184 210 180 230 172 250"
+                fill="none" stroke="#3A6070" stroke-width="1.2" opacity="0.4" pointer-events="none"/>
             </g>
-          </g>
 
-          <!-- ========= DECORATIVE ELEMENTS (non-clickable) ========= -->
+          </g><!-- end filter group -->
 
-          <!-- Dorsal fin -->
-          <path d="M195 196 C218 160 252 138 295 130 C340 122 385 128 420 138 C450 146 468 160 472 196"
-            fill="rgba(168,200,220,0.55)" stroke="#4A7090" stroke-width="1.8" pointer-events="none"/>
+          <!-- ══════════ DECORATIVE FINS (non-clickable) ══════════ -->
+
+          <!-- Dorsal fin (top) -->
+          <path d="M192 118 C215 80 252 56 295 48 C340 40 388 46 428 58 C458 68 478 84 488 118"
+            fill="rgba(160,195,215,0.55)" stroke="#3A6070" stroke-width="1.8" pointer-events="none"/>
           <!-- Dorsal fin rays -->
-          <g stroke="#3A6080" stroke-width="0.9" opacity="0.32" pointer-events="none">
-            <line x1="205" y1="196" x2="215" y2="152"/>
-            <line x1="230" y1="196" x2="234" y2="138"/>
-            <line x1="258" y1="196" x2="260" y2="130"/>
-            <line x1="286" y1="196" x2="288" y2="126"/>
-            <line x1="316" y1="196" x2="318" y2="125"/>
-            <line x1="346" y1="196" x2="347" y2="126"/>
-            <line x1="374" y1="196" x2="375" y2="128"/>
-            <line x1="400" y1="196" x2="400" y2="135"/>
-            <line x1="424" y1="196" x2="424" y2="144"/>
-            <line x1="448" y1="196" x2="448" y2="155"/>
-            <line x1="466" y1="196" x2="466" y2="164"/>
+          <g stroke="#2A5060" stroke-width="0.85" opacity="0.30" pointer-events="none">
+            <line x1="200" y1="118" x2="208" y2="70"/><line x1="222" y1="118" x2="224" y2="54"/>
+            <line x1="248" y1="118" x2="249" y2="48"/><line x1="276" y1="118" x2="277" y2="44"/>
+            <line x1="306" y1="118" x2="307" y2="43"/><line x1="336" y1="118" x2="337" y2="44"/>
+            <line x1="364" y1="118" x2="365" y2="46"/><line x1="392" y1="118" x2="393" y2="52"/>
+            <line x1="418" y1="118" x2="419" y2="60"/><line x1="442" y1="118" x2="443" y2="72"/>
+            <line x1="464" y1="118" x2="465" y2="86"/><line x1="482" y1="118" x2="483" y2="100"/>
           </g>
 
-          <!-- Pectoral fin -->
-          <path d="M188 220 C170 232 155 255 160 268 C164 278 180 276 198 260 C213 245 218 228 200 220 Z"
-            fill="rgba(168,200,220,0.5)" stroke="#4A7090" stroke-width="1.5" pointer-events="none"/>
+          <!-- Pectoral fin (side fin near head) -->
+          <path d="M186 198 C170 212 154 238 157 252 C160 263 175 262 192 248
+                   C206 235 212 218 196 206 Z"
+            fill="rgba(160,195,215,0.52)" stroke="#3A6070" stroke-width="1.5" pointer-events="none"/>
 
-          <!-- Ventral fin -->
-          <path d="M306 232 C295 252 288 274 292 285 C295 292 308 290 318 277 C326 264 325 245 310 236 Z"
-            fill="rgba(168,200,220,0.45)" stroke="#4A7090" stroke-width="1.2" pointer-events="none"/>
+          <!-- Ventral fin (underside mid) -->
+          <path d="M315 256 C306 272 300 292 304 303 C307 311 320 309 330 296
+                   C338 283 337 266 322 260 Z"
+            fill="rgba(160,195,215,0.48)" stroke="#3A6070" stroke-width="1.2" pointer-events="none"/>
 
-          <!-- Anal fin -->
-          <path d="M424 234 C416 250 413 268 418 278 C422 284 433 282 440 270 C448 256 447 240 432 236 Z"
-            fill="rgba(168,200,220,0.4)" stroke="#4A7090" stroke-width="1.2" pointer-events="none"/>
+          <!-- Anal fin (underside back) -->
+          <path d="M440 248 C432 262 428 280 432 290 C435 298 448 296 455 284
+                   C462 272 462 256 447 252 Z"
+            fill="rgba(160,195,215,0.45)" stroke="#3A6070" stroke-width="1.2" pointer-events="none"/>
 
-          <!-- Lateral line (running through body) -->
-          <path d="M180 220 C240 219 320 218 400 217 C440 217 485 218 520 220"
-            stroke="#3A6080" stroke-width="1.5" fill="none" opacity="0.3" stroke-dasharray="7,4" pointer-events="none"/>
+          <!-- Lateral line running through the body -->
+          <path d="M175 186 C240 184 330 182 420 181 C466 181 510 182 545 185"
+            stroke="#2A5060" stroke-width="1.5" fill="none" opacity="0.28"
+            stroke-dasharray="7,4" pointer-events="none"/>
 
-          <!-- Scale pattern arcs (decorative) -->
-          <g opacity="0.14" fill="none" stroke="#2A4860" stroke-width="1.2" pointer-events="none">
-            <path d="M220 202 Q235 193 250 202"/><path d="M240 210 Q255 201 270 210"/>
-            <path d="M220 214 Q235 205 250 214"/><path d="M240 222 Q255 213 270 222"/>
-            <path d="M260 204 Q275 195 290 204"/><path d="M280 212 Q295 203 310 212"/>
-            <path d="M260 216 Q275 207 290 216"/><path d="M280 224 Q295 215 310 224"/>
-            <path d="M300 202 Q315 193 330 202"/><path d="M320 210 Q335 201 350 210"/>
-            <path d="M300 214 Q315 205 330 214"/><path d="M320 222 Q335 213 350 222"/>
-            <path d="M340 202 Q355 193 370 202"/><path d="M360 210 Q375 201 390 210"/>
-            <path d="M340 214 Q355 205 370 214"/><path d="M360 222 Q375 213 390 222"/>
-            <path d="M380 204 Q395 195 410 204"/><path d="M400 212 Q415 203 430 212"/>
-            <path d="M380 216 Q395 207 410 216"/><path d="M400 224 Q415 215 430 224"/>
-            <path d="M420 206 Q435 197 450 206"/><path d="M440 214 Q455 205 470 214"/>
-            <path d="M420 218 Q435 209 450 218"/>
+          <!-- Scale arcs (decorative, semi-transparent) -->
+          <g opacity="0.13" fill="none" stroke="#1A3850" stroke-width="1.2" pointer-events="none">
+            <path d="M218 136 Q234 126 250 136"/><path d="M240 148 Q256 138 272 148"/>
+            <path d="M218 152 Q234 142 250 152"/><path d="M240 164 Q256 154 272 164"/>
+            <path d="M265 128 Q281 118 297 128"/><path d="M288 140 Q304 130 320 140"/>
+            <path d="M265 144 Q281 134 297 144"/><path d="M288 156 Q304 146 320 156"/>
+            <path d="M312 126 Q328 116 344 126"/><path d="M336 138 Q352 128 368 138"/>
+            <path d="M312 142 Q328 132 344 142"/><path d="M336 154 Q352 144 368 154"/>
+            <path d="M358 128 Q374 118 390 128"/><path d="M382 140 Q398 130 414 140"/>
+            <path d="M358 144 Q374 134 390 144"/><path d="M382 156 Q398 146 414 156"/>
+            <path d="M404 134 Q420 124 436 134"/><path d="M428 146 Q444 136 460 146"/>
+            <path d="M404 150 Q420 140 436 150"/>
+            <path d="M218 222 Q234 232 250 222"/><path d="M240 212 Q256 222 272 212"/>
+            <path d="M265 230 Q281 240 297 230"/><path d="M288 220 Q304 230 320 220"/>
+            <path d="M312 234 Q328 244 344 234"/><path d="M336 224 Q352 234 368 224"/>
+            <path d="M358 230 Q374 240 390 230"/><path d="M382 220 Q398 230 414 220"/>
           </g>
 
           <!-- Section divider lines -->
-          <line x1="190" y1="198" x2="190" y2="254" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
-          <line x1="320" y1="192" x2="320" y2="260" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
-          <line x1="460" y1="196" x2="460" y2="256" stroke="#1A4860" stroke-width="2" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
-          <line x1="570" y1="208" x2="570" y2="242" stroke="#1A4860" stroke-width="2.5" stroke-dasharray="5,3" opacity="0.45" pointer-events="none"/>
+          <line x1="185" y1="124" x2="185" y2="256" stroke="#0A3040" stroke-width="2" stroke-dasharray="5,3" opacity="0.42" pointer-events="none"/>
+          <line x1="310" y1="118" x2="310" y2="262" stroke="#0A3040" stroke-width="2" stroke-dasharray="5,3" opacity="0.42" pointer-events="none"/>
+          <line x1="450" y1="130" x2="450" y2="250" stroke="#0A3040" stroke-width="2" stroke-dasharray="5,3" opacity="0.42" pointer-events="none"/>
+          <line x1="565" y1="168" x2="565" y2="212" stroke="#0A3040" stroke-width="2.5" stroke-dasharray="5,3" opacity="0.42" pointer-events="none"/>
+
+          <!-- Leader lines from labels up to fish body -->
+          <line x1="138" y1="274" x2="138" y2="300" stroke="#1A5060" stroke-width="1" stroke-dasharray="3,2" opacity="0.42" pointer-events="none"/>
+          <line x1="247" y1="274" x2="247" y2="300" stroke="#1A5060" stroke-width="1" stroke-dasharray="3,2" opacity="0.42" pointer-events="none"/>
+          <line x1="380" y1="276" x2="380" y2="300" stroke="#1A5060" stroke-width="1" stroke-dasharray="3,2" opacity="0.42" pointer-events="none"/>
+          <line x1="507" y1="266" x2="507" y2="300" stroke="#1A5060" stroke-width="1" stroke-dasharray="3,2" opacity="0.42" pointer-events="none"/>
+          <line x1="607" y1="230" x2="607" y2="300" stroke="#1A5060" stroke-width="1" stroke-dasharray="3,2" opacity="0.42" pointer-events="none"/>
 
           <!-- Section labels -->
-          <text x="148" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">HEAD</text>
-          <text x="255" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">FRONT</text>
-          <text x="390" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">MIDDLE</text>
-          <text x="515" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">BACK</text>
-          <text x="612" y="318" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9.5" fill="#0A3040" opacity="0.7" pointer-events="none">TAIL</text>
+          <text x="138" y="312" text-anchor="middle" font-family="'DM Mono',monospace" font-size="10" fill="#082030" opacity="0.72" pointer-events="none">HEAD</text>
+          <text x="247" y="312" text-anchor="middle" font-family="'DM Mono',monospace" font-size="10" fill="#082030" opacity="0.72" pointer-events="none">FRONT</text>
+          <text x="380" y="312" text-anchor="middle" font-family="'DM Mono',monospace" font-size="10" fill="#082030" opacity="0.72" pointer-events="none">MIDDLE</text>
+          <text x="507" y="312" text-anchor="middle" font-family="'DM Mono',monospace" font-size="10" fill="#082030" opacity="0.72" pointer-events="none">BACK</text>
+          <text x="607" y="312" text-anchor="middle" font-family="'DM Mono',monospace" font-size="10" fill="#082030" opacity="0.72" pointer-events="none">TAIL</text>
 
-          <!-- Tick marks from label to fish -->
-          <line x1="148" y1="257" x2="148" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
-          <line x1="255" y1="263" x2="255" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
-          <line x1="390" y1="265" x2="390" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
-          <line x1="515" y1="257" x2="515" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
-          <line x1="612" y1="252" x2="612" y2="310" stroke="#2A6070" stroke-width="1" stroke-dasharray="3,2" opacity="0.4" pointer-events="none"/>
-
-          <!-- Title -->
-          <text x="350" y="370" text-anchor="middle"
-            font-family="'Playfair Display',serif" font-size="18" font-weight="900"
-            fill="#082030" letter-spacing="0.10em">WHOLE FISH</text>
-          <text x="350" y="385" text-anchor="middle"
+          <!-- Main title -->
+          <text x="350" y="338" text-anchor="middle"
+            font-family="'Playfair Display',serif" font-size="17" font-weight="900"
+            fill="#062030" letter-spacing="0.10em">WHOLE FISH</text>
+          <text x="350" y="352" text-anchor="middle"
             font-family="'DM Mono',monospace" font-size="7.5"
-            fill="#1A5068" letter-spacing="0.22em" opacity="0.62">FRESH CUT · SELECT SECTION TO HARVEST</text>
+            fill="#0A4860" letter-spacing="0.22em" opacity="0.62">FRESH CUT · CLICK A SECTION TO SELECT</text>
         </svg>
       </div>
     </div>
 
 
-    <!-- 3D Canvas Container -->
-    <div id="canvas3d-container">
-      <canvas id="canvas3d"></canvas>
-    </div>
 
     <!-- Quick Select Sidebar -->
     <div class="quick-select-sidebar" id="quickSelectSidebar">
@@ -1804,417 +1779,6 @@ body {
 </div>
 
 <script>
-// ==========================================
-// MODULE: threeye.js
-// ==========================================
-// threeye.js — Custom Lightweight 3D Canvas Projection Engine
-
-class Vector3 {
-  constructor(x = 0, y = 0, z = 0) {
-    this.x = x; this.y = y; this.z = z;
-  }
-  set(x, y, z) {
-    this.x = x; this.y = y; this.z = z;
-    return this;
-  }
-  clone() {
-    return new Vector3(this.x, this.y, this.z);
-  }
-  copy(v) {
-    this.x = v.x; this.y = v.y; this.z = v.z;
-    return this;
-  }
-  lerpVectors(v1, v2, t) {
-    this.x = v1.x + (v2.x - v1.x) * t;
-    this.y = v1.y + (v2.y - v1.y) * t;
-    this.z = v1.z + (v2.z - v1.z) * t;
-    return this;
-  }
-}
-
-class Vector2 {
-  constructor(x = 0, y = 0) {
-    this.x = x; this.y = y;
-  }
-}
-
-class Color {
-  constructor(val) {
-    this.set(val);
-  }
-  set(val) {
-    if (typeof val === 'number') {
-      this.hexStr = '#' + val.toString(16).padStart(6, '0');
-    } else {
-      this.hexStr = val;
-    }
-  }
-  setHex(hex) {
-    this.set(hex);
-  }
-}
-
-class Euler {
-  constructor(x = 0, y = 0, z = 0) {
-    this.x = x; this.y = y; this.z = z;
-  }
-  set(x, y, z) {
-    this.x = x; this.y = y; this.z = z;
-  }
-}
-
-class Object3D {
-  constructor() {
-    this.position = new Vector3();
-    this.rotation = new Euler();
-    this.scale = new Vector3(1, 1, 1);
-    this.children = [];
-    this.visible = true;
-    this.userData = {};
-  }
-  add(obj) {
-    if (obj) {
-      obj.parent = this;
-      this.children.push(obj);
-    }
-  }
-  traverse(cb) {
-    cb(this);
-    this.children.forEach(child => {
-      if (child && typeof child.traverse === 'function') {
-        child.traverse(cb);
-      }
-    });
-  }
-}
-
-class Scene extends Object3D {
-  constructor() {
-    super();
-    this.background = new Color(0xffffff);
-  }
-}
-
-class Group extends Object3D {}
-
-class SphereGeometry {
-  constructor(radius = 1, widthSegments = 8, heightSegments = 6) {
-    this.type = 'sphere';
-    this.radius = radius;
-  }
-}
-
-class CylinderGeometry {
-  constructor(radiusTop = 1, radiusBottom = 1, height = 1, radialSegments = 8) {
-    this.type = 'cylinder';
-    this.radiusTop = radiusTop;
-    this.radiusBottom = radiusBottom;
-    this.height = height;
-  }
-}
-
-class MeshToonMaterial {
-  constructor(params = {}) {
-    this.color = new Color(params.color || 0xffffff);
-    this.emissive = new Color(0x000000);
-  }
-}
-
-class Mesh extends Object3D {
-  constructor(geometry, material) {
-    super();
-    this.geometry = geometry;
-    this.material = material;
-    this.isMesh = true;
-  }
-}
-
-class AmbientLight extends Object3D {
-  constructor(color, intensity) {
-    super();
-  }
-}
-
-class DirectionalLight extends Object3D {
-  constructor(color, intensity) {
-    super();
-    this.position = new Vector3();
-  }
-}
-
-class PerspectiveCamera {
-  constructor(fov, aspect, near, far) {
-    this.position = new Vector3(0, 0, 5);
-  }
-  updateProjectionMatrix() {}
-}
-
-class Raycaster {
-  constructor() {
-    this.camera = null;
-    this.mouse = null;
-  }
-  setFromCamera(mouse, camera) {
-    this.mouse = mouse;
-    this.camera = camera;
-  }
-  intersectObjects(objects) {
-    if (!this.mouse || !window.renderer3) return [];
-    
-    const W = window.renderer3.width;
-    const H = window.renderer3.height;
-    
-    // Convert NDC (-1 to 1) back to canvas coordinates
-    const mx_canvas = ((this.mouse.x + 1) / 2) * W;
-    const my_canvas = ((1 - this.mouse.y) / 2) * H;
-    
-    const hits = [];
-    objects.forEach(mesh => {
-      if (mesh.visible && mesh._lastScreenPos) {
-        const dx = mx_canvas - mesh._lastScreenPos.x;
-        const dy = my_canvas - mesh._lastScreenPos.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
-        let clickRadius = Math.max(mesh._lastScreenPos.rx, mesh._lastScreenPos.ry);
-        if (mesh.geometry.type === 'cylinder') {
-          clickRadius = mesh._lastScreenPos.rx * 1.5; // adjust for cylinder click accuracy
-        }
-        
-        if (dist <= clickRadius) {
-          hits.push({
-            object: mesh,
-            distance: mesh._lastScreenPos.z // use depth Z for distance
-          });
-        }
-      }
-    });
-    
-    // Sort closest depth first (i.e. highest z value)
-    hits.sort((a, b) => b.distance - a.distance);
-    return hits;
-  }
-}
-
-// Color shader helpers
-function darkenColor(hex, percent) {
-  let num = parseInt(hex.replace("#",""), 16),
-  amt = Math.round(2.55 * percent * 100),
-  R = (num >> 16) - amt,
-  G = (num >> 8 & 0x00FF) - amt,
-  B = (num & 0x0000FF) - amt;
-  return "#" + (0x1000000 + (R<0?0:R>255?255:R)*0x10000 + (G<0?0:G>255?255:G)*0x100 + (B<0?0:B>255?255:B)).toString(16).slice(1);
-}
-
-// Escaping the # character in string formatters inside build script
-function lightenColor(hex, percent) {
-  let num = parseInt(hex.replace("#",""), 16),
-  amt = Math.round(2.55 * percent * 100),
-  R = (num >> 16) + amt,
-  G = (num >> 8 & 0x00FF) + amt,
-  B = (num & 0x0000FF) + amt;
-  return "#" + (0x1000000 + (R<0?0:R>255?255:R)*0x10000 + (G<0?0:G>255?255:G)*0x100 + (B<0?0:B>255?255:B)).toString(16).slice(1);
-}
-
-class WebGLRenderer {
-  constructor(params = {}) {
-    this.canvas = params.canvas;
-    this.ctx = this.canvas.getContext('2d');
-    this.width = this.canvas.width;
-    this.height = this.canvas.height;
-    window.renderer3 = this; // store globally for raycaster
-  }
-  setSize(w, h) {
-    this.width = w;
-    this.height = h;
-    this.canvas.width = w;
-    this.canvas.height = h;
-  }
-  setPixelRatio() {}
-  
-  render(scene, camera) {
-    const ctx = this.ctx;
-    const W = this.width;
-    const H = this.height;
-    
-    // Clear canvas with scene background
-    ctx.fillStyle = scene.background.hexStr || '#DCD8D0';
-    ctx.fillRect(0, 0, W, H);
-    
-    const cameraZ = 5.0;
-    const fov = 350; // Perspective zoom
-    
-    const meshes = [];
-    
-    // Helper to traverse hierarchically and compute global positions
-    const traverse = (node, parentPos, parentRotY, parentScale, parentVisible) => {
-      const visible = parentVisible && node.visible;
-      if (!visible) return;
-      
-      // Calculate global rotation (simple Y-axis accumulation)
-      const rotY = parentRotY + node.rotation.y;
-      
-      // Calculate global position (rotate local position by parent's Y rotation, and scale by parent's scale)
-      const lx = node.position.x * parentScale.x;
-      const ly = node.position.y * parentScale.y;
-      const lz = node.position.z * parentScale.z;
-      
-      const cosY = Math.cos(parentRotY);
-      const sinY = Math.sin(parentRotY);
-      
-      const gx = parentPos.x + (lx * cosY - lz * sinY);
-      const gy = parentPos.y + ly;
-      const gz = parentPos.z + (lx * sinY + lz * cosY);
-      
-      const scaleX = parentScale.x * node.scale.x;
-      const scaleY = parentScale.y * node.scale.y;
-      const scaleZ = parentScale.z * node.scale.z;
-      
-      const globalPos = new Vector3(gx, gy, gz);
-      const globalScale = new Vector3(scaleX, scaleY, scaleZ);
-      
-      if (node.isMesh) {
-        // Project to 2D screen coords
-        const scale = fov / (cameraZ - gz);
-        const screenX = gx * scale + W / 2;
-        const screenY = -gy * scale + H / 2;
-        
-        let rx = 0, ry = 0;
-        if (node.geometry.type === 'sphere') {
-          rx = Math.abs(node.geometry.radius * scaleX * scale);
-          ry = Math.abs(node.geometry.radius * scaleY * scale);
-        } else {
-          rx = Math.abs(node.geometry.radiusBottom * scaleX * scale);
-          ry = Math.abs(node.geometry.height * scaleY * scale);
-        }
-        
-        // Ensure values are finite and positive to prevent canvas errors
-        if (isFinite(screenX) && isFinite(screenY) && isFinite(rx) && isFinite(ry)) {
-          node._lastScreenPos = {
-            x: screenX,
-            y: screenY,
-            z: gz,
-            rx: Math.max(0.1, rx),
-            ry: Math.max(0.1, ry),
-            scale: scale,
-            rotY: rotY
-          };
-          meshes.push(node);
-        }
-      }
-      
-      node.children.forEach(child => {
-        traverse(child, globalPos, rotY, globalScale, visible);
-      });
-    };
-    
-    traverse(scene, new Vector3(0,0,0), 0, new Vector3(1,1,1), true);
-    
-    // Depth sorting (Z-buffer / Painter's Algorithm)
-    meshes.sort((a, b) => a._lastScreenPos.z - b._lastScreenPos.z);
-    
-    // Draw meshes
-    meshes.forEach(mesh => {
-      const proj = mesh._lastScreenPos;
-      const baseColor = mesh.material.color.hexStr;
-      
-      let glowHex = mesh.material.emissive.hexStr;
-      let isGlowing = (glowHex !== '#000000' && glowHex !== '#000');
-      
-      ctx.save();
-      
-      if (mesh.geometry.type === 'sphere') {
-        const rx = proj.rx;
-        const ry = proj.ry;
-        
-        ctx.beginPath();
-        ctx.ellipse(proj.x, proj.y, rx, ry, mesh.rotation.z, 0, 2 * Math.PI);
-        
-        let shadowColor = darkenColor(baseColor, 0.28);
-        let highlightColor = lightenColor(baseColor, 0.38);
-        
-        if (isGlowing) {
-          shadowColor = lightenColor(glowHex, 0.1);
-          highlightColor = lightenColor(glowHex, 0.45);
-        }
-        
-        const grad = ctx.createRadialGradient(
-          proj.x - rx * 0.25, proj.y - ry * 0.25, Math.max(0.1, Math.min(rx, ry) * 0.1),
-          proj.x, proj.y, Math.max(0.2, Math.max(rx, ry))
-        );
-        grad.addColorStop(0, highlightColor);
-        grad.addColorStop(0.3, isGlowing ? glowHex : baseColor);
-        grad.addColorStop(1, shadowColor);
-        
-        ctx.fillStyle = grad;
-        ctx.shadowColor = 'rgba(0,0,0,0.1)';
-        ctx.shadowBlur = 6;
-        ctx.shadowOffsetY = 3;
-        ctx.fill();
-        
-        ctx.strokeStyle = darkenColor(baseColor, 0.45);
-        ctx.lineWidth = 1.8;
-        ctx.stroke();
-      } 
-      else if (mesh.geometry.type === 'cylinder') {
-        const rx = proj.rx;
-        const ry = proj.ry;
-        
-        const cx = proj.x;
-        const cy = proj.y;
-        
-        // Translate and rotate FIRST, then draw
-        ctx.translate(cx, cy);
-        ctx.rotate(mesh.rotation.z);
-        
-        let shadowColor = darkenColor(baseColor, 0.28);
-        let highlightColor = lightenColor(baseColor, 0.3);
-        if (isGlowing) {
-          shadowColor = lightenColor(glowHex, 0.1);
-          highlightColor = lightenColor(glowHex, 0.45);
-        }
-        
-        // Draw cylinder body
-        const grad = ctx.createLinearGradient(-rx, 0, rx, 0);
-        grad.addColorStop(0, shadowColor);
-        grad.addColorStop(0.35, isGlowing ? glowHex : baseColor);
-        grad.addColorStop(0.65, isGlowing ? glowHex : baseColor);
-        grad.addColorStop(1, shadowColor);
-        
-        ctx.fillStyle = grad;
-        ctx.strokeStyle = darkenColor(baseColor, 0.45);
-        ctx.lineWidth = 1.8;
-        ctx.fillRect(-rx, -ry/2, rx*2, ry);
-        ctx.strokeRect(-rx, -ry/2, rx*2, ry);
-        
-        // Top ellipse cap
-        ctx.beginPath();
-        ctx.ellipse(0, -ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
-        ctx.fillStyle = lightenColor(baseColor, 0.2);
-        ctx.fill();
-        ctx.strokeStyle = darkenColor(baseColor, 0.45);
-        ctx.stroke();
-        
-        // Bottom ellipse cap
-        ctx.beginPath();
-        ctx.ellipse(0, ry/2, rx, Math.max(0.1, rx*0.35), 0, 0, 2*Math.PI);
-        ctx.fillStyle = darkenColor(baseColor, 0.15);
-        ctx.fill();
-        ctx.stroke();
-      }
-      
-      ctx.restore();
-    });
-  }
-}
-
-// Bind to global scope
-window.THREE = {
-  Vector3, Vector2, Color, Euler, Object3D, Scene, Group,
-  SphereGeometry, CylinderGeometry, MeshToonMaterial, Mesh,
-  AmbientLight, DirectionalLight, PerspectiveCamera, WebGLRenderer, Raycaster
-};
-
-
 // ==========================================
 // MODULE: state.js
 // ==========================================
@@ -2920,418 +2484,6 @@ function setupSVGInteractions() {
 
 
 // ==========================================
-// MODULE: threeEngine.js
-// ==========================================
-
-let scene3, camera3, renderer3, chickenGroup, raycaster, mouse;
-const parts3D = {};
-
-const colorValues = {
-  back: 0xFFB74D,       
-  breast_l: 0xFFF8E1,   
-  breast_r: 0xFFF8E1,   
-  wing_l: 0xFFCC80,     
-  wing_r: 0xFFCC80,     
-  thigh_l: 0xFF8A65,    
-  thigh_r: 0xFF8A65,    
-  leg_l: 0xFF7043,      
-  leg_r: 0xFF7043,      
-  neck: 0xFF8A65        
-};
-
-function init3D() {
-  try {
-    if (typeof THREE === 'undefined') {
-      throw new Error("Three.js library is not loaded. Please check your browser tracking prevention or internet settings.");
-    }
-    
-    const container = document.getElementById('canvas3d-container');
-    const canvas    = document.getElementById('canvas3d');
-    let W = container.clientWidth;
-    let H = container.clientHeight;
-    if (W < 100 || H < 100) {
-      const rightPanel = document.getElementById('customRightPanel');
-      W = rightPanel.clientWidth || (window.innerWidth - 320);
-      H = rightPanel.clientHeight || window.innerHeight;
-    }
-
-    scene3 = new THREE.Scene();
-    scene3.background = new THREE.Color(0xDCD8D0);
-
-    camera3 = new THREE.PerspectiveCamera(40, W/H, 0.1, 50);
-    camera3.position.set(0, 0, 5.0);
-
-    renderer3 = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer3.setSize(W, H);
-    renderer3.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    scene3.add(new THREE.AmbientLight(0xffffff, 0.75));
-    
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(2.5, 4.0, 3.5);
-    scene3.add(dirLight);
-
-    const fillLight = new THREE.DirectionalLight(0xFFE0B2, 0.45);
-    fillLight.position.set(-3.0, 1.0, 2.0);
-    scene3.add(fillLight);
-
-    buildChicken3D();
-
-    raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
-
-    canvas.addEventListener('click', on3DClick);
-    canvas.addEventListener('mousemove', on3DHover);
-    window.addEventListener('resize', onWindowResize);
-
-    animate3D();
-  } catch (err) {
-    console.error("3D Canvas Initialization failed:", err);
-    const container = document.getElementById('canvas3d-container');
-    container.innerHTML = `<div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; color:var(--red); background: #E8D8C4; border: 2px solid var(--border); border-radius:8px; font-family:'Outfit', sans-serif;">
-      <span style="font-size:2rem; margin-bottom:12px;">⚠️</span>
-      <h3 style="font-family:'Playfair Display', serif; margin-bottom:8px;">3D Model Failed to Load</h3>
-      <p style="font-size:0.75rem; color:var(--ink-light); max-width:300px; margin-bottom:12px;">${err.message}</p>
-      <button onclick="window.location.reload()" style="background:var(--brand-primary); color:white; border:none; padding:6px 16px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">Reload Page</button>
-    </div>`;
-  }
-}
-
-function buildChicken3D() {
-  chickenGroup = new THREE.Group();
-
-  const materials = {};
-  for (const [part, hex] of Object.entries(colorValues)) {
-    materials[part] = new THREE.MeshToonMaterial({
-      color: hex
-    });
-  }
-
-  // Split Back 3D Parts (Upper Ribs and Lower Back)
-  const buGroup = new THREE.Group();
-  const buMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 24), materials.back);
-  buMesh.scale.set(0.95, 0.85, 0.9);
-  buGroup.position.set(0, 0.45, -0.05);
-  buGroup.add(buMesh);
-  buGroup.userData = { partId: 'back_upper', name: 'Ribs', weight: 200, price: 0.65, emoji: '🦴' };
-  buGroup.userData.origPos = buGroup.position.clone();
-  parts3D.back_upper = buGroup;
-  chickenGroup.add(buGroup);
-
-  const bloGroup = new THREE.Group();
-  const bloMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 24), materials.back);
-  bloMesh.scale.set(0.95, 0.85, 0.9);
-  bloGroup.position.set(0, -0.35, -0.05);
-  bloGroup.add(bloMesh);
-  bloGroup.userData = { partId: 'back_lower', name: 'Lower Back', weight: 180, price: 0.55, emoji: '🍗' };
-  bloGroup.userData.origPos = bloGroup.position.clone();
-  parts3D.back_lower = bloGroup;
-  chickenGroup.add(bloGroup);
-
-  const blGroup = new THREE.Group();
-  const blMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 32, 24), materials.breast_l);
-  blMesh.scale.set(0.85, 1.35, 0.82);
-  blGroup.position.set(-0.42, 0.22, 0.48);
-  blGroup.rotation.set(0.08, 0.08, -0.12);
-  blGroup.add(blMesh);
-  blGroup.userData = { partId: 'breast_l', name: 'Breast', weight: 255, price: 3.50, emoji: '🥩' };
-  blGroup.userData.origPos = blGroup.position.clone();
-  parts3D.breast_l = blGroup;
-  chickenGroup.add(blGroup);
-
-  const brGroup = new THREE.Group();
-  const brMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 32, 24), materials.breast_r);
-  brMesh.scale.set(0.85, 1.35, 0.82);
-  brGroup.position.set(0.42, 0.22, 0.48);
-  brGroup.rotation.set(0.08, -0.08, 0.12);
-  brGroup.add(brMesh);
-  brGroup.userData = { partId: 'breast_r', name: 'Breast', weight: 255, price: 3.50, emoji: '🥩' };
-  brGroup.userData.origPos = brGroup.position.clone();
-  parts3D.breast_r = brGroup;
-  chickenGroup.add(brGroup);
-
-  const neckGroup = new THREE.Group();
-  neckGroup.position.set(0, 1.15, 0.1);
-  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.55, 24), materials.neck);
-  neckMesh.rotation.x = -0.10;
-  neckGroup.add(neckMesh);
-  neckGroup.userData = { partId: 'neck', name: 'Neck', weight: 115, price: 0.90, emoji: '🦴' };
-  neckGroup.userData.origPos = neckGroup.position.clone();
-  parts3D.neck = neckGroup;
-  chickenGroup.add(neckGroup);
-
-  const wlGroup = new THREE.Group();
-  wlGroup.position.set(-0.95, 0.32, 0.05);
-  const wlDrum = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), materials.wing_l);
-  wlDrum.scale.set(0.65, 0.65, 1.35);
-  wlDrum.rotation.set(0.15, 0.15, -0.35);
-  wlGroup.add(wlDrum);
-  
-  const wlFlat = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), materials.wing_l);
-  wlFlat.scale.set(0.5, 0.5, 1.75);
-  wlFlat.position.set(-0.23, -0.18, -0.10);
-  wlFlat.rotation.set(0.25, 0.25, -0.55);
-  wlGroup.add(wlFlat);
-  
-  wlGroup.userData = { partId: 'wing_l', name: 'Wing', weight: 95, price: 1.80, emoji: '🍗' };
-  wlGroup.userData.origPos = wlGroup.position.clone();
-  parts3D.wing_l = wlGroup;
-  chickenGroup.add(wlGroup);
-
-  const wrGroup = new THREE.Group();
-  wrGroup.position.set(0.95, 0.32, 0.05);
-  const wrDrum = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), materials.wing_r);
-  wrDrum.scale.set(0.65, 0.65, 1.35);
-  wrDrum.rotation.set(0.15, -0.15, 0.35);
-  wrGroup.add(wrDrum);
-  
-  const wrFlat = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), materials.wing_r);
-  wrFlat.scale.set(0.5, 0.5, 1.75);
-  wrFlat.position.set(0.23, -0.18, -0.10);
-  wrFlat.rotation.set(0.25, -0.25, 0.55);
-  wrGroup.add(wrFlat);
-  
-  wrGroup.userData = { partId: 'wing_r', name: 'Wing', weight: 95, price: 1.80, emoji: '🍗' };
-  wrGroup.userData.origPos = wrGroup.position.clone();
-  parts3D.wing_r = wrGroup;
-  chickenGroup.add(wrGroup);
-
-  const tlGroup = new THREE.Group();
-  tlGroup.position.set(-0.52, -0.55, 0.22);
-  const tlMesh = new THREE.Mesh(new THREE.SphereGeometry(0.64, 24, 18), materials.thigh_l);
-  tlMesh.scale.set(0.85, 1.12, 0.85);
-  tlMesh.rotation.set(0.08, 0.08, -0.08);
-  tlGroup.add(tlMesh);
-  tlGroup.userData = { partId: 'thigh_l', name: 'Thigh', weight: 172, price: 2.20, emoji: '🍗' };
-  tlGroup.userData.origPos = tlGroup.position.clone();
-  parts3D.thigh_l = tlGroup;
-  chickenGroup.add(tlGroup);
-
-  const trGroup = new THREE.Group();
-  trGroup.position.set(0.52, -0.55, 0.22);
-  const trMesh = new THREE.Mesh(new THREE.SphereGeometry(0.64, 24, 18), materials.thigh_r);
-  trMesh.scale.set(0.85, 1.12, 0.85);
-  trMesh.rotation.set(0.08, -0.08, 0.08);
-  trGroup.add(trMesh);
-  trGroup.userData = { partId: 'thigh_r', name: 'Thigh', weight: 172, price: 2.20, emoji: '🍗' };
-  trGroup.userData.origPos = trGroup.position.clone();
-  parts3D.thigh_r = trGroup;
-  chickenGroup.add(trGroup);
-
-  const dlGroup = new THREE.Group();
-  dlGroup.position.set(-0.46, -1.25, 0.28);
-  const dlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_l);
-  dlMesh.rotation.set(0.18, 0.08, -0.10);
-  dlGroup.add(dlMesh);
-  dlGroup.userData = { partId: 'leg_l', name: 'Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
-  dlGroup.userData.origPos = dlGroup.position.clone();
-  parts3D.leg_l = dlGroup;
-  chickenGroup.add(dlGroup);
-
-  const drGroup = new THREE.Group();
-  drGroup.position.set(0.46, -1.25, 0.28);
-  const drMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 0.75, 20), materials.leg_r);
-  drMesh.rotation.set(0.18, -0.08, 0.10);
-  drGroup.add(drMesh);
-  drGroup.userData = { partId: 'leg_r', name: 'Drumstick', weight: 148, price: 1.60, emoji: '🍗' };
-  drGroup.userData.origPos = drGroup.position.clone();
-  parts3D.leg_r = drGroup;
-  chickenGroup.add(drGroup);
-
-  chickenGroup.position.y = -0.10;
-  chickenGroup.scale.set(0.92, 0.92, 0.92);
-  scene3.add(chickenGroup);
-}
-
-function onWindowResize() {
-  if (!renderer3) return;
-  const container = document.getElementById('canvas3d-container');
-  let W = container.clientWidth;
-  let H = container.clientHeight;
-  if (W < 100 || H < 100) {
-    const rightPanel = document.getElementById('customRightPanel');
-    W = rightPanel.clientWidth || (window.innerWidth - 320);
-    H = rightPanel.clientHeight || window.innerHeight;
-  }
-  renderer3.setSize(W, H);
-  camera3.aspect = W / H;
-  camera3.updateProjectionMatrix();
-}
-
-function animate3D() {
-  if (viewMode !== '3d') {
-    setIsAnimatingState(false);
-    return;
-  }
-  setIsAnimatingState(true);
-  // Self-heal: if canvas was resized to 0 (hidden during init), fix it now
-  if (renderer3 && (renderer3.width < 50 || renderer3.height < 50)) {
-    onWindowResize();
-  }
-  requestAnimationFrame(animate3D);
-  if (chickenGroup) {
-    chickenGroup.rotation.y = Math.sin(Date.now() * 0.0006) * 0.22;
-  }
-  if (renderer3) {
-    renderer3.render(scene3, camera3);
-  }
-}
-
-let hovered3DGroup = null;
-
-function on3DHover(e) {
-  if (viewMode !== '3d') return;
-  const canvas = document.getElementById('canvas3d');
-  const rect   = canvas.getBoundingClientRect();
-  mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-  mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, camera3);
-  
-  const clickableMeshes = [];
-  if (chickenGroup) {
-    chickenGroup.children.forEach(group => {
-      if (group.visible) {
-        group.traverse(child => { if (child.isMesh) clickableMeshes.push(child); });
-      }
-    });
-  }
-
-  const hits = raycaster.intersectObjects(clickableMeshes);
-  
-  if (hovered3DGroup) {
-    const prevData = hovered3DGroup.userData;
-    const side = prevData.partId.endsWith('_l') ? 'l' : 'r';
-    if ((prevData.partId.startsWith('thigh') || prevData.partId.startsWith('leg')) && legStates[side] === 'whole') {
-      [`thigh_${side}`, `leg_${side}`].forEach(p => {
-        const grp = parts3D[p];
-        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x000000); });
-      });
-    } else {
-      hovered3DGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x000000); });
-    }
-    hovered3DGroup = null;
-  }
-
-  if (hits.length > 0) {
-    const hitMesh = hits[0].object;
-    let parentGroup = hitMesh.parent;
-    while (parentGroup && parentGroup.parent !== chickenGroup) { parentGroup = parentGroup.parent; }
-
-    if (parentGroup) {
-      const pId = parentGroup.userData.partId;
-      if (!severedParts[pId]) {
-        hovered3DGroup = parentGroup;
-        const glowHex = currentTool === 'knife' ? 0x441100 : 0x181000;
-        const side = pId.endsWith('_l') ? 'l' : 'r';
-
-        if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
-          [`thigh_${side}`, `leg_${side}`].forEach(p => {
-            const grp = parts3D[p];
-            if (grp && !severedParts[p]) {
-              grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(glowHex); });
-            }
-          });
-        } else {
-          parentGroup.traverse(child => { if (child.isMesh) child.material.emissive.setHex(glowHex); });
-        }
-      }
-    }
-  }
-}
-
-function on3DClick(e) {
-  if (viewMode !== '3d') return;
-  if (!hovered3DGroup) return;
-
-  const group = hovered3DGroup;
-  const data = group.userData;
-  const pId = data.partId;
-  const side = pId.endsWith('_l') ? 'l' : 'r';
-
-  if (currentTool === 'knife') {
-    if (severedParts[pId]) return;
-    if ((pId.startsWith('thigh') || pId.startsWith('leg')) && legStates[side] === 'whole') {
-      splitLeg(side, e.clientX, e.clientY);
-    } else {
-      cut3DPart(group, e.clientX, e.clientY);
-    }
-  } else {
-    inspectPart(pId);
-    
-    if (pId.startsWith('back_')) {
-      const grp = parts3D[pId];
-      if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
-    } else {
-      [`thigh_${side}`, `leg_${side}`].forEach(p => {
-        const grp = parts3D[p];
-        if (grp) grp.traverse(child => { if (child.isMesh) child.material.emissive.setHex(0x181000); });
-      });
-    }
-  }
-}
-
-
-function cut3DPart(group, cx, cy) {
-  const data = group.userData;
-  const partId = data.partId;
-  if (severedParts[partId]) return;
-
-  severedParts[partId] = true;
-  hovered3DGroup = null;
-
-  spawn2DSlash(cx, cy);
-
-  const startPos = group.position.clone();
-  const startScale = group.scale.clone();
-  const targetPos = new THREE.Vector3(startPos.x * 2.2, startPos.y * 1.5, startPos.z + 1.5);
-
-  let t = 0;
-  const animateCut = () => {
-    t += 0.055;
-    if (t >= 1) {
-      group.visible = false;
-      animateScale(data.weight, data.name, data.emoji);
-      addCutToSession(partId, data.name, data.weight, data.price, data.emoji);
-      actionHistory.push({ type: 'harvest', partId: partId });
-      renderSessionCuts();
-      severPart(partId);
-    } else {
-      group.position.lerpVectors(startPos, targetPos, t);
-      group.scale.set(startScale.x*(1-t), startScale.y*(1-t), startScale.z*(1-t));
-      requestAnimationFrame(animateCut);
-    }
-  };
-  animateCut();
-}
-
-function syncPartTo3D(partId, visible) {
-  if (!chickenGroup) return;
-  const group = parts3D[partId];
-  if (group) {
-    if (visible) {
-      group.visible = true;
-      group.scale.set(1, 1, 1);
-      
-      const side = partId.endsWith('_l') ? 'l' : 'r';
-      if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'split') {
-        const offset = thigh => {
-          if (side === 'l') return thigh ? {x:-0.12, y:0.06} : {x:-0.06, y:-0.12};
-          return thigh ? {x:0.12, y:0.06} : {x:0.06, y:-0.12};
-        };
-        const off = offset(partId.startsWith('thigh'));
-        group.position.set(group.userData.origPos.x + off.x, group.userData.origPos.y + off.y, group.userData.origPos.z);
-      } else {
-        group.position.copy(group.userData.origPos);
-      }
-    } else {
-      group.visible = false;
-    }
-  }
-}
-
-
-// ==========================================
 // MODULE: ui.js
 // ==========================================
 
@@ -3677,35 +2829,12 @@ function renderQuickSelectSidebar() {
 // MODULE: main.js
 // ==========================================
 
-// Bind to window for global inline HTML onclick support
+// Always 2D — 3D removed
 window.setViewMode = function(mode) {
-  setViewModeState(mode);
-  document.getElementById('btn2D').classList.toggle('active', mode === '2d');
-  document.getElementById('btn3D').classList.toggle('active', mode === '3d');
-
+  // Only 2D supported now — just ensure the right diagram is visible
+  setViewModeState('2d');
   const diagSvg = document.getElementById('diag-' + currentAnimal);
-  const container3D = document.getElementById('canvas3d-container');
-
-  if (mode === '2d') {
-    if (diagSvg) diagSvg.style.display = 'block';
-    container3D.style.display = 'none';
-  } else {
-    // Hide all diagram containers
-    document.querySelectorAll('.meat-diagram').forEach(d => d.style.display = 'none');
-    container3D.style.display = 'block';
-    // Force layout reflow so clientWidth/Height are available
-    container3D.getBoundingClientRect();
-    setTimeout(() => {
-      if (typeof init3D === 'function') {
-        if (!renderer3) {
-          init3D();
-        } else {
-          onWindowResize();
-          animate3D();
-        }
-      }
-    }, 200); // increased from 50ms to 200ms for reliable layout
-  }
+  if (diagSvg) diagSvg.style.display = 'block';
 };
 
 window.setTool = function(tool) {
@@ -3732,10 +2861,10 @@ window.setAnimal = function(animal) {
   if (btnChicken) btnChicken.classList.toggle('active', animal === 'chicken');
   if (btnFish)    btnFish.classList.toggle('active',    animal === 'fish');
 
-  // Show the right diagram, hide the other; also handle 3D toggle visibility
+  // Show the right diagram, hide all others
   document.querySelectorAll('.meat-diagram').forEach(d => { d.style.display = 'none'; });
   const activeDiag = document.getElementById('diag-' + animal);
-  if (activeDiag && viewMode === '2d') activeDiag.style.display = 'block';
+  if (activeDiag) activeDiag.style.display = 'block';
 
   // Reset left-panel state
   const weightDisplay = document.getElementById('weightDisplay');
@@ -3790,7 +2919,11 @@ window.goBackToStorefront = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  window.setViewMode('2d');
+  // Show chicken by default
+  document.querySelectorAll('.meat-diagram').forEach(d => { d.style.display = 'none'; });
+  const chickenDiag = document.getElementById('diag-chicken');
+  if (chickenDiag) chickenDiag.style.display = 'block';
+  
   initOffalBox();
   setupSVGInteractions();
   renderQuickSelectSidebar();
