@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HiGroces — Rider Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --brand-primary: #0C513F;
+  --brand-primary-light: #12755B;
+  --brand-accent: #FF5E2B;
+  --brand-accent-hover: #E04D1E;
+  --bg-main: #F4F6F5;
+  --bg-card: #FFFFFF;
+  --text-dark: #1C2220;
+  --text-muted: #606C66;
+  --border-light: #E2E8E5;
+  --success: #2E7D32;
+  --warning: #EF6C00;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #EAECEB;
+  color: var(--text-dark);
+  font-family: 'Outfit', sans-serif;
+  padding-bottom: 60px;
+}
+
+header {
+  background: var(--brand-primary);
+  color: white;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(12,81,63,0.15);
+}
+.header-container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: white;
+}
+.logo-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 1.3rem;
+}
+.logo-badge {
+  background: var(--brand-accent);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.settings-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+}
+.settings-btn:hover { background: rgba(255,255,255,0.25); }
+
+.dashboard {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid var(--border-light);
+  padding-bottom: 8px;
+}
+.count-badge {
+  background: var(--brand-primary);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.order-item {
+  border: 1.5px solid var(--border-light);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.2s;
+}
+.order-item:hover {
+  border-color: #A0B0A8;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.order-id {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.order-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.cust-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cust-name { font-weight: 700; font-size: 0.95rem; }
+.cust-phone { font-size: 0.85rem; color: var(--brand-primary-light); text-decoration: none; font-weight: 500; }
+.cust-address { font-size: 0.88rem; color: var(--text-dark); margin-top: 4px; background: #F8FAF9; padding: 8px; border-radius: 6px; border-left: 3px solid var(--brand-primary); }
+.order-note { font-size: 0.8rem; font-style: italic; color: var(--warning); margin-top: 4px; }
+
+.item-list {
+  font-size: 0.82rem;
+  background: #F4F6F5;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.order-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.btn-action {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+.btn-action.accept {
+  background: var(--brand-primary);
+}
+.btn-action.accept:hover { background: var(--brand-primary-light); }
+.btn-action.deliver {
+  background: var(--success);
+}
+.btn-action.deliver:hover { background: #246628; }
+
+/* ── SETTINGS MODAL ── */
+.settings-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.settings-modal-bg.open { display: flex; }
+.settings-modal {
+  background: white;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.22);
+}
+.settings-modal h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+.settings-modal p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+}
+.form-group input:focus { border-color: var(--brand-primary); }
+
+.modal-actions {
+  display: flex; gap: 8px; margin-top: 16px;
+}
+.btn-cancel {
+  flex: 1; padding: 10px;
+  border: 1.5px solid var(--border-light);
+  background: white; color: var(--text-muted);
+  border-radius: 6px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+}
+.btn-save {
+  flex: 2; padding: 10px;
+  background: var(--brand-primary); color: white; border: none;
+  border-radius: 6px; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+}
+
+.empty-orders {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  padding: 40px 0;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <a href="#" class="logo">
+      <span class="logo-icon">🛵</span>
+      <div>
+        <span class="logo-title">HiGroces</span>
+        <span class="logo-badge">Rider Dashboard</span>
+      </div>
+    </a>
+    <button class="settings-btn" onclick="openSettings()">⚙️</button>
+  </div>
+</header>
+
+<div class="dashboard">
+
+  <!-- Setup alert if credentials not found -->
+  <div id="setupAlert" class="card" style="display:none; border-color: var(--brand-accent); background: #FFF5F2;">
+    <h3 style="color:var(--brand-accent); font-family:'Playfair Display',serif; margin-bottom:6px;">⚠️ Supabase Connection Needed</h3>
+    <p style="font-size:0.85rem; line-height:1.5; color:var(--text-dark); margin-bottom:12px;">
+      Please click the gear icon (⚙️) at the top right to configure your Supabase URL & Anon Key so you can see live orders.
+    </p>
+    <button class="btn-action accept" onclick="openSettings()">Configure Now</button>
+  </div>
+
+  <!-- PENDING ORDERS -->
+  <div class="card">
+    <div class="card-title">
+      <span>📥 Incoming Orders (Pending)</span>
+      <span class="count-badge" id="pendingCount">0</span>
+    </div>
+    <div class="order-list" id="pendingList">
+      <div class="empty-orders">No incoming orders right now.</div>
+    </div>
+  </div>
+
+  <!-- ACTIVE ORDERS -->
+  <div class="card">
+    <div class="card-title">
+      <span>🛵 Active Deliveries</span>
+      <span class="count-badge" id="activeCount" style="background:var(--warning)">0</span>
+    </div>
+    <div class="order-list" id="activeList">
+      <div class="empty-orders">No active deliveries. Go accept some orders!</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="settings-modal-bg" id="settingsModal">
+  <div class="settings-modal">
+    <h2>⚙️ Supabase Settings</h2>
+    <p>Enter your Supabase API credentials to listen to live orders. These are saved locally in your browser.</p>
+    <div class="form-group">
+      <label>Supabase Project URL</label>
+      <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co" />
+    </div>
+    <div class="form-group">
+      <label>Supabase Anon Key</label>
+      <input type="text" id="sbKey" placeholder="eyJhbGciOi..." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save &amp; Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sound effect for new order -->
+<audio id="bellSound" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav" preload="auto"></audio>
+
+<script>
+let supabase = null;
+let ordersChannel = null;
+
+function openSettings() {
+  document.getElementById('sbUrl').value = localStorage.getItem('supabase_url') || '';
+  document.getElementById('sbKey').value = localStorage.getItem('supabase_key') || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  if (!url || !key) {
+    alert('Please fill both fields.');
+    return;
+  }
+  localStorage.setItem('supabase_url', url);
+  localStorage.setItem('supabase_key', key);
+  closeSettings();
+  initSupabase();
+}
+
+function initSupabase() {
+  const url = localStorage.getItem('supabase_url');
+  const key = localStorage.getItem('supabase_key');
+  
+  if (!url || !key) {
+    document.getElementById('setupAlert').style.display = 'block';
+    return;
+  }
+  
+  document.getElementById('setupAlert').style.display = 'none';
+  
+  try {
+    supabase = supabase.createClient(url, key);
+    fetchOrders();
+    setupRealtime();
+  } catch (e) {
+    console.error(e);
+    alert('Connection failed. Please check credentials.');
+  }
+}
+
+async function fetchOrders() {
+  if (!supabase) return;
+  
+  // Fetch pending and active orders
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .in('status', ['pending', 'accepted'])
+    .order('created_at', { ascending: false });
+    
+  if (error) {
+    console.error(error);
+    return;
+  }
+  
+  renderOrders(data);
+}
+
+function setupRealtime() {
+  if (!supabase) return;
+  
+  if (ordersChannel) {
+    supabase.removeChannel(ordersChannel);
+  }
+  
+  ordersChannel = supabase.channel('schema-db-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      (payload) => {
+        console.log('Realtime change:', payload);
+        
+        // Play sound if a new order is inserted
+        if (payload.eventType === 'INSERT') {
+          try {
+            document.getElementById('bellSound').play();
+          } catch(e){}
+        }
+        
+        fetchOrders();
+      }
+    )
+    .subscribe();
+}
+
+function renderOrders(orders) {
+  const pendingList = document.getElementById('pendingList');
+  const activeList  = document.getElementById('activeList');
+  
+  const pendingOrders = orders.filter(o => o.status === 'pending');
+  const activeOrders  = orders.filter(o => o.status === 'accepted');
+  
+  document.getElementById('pendingCount').textContent = pendingOrders.length;
+  document.getElementById('activeCount').textContent  = activeOrders.length;
+  
+  // Render Pending
+  if (pendingOrders.length === 0) {
+    pendingList.innerHTML = `<div class="empty-orders">No incoming orders right now.</div>`;
+  } else {
+    pendingList.innerHTML = pendingOrders.map(o => renderOrderItemMarkup(o, true)).join('');
+  }
+  
+  // Render Active
+  if (activeOrders.length === 0) {
+    activeList.innerHTML = `<div class="empty-orders">No active deliveries. Go accept some orders!</div>`;
+  } else {
+    activeList.innerHTML = activeOrders.map(o => renderOrderItemMarkup(o, false)).join('');
+  }
+}
+
+function renderOrderItemMarkup(o, isPending) {
+  const dateStr = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+  
+  const itemsHTML = items.map(i => `
+    <div class="item-row">
+      <span>${i.emoji} ${i.name} ${i.isCustom ? '<b>(Custom)</b>' : ''}</span>
+      <span>${i.qty} × ${i.unit || 'pc'}</span>
+    </div>
+  `).join('');
+  
+  const actionButton = isPending
+    ? `<button class="btn-action accept" onclick="updateOrderStatus('${o.id}', 'accepted')">Accept Order 🛵</button>`
+    : `<button class="btn-action deliver" onclick="updateOrderStatus('${o.id}', 'delivered')">Mark Delivered ✅</button>`;
+
+  return `
+    <div class="order-item" id="order-${o.id}">
+      <div class="order-header">
+        <span class="order-id">ID: ${o.id.substring(0,8)}...</span>
+        <span class="order-time">🕒 ${dateStr}</span>
+      </div>
+      
+      <div class="cust-info">
+        <div class="cust-name">👤 ${o.customer_name}</div>
+        <a href="tel:${o.customer_phone}" class="cust-phone">📞 ${o.customer_phone}</a>
+        <div class="cust-address">📍 Address: ${o.delivery_address}</div>
+        ${o.special_notes ? `<div class="order-note">📝 Note: ${o.special_notes}</div>` : ''}
+      </div>
+      
+      <div class="item-list">
+        ${itemsHTML}
+      </div>
+      
+      <div class="order-footer">
+        <div class="order-total">Total: ₹${o.total_price}</div>
+        ${actionButton}
+      </div>
+    </div>
+  `;
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+  if (!supabase) return;
+  
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: newStatus })
+    .eq('id', orderId);
+    
+  if (error) {
+    console.error(error);
+    alert('Failed to update status.');
+    return;
+  }
+  
+  fetchOrders();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initSupabase();
+});
+</script>
+</body>
+</html>

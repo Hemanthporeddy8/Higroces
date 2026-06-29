@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HiGroces — Fresh Meat, Eggs & Groceries | Delivered Fast</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -112,6 +113,11 @@ header {
   font-size: 0.9rem;
   color: var(--text-muted);
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .cart-widget {
   background: var(--brand-accent);
   color: white;
@@ -137,6 +143,18 @@ header {
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700;
 }
+.settings-btn {
+  background: #F4F6F5;
+  border: 1px solid var(--border-light);
+  color: var(--text-dark);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+}
+.settings-btn:hover { background: #E2E8E5; }
 
 /* ── STOREFRONT BODY ── */
 .storefront {
@@ -521,6 +539,73 @@ header {
 }
 .drawer-overlay.active { display: block; }
 
+/* ── SETTINGS MODAL ── */
+.settings-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.settings-modal-bg.open { display: flex; }
+.settings-modal {
+  background: white;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.22);
+}
+.settings-modal h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+.settings-modal p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.settings-modal .form-group {
+  margin-bottom: 12px;
+}
+.settings-modal .form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.settings-modal .form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+}
+.settings-modal .form-group input:focus { border-color: var(--brand-primary); }
+
+.modal-actions {
+  display: flex; gap: 8px; margin-top: 16px;
+}
+.btn-cancel {
+  flex: 1; padding: 10px;
+  border: 1.5px solid var(--border-light);
+  background: white; color: var(--text-muted);
+  border-radius: 6px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+}
+.btn-save {
+  flex: 2; padding: 10px;
+  background: var(--brand-primary); color: white; border: none;
+  border-radius: 6px; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+}
+
 /* ── ORDER FORM MODAL ── */
 .order-modal-bg {
   position: fixed; inset: 0;
@@ -603,7 +688,7 @@ header {
 .btn-modal-cancel:hover { border-color: var(--text-muted); color: var(--text-dark); }
 .btn-modal-confirm {
   flex: 2; padding: 12px;
-  background: #25D366; /* WhatsApp green */
+  background: var(--brand-primary);
   color: white; border: none;
   border-radius: 8px; font-size: 0.9rem;
   font-weight: 700; cursor: pointer;
@@ -612,9 +697,9 @@ header {
   font-family: 'Outfit', sans-serif;
   transition: background 0.2s;
 }
-.btn-modal-confirm:hover { background: #1EBE58; }
+.btn-modal-confirm:hover { background: var(--brand-primary-light); }
 
-/* ── SUCCESS OVERLAY ── */
+/* ── SUCCESS OVERLAY (LIVE ORDER TRACKER) ── */
 .success-overlay {
   position: fixed; inset: 0;
   background: rgba(12,81,63,0.96);
@@ -631,8 +716,8 @@ header {
 @keyframes fadeInOv { from { opacity:0; } to { opacity:1; } }
 .success-overlay.open { display: flex; }
 .success-checkmark {
-  font-size: 5rem;
-  margin-bottom: 20px;
+  font-size: 4rem;
+  margin-bottom: 12px;
   animation: bounceIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275);
 }
 @keyframes bounceIn {
@@ -650,8 +735,62 @@ header {
   opacity: 0.9;
   max-width: 380px;
   line-height: 1.65;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
+
+/* Tracking progress steps styling */
+.tracker-container {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  margin-bottom: 24px;
+}
+.track-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  text-align: left;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.track-step.active {
+  opacity: 1;
+}
+.track-step.done {
+  opacity: 0.8;
+}
+.track-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.track-step.done .track-dot {
+  background: white;
+  color: var(--brand-primary);
+}
+.track-step.active .track-dot {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 10px var(--brand-accent);
+}
+.track-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.track-sub {
+  font-size: 0.72rem;
+  opacity: 0.8;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
 .btn-back-home {
   background: white;
   color: var(--brand-primary);
@@ -743,19 +882,69 @@ header {
 </head>
 <body>
 
-<!-- SUCCESS OVERLAY -->
+<!-- SUCCESS OVERLAY (LIVE TRACKER) -->
 <div class="success-overlay" id="successOverlay">
-  <div class="success-checkmark">✅</div>
-  <h1>Order Placed!</h1>
-  <p>Your order has been sent to us on WhatsApp. Our rider will confirm and deliver to your door shortly. Pay cash on delivery.</p>
-  <button class="btn-back-home" onclick="closeSuccess()">← Back to Shop</button>
+  <div class="success-checkmark" id="trackerEmoji">⏳</div>
+  <h1 id="trackerTitle">Preparing Order</h1>
+  <p id="trackerSubtitle">Connecting to rider network...</p>
+  
+  <div class="tracker-container">
+    <div class="track-step" id="step-pending">
+      <div class="track-dot">1</div>
+      <div>
+        <div class="track-label">Order Placed</div>
+        <div class="track-sub">Waiting for rider acceptance</div>
+      </div>
+    </div>
+    <div class="track-step" id="step-accepted">
+      <div class="track-dot">2</div>
+      <div>
+        <div class="track-label">Accepted by Rider</div>
+        <div class="track-sub">Your cuts are packed &amp; in transit</div>
+      </div>
+    </div>
+    <div class="track-step" id="step-delivered">
+      <div class="track-dot">3</div>
+      <div>
+        <div class="track-label">Delivered</div>
+        <div class="track-sub">Pay cash to rider &amp; enjoy fresh cuts!</div>
+      </div>
+    </div>
+  </div>
+  
+  <button class="btn-back-home" id="closeTrackerBtn" onclick="closeSuccess()" style="display:none">← Back to Shop</button>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="settings-modal-bg" id="settingsModal">
+  <div class="settings-modal">
+    <h2>⚙️ Supabase Settings</h2>
+    <p>Configure your Supabase backend to enable database order storage and live order status tracking.</p>
+    <div class="form-group">
+      <label>Supabase Project URL</label>
+      <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co" />
+    </div>
+    <div class="form-group">
+      <label>Supabase Anon Key</label>
+      <input type="text" id="sbKey" placeholder="eyJhbGciOi..." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save &amp; Connect</button>
+    </div>
+  </div>
 </div>
 
 <!-- ORDER FORM MODAL -->
 <div class="order-modal-bg" id="orderModalBg">
   <div class="order-modal">
     <h2>📋 Confirm Your Order</h2>
-    <p class="subtitle">Fill your details — your order will be sent to us directly on WhatsApp. Pay cash when it arrives.</p>
+    <p class="subtitle">Complete your details to place the order. Direct delivery to your door, pay cash on arrival.</p>
+
+    <!-- Supabase Status Hint -->
+    <div id="sbStatusHint" style="font-size: 0.72rem; padding: 6px; background:#FFF5F2; border:1px solid #FFE0B2; border-radius: 4px; color: var(--brand-accent); margin-bottom: 12px; display:none; text-align:center; font-weight:600;">
+      ⚠️ Please configure Supabase settings using the gear icon (⚙️) in the header before placing an order.
+    </div>
 
     <div class="form-group">
       <label>Your Name *</label>
@@ -775,8 +964,8 @@ header {
     </div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeOrderModal()">Cancel</button>
-      <button class="btn-modal-confirm" onclick="submitOrderViaWhatsApp()">
-        📱 Send Order on WhatsApp
+      <button class="btn-modal-confirm" id="btnPlaceOrder" onclick="submitDirectOrder()">
+        🚀 Place Order
       </button>
     </div>
   </div>
@@ -802,10 +991,13 @@ header {
       <input type="text" class="search-bar" id="searchInput" placeholder="Search chicken, eggs, fish..." oninput="filterProducts(this.value)">
     </div>
 
-    <button class="cart-widget" onclick="openCartDrawer()">
-      🛒 Cart
-      <span class="cart-badge" id="cartCount">0</span>
-    </button>
+    <div class="header-actions">
+      <button class="cart-widget" onclick="openCartDrawer()">
+        🛒 Cart
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
+      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
   </div>
 </header>
 
@@ -888,10 +1080,6 @@ header {
 </div>
 
 <script>
-// ═══════════════════════════════════════════════
-// CONFIG — Change this to your WhatsApp number
-// ═══════════════════════════════════════════════
-const WHATSAPP_NUMBER = '919999999999'; // ← Replace with your number (91 + 10 digits)
 const DELIVERY_FEE = 20; // ₹20 flat delivery
 
 // ═══════════════════════════════════════════════
@@ -1049,6 +1237,51 @@ const PRODUCTS = [
     category: 'staples'
   },
 ];
+
+// ═══════════════════════════════════════════════
+// SUPABASE & CONFIG STATE
+// ═══════════════════════════════════════════════
+let supabase = null;
+let liveOrderSubscription = null;
+
+function openSettings() {
+  document.getElementById('sbUrl').value = localStorage.getItem('supabase_url') || '';
+  document.getElementById('sbKey').value = localStorage.getItem('supabase_key') || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  if (!url || !key) {
+    alert('Please fill both fields.');
+    return;
+  }
+  localStorage.setItem('supabase_url', url);
+  localStorage.setItem('supabase_key', key);
+  closeSettings();
+  initSupabase();
+}
+
+function initSupabase() {
+  const url = localStorage.getItem('supabase_url');
+  const key = localStorage.getItem('supabase_key');
+  
+  if (url && key) {
+    try {
+      supabase = supabase.createClient(url, key);
+      document.getElementById('sbStatusHint').style.display = 'none';
+    } catch(e) {
+      console.error(e);
+      document.getElementById('sbStatusHint').style.display = 'block';
+    }
+  } else {
+    document.getElementById('sbStatusHint').style.display = 'block';
+  }
+}
 
 // ═══════════════════════════════════════════════
 // CART STATE
@@ -1239,13 +1472,20 @@ function closeCartDrawer() {
 }
 
 // ═══════════════════════════════════════════════
-// ORDER MODAL + WHATSAPP
+// ORDER MODAL & DIRECT DATABASE CHECKOUT
 // ═══════════════════════════════════════════════
 function openOrderModal() {
   if (cart.length === 0) {
     alert('Your cart is empty! Add some items first.');
     return;
   }
+  
+  if (!supabase) {
+    alert('Supabase connection is not configured. Please configure settings (⚙️ icon in header) first.');
+    openSettings();
+    return;
+  }
+  
   closeCartDrawer();
   document.getElementById('orderModalBg').classList.add('open');
 }
@@ -1254,7 +1494,7 @@ function closeOrderModal() {
   document.getElementById('orderModalBg').classList.remove('open');
 }
 
-function submitOrderViaWhatsApp() {
+async function submitDirectOrder() {
   const name    = document.getElementById('custName').value.trim();
   const phone   = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
@@ -1268,41 +1508,136 @@ function submitOrderViaWhatsApp() {
     alert('Please enter a valid 10-digit phone number.');
     return;
   }
-
+  
+  if (!supabase) {
+    alert('Supabase not configured.');
+    return;
+  }
+  
   const subtotal = calcSubtotal();
   const delivery = DELIVERY_FEE;
   const total    = subtotal + delivery;
+  
+  const orderItemsData = cart.map(i => ({
+    id: i.id,
+    name: i.name,
+    price: i.price,
+    qty: i.qty,
+    unit: i.unit,
+    emoji: i.emoji,
+    isCustom: !!i.isCustom
+  }));
 
-  const itemLines = cart.map(i =>
-    `• ${i.name} × ${i.qty} — ₹${i.price * i.qty}`
-  ).join('\n');
+  const orderBtn = document.getElementById('btnPlaceOrder');
+  orderBtn.disabled = true;
+  orderBtn.textContent = 'Placing Order... ⌛';
 
-  const msg = [
-    `🛒 *NEW ORDER — HiGroces*`,
-    ``,
-    `👤 *Name:* ${name}`,
-    `📱 *Phone:* ${phone}`,
-    `📍 *Address:* ${address}`,
-    note ? `📝 *Note:* ${note}` : null,
-    `💳 *Payment:* Cash on Delivery`,
-    ``,
-    `📦 *Order Items:*`,
-    itemLines,
-    ``,
-    `💰 Subtotal: ₹${subtotal}`,
-    `🛵 Delivery: ₹${delivery}`,
-    `✅ *Total to Collect: ₹${total}*`,
-  ].filter(Boolean).join('\n');
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([
+      {
+        customer_name: name,
+        customer_phone: phone,
+        delivery_address: address,
+        special_notes: note,
+        items: orderItemsData,
+        subtotal: subtotal,
+        delivery_fee: delivery,
+        total_price: total,
+        status: 'pending'
+      }
+    ])
+    .select();
 
-  const waURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  window.open(waURL, '_blank');
+  if (error) {
+    console.error(error);
+    alert('Failed to place order: ' + error.message);
+    orderBtn.disabled = false;
+    orderBtn.textContent = '🚀 Place Order';
+    return;
+  }
 
-  // Clear cart and show success
+  const createdOrder = data[0];
+  
+  // Clear cart and reset order button
   cart.length = 0;
   updateCartBadge();
   closeOrderModal();
-  document.getElementById('orderModalBg').classList.remove('open');
-  document.getElementById('successOverlay').classList.add('open');
+  
+  orderBtn.disabled = false;
+  orderBtn.textContent = '🚀 Place Order';
+  
+  // Show Live Tracker and listen for real-time status updates
+  openOrderTracker(createdOrder);
+}
+
+function openOrderTracker(order) {
+  const overlay = document.getElementById('successOverlay');
+  overlay.classList.add('open');
+  
+  updateTrackerUI(order.status);
+  
+  if (liveOrderSubscription) {
+    supabase.removeChannel(liveOrderSubscription);
+  }
+  
+  // Listen to live changes for this order
+  liveOrderSubscription = supabase.channel('order-status-channel')
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` },
+      (payload) => {
+        console.log('Order status updated:', payload.new);
+        updateTrackerUI(payload.new.status);
+      }
+    )
+    .subscribe();
+}
+
+function updateTrackerUI(status) {
+  const steps = ['pending', 'accepted', 'delivered'];
+  const currentIdx = steps.indexOf(status);
+  
+  // Update steps styling
+  steps.forEach((step, idx) => {
+    const el = document.getElementById('step-' + step);
+    if (!el) return;
+    
+    el.classList.remove('active', 'done');
+    if (idx < currentIdx) {
+      el.classList.add('done');
+    } else if (idx === currentIdx) {
+      el.classList.add('active');
+    }
+  });
+
+  const emojiEl    = document.getElementById('trackerEmoji');
+  const titleEl    = document.getElementById('trackerTitle');
+  const subtitleEl = document.getElementById('trackerSubtitle');
+  const closeBtn   = document.getElementById('closeTrackerBtn');
+
+  if (status === 'pending') {
+    emojiEl.textContent = '⏳';
+    titleEl.textContent = 'Preparing Order';
+    subtitleEl.textContent = 'Finding a nearby rider to accept your delivery...';
+    closeBtn.style.display = 'none';
+  } else if (status === 'accepted') {
+    emojiEl.textContent = '🛵';
+    titleEl.textContent = 'Order in Transit!';
+    subtitleEl.textContent = 'A rider accepted your order! Your fresh cuts are on the way.';
+    closeBtn.style.display = 'none';
+  } else if (status === 'delivered') {
+    emojiEl.textContent = '✅';
+    titleEl.textContent = 'Delivered!';
+    subtitleEl.textContent = 'Order complete. Please pay cash to the rider. Enjoy!';
+    closeBtn.style.display = 'block'; // Sells are done, customer can go back
+    
+    // Clean up subscription
+    if (liveOrderSubscription) {
+      supabase.removeChannel(liveOrderSubscription);
+      liveOrderSubscription = null;
+    }
+  }
 }
 
 function closeSuccess() {
@@ -1332,6 +1667,7 @@ function showToast(msg) {
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  initSupabase();
   renderProductGrid('all');
 
   // Pick up custom cuts from Butcher Mode (custom.html)
