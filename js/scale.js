@@ -181,7 +181,7 @@ export function harvestSelectedPart() {
   if (activeB) priceFactor *= 1.15;
   if (activeS) priceFactor *= 1.05;
 
-  const computedPrice = parseFloat((basePrice * (baseScaleWeight / baseWeight) * priceFactor).toFixed(2));
+  const computedPrice = Math.round(basePrice * (baseScaleWeight / baseWeight) * priceFactor);
 
   let displayName = info.name;
   if (activeB && activeS) displayName += " (Boneless, Skinless)";
@@ -277,7 +277,7 @@ export function setCutSize(idx, size) {
   if (size === 'Large') mult = 1.25;
 
   item.weight = Math.round(baseWeight * mult);
-  item.price = parseFloat((basePrice * mult).toFixed(2));
+  item.price = Math.round(basePrice * mult);
 
   renderSessionCuts();
 }

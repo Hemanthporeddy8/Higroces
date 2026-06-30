@@ -25,7 +25,7 @@ export function renderSessionCuts() {
             <span style="font-size:1.2rem;">${item.emoji}</span>
             <div>
               <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink);">${item.name}</div>
-              <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • $${item.price.toFixed(2)}</div>
+              <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight}g • ₹${item.price.toFixed(0)}</div>
             </div>
           </div>
           <button class="sci-remove" data-idx="${idx}" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem; padding:0 6px;">×</button>
@@ -56,7 +56,7 @@ export function renderSessionCuts() {
           <span style="font-size:1.2rem;">${item.emoji}</span>
           <div>
             <div class="sci-name" style="font-weight:600; font-size:0.8rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.name}">${item.name}</div>
-            <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight * (item.qty || 1)}g • $${((item.price || 0) * (item.qty || 1)).toFixed(2)}</div>
+            <div class="sci-weight" style="font-size:0.7rem; color:var(--ink-light);">${item.weight * (item.qty || 1)}g • ₹${((item.price || 0) * (item.qty || 1)).toFixed(0)}</div>
           </div>
         </div>
         <div style="display:flex; align-items:center;">

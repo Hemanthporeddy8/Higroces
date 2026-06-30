@@ -1557,7 +1557,7 @@ window.addEventListener('DOMContentLoaded', () => {
           cart.push({
             id:       cut.id,
             name:     'Custom: ' + cut.name + (cut.size && cut.size !== 'Medium' ? ` (${cut.size})` : ''),
-            price:    Math.round(cut.price * 80), // convert to ₹ roughly
+            price:    cut.price,
             unit:     cut.weight + 'g',
             emoji:    cut.emoji || '🥩',
             category: 'meat',

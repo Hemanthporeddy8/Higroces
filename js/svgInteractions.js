@@ -263,7 +263,7 @@ export function setupSVGInteractions() {
       }
 
       const tooltip = document.getElementById('tooltip');
-      tooltip.textContent = `${displayName} • ${displayWeight}g • $${displayPrice.toFixed(2)}`;
+      tooltip.textContent = `${displayName} • ${displayWeight}g • ₹${displayPrice.toFixed(0)}`;
       tooltip.classList.add('visible');
     });
 
