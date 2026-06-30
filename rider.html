@@ -67,19 +67,6 @@ header {
   text-transform: uppercase;
 }
 
-.settings-btn {
-  background: rgba(255,255,255,0.15);
-  border: none;
-  color: white;
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem;
-  transition: background 0.2s;
-}
-.settings-btn:hover { background: rgba(255,255,255,0.25); }
-
 .dashboard {
   max-width: 900px;
   margin: 24px auto;
@@ -212,73 +199,6 @@ header {
 }
 .btn-action.deliver:hover { background: #246628; }
 
-/* ── SETTINGS MODAL ── */
-.settings-modal-bg {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 600;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.settings-modal-bg.open { display: flex; }
-.settings-modal {
-  background: white;
-  border-radius: 14px;
-  padding: 28px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.22);
-}
-.settings-modal h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  margin-bottom: 6px;
-}
-.settings-modal p {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 18px;
-  line-height: 1.5;
-}
-.form-group {
-  margin-bottom: 12px;
-}
-.form-group label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1.5px solid var(--border-light);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-family: 'Outfit', sans-serif;
-  outline: none;
-}
-.form-group input:focus { border-color: var(--brand-primary); }
-
-.modal-actions {
-  display: flex; gap: 8px; margin-top: 16px;
-}
-.btn-cancel {
-  flex: 1; padding: 10px;
-  border: 1.5px solid var(--border-light);
-  background: white; color: var(--text-muted);
-  border-radius: 6px; font-size: 0.88rem; font-weight: 600;
-  cursor: pointer; font-family: 'Outfit', sans-serif;
-}
-.btn-save {
-  flex: 2; padding: 10px;
-  background: var(--brand-primary); color: white; border: none;
-  border-radius: 6px; font-size: 0.88rem; font-weight: 700;
-  cursor: pointer; font-family: 'Outfit', sans-serif;
-}
-
 .empty-orders {
   text-align: center;
   color: var(--text-muted);
@@ -298,20 +218,10 @@ header {
         <span class="logo-badge">Rider Dashboard</span>
       </div>
     </a>
-    <button class="settings-btn" onclick="openSettings()">⚙️</button>
   </div>
 </header>
 
 <div class="dashboard">
-
-  <!-- Setup alert if credentials not found -->
-  <div id="setupAlert" class="card" style="display:none; border-color: var(--brand-accent); background: #FFF5F2;">
-    <h3 style="color:var(--brand-accent); font-family:'Playfair Display',serif; margin-bottom:6px;">⚠️ Supabase Connection Needed</h3>
-    <p style="font-size:0.85rem; line-height:1.5; color:var(--text-dark); margin-bottom:12px;">
-      Please click the gear icon (⚙️) at the top right to configure your Supabase URL & Anon Key so you can see live orders.
-    </p>
-    <button class="btn-action accept" onclick="openSettings()">Configure Now</button>
-  </div>
 
   <!-- PENDING ORDERS -->
   <div class="card">
@@ -337,81 +247,21 @@ header {
 
 </div>
 
-<!-- SETTINGS MODAL -->
-<div class="settings-modal-bg" id="settingsModal">
-  <div class="settings-modal">
-    <h2>⚙️ Supabase Settings</h2>
-    <p>Enter your Supabase API credentials to listen to live orders. These are saved locally in your browser.</p>
-    <div class="form-group">
-      <label>Supabase Project URL</label>
-      <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co" />
-    </div>
-    <div class="form-group">
-      <label>Supabase Anon Key</label>
-      <input type="text" id="sbKey" placeholder="eyJhbGciOi..." />
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="btn-save" onclick="saveSettings()">Save &amp; Connect</button>
-    </div>
-  </div>
-</div>
-
 <!-- Sound effect for new order -->
 <audio id="bellSound" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav" preload="auto"></audio>
 
 <script>
-let supabase = null;
+// Supabase credentials hardcoded
+const supabaseUrl = 'https://tnqntqpsrbvtgdvjelqj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucW50cXBzcmJ2dGdkdmplbHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjczNjYsImV4cCI6MjA5ODMwMzM2Nn0.w5GH-gGvtMsIHL34Qh60qImqoOyunPx0V1y1EOcyrRM';
+
+// Instantiate client (renamed to avoid conflict with global library object)
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 let ordersChannel = null;
 
-function openSettings() {
-  document.getElementById('sbUrl').value = localStorage.getItem('supabase_url') || '';
-  document.getElementById('sbKey').value = localStorage.getItem('supabase_key') || '';
-  document.getElementById('settingsModal').classList.add('open');
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-}
-
-function saveSettings() {
-  const url = document.getElementById('sbUrl').value.trim();
-  const key = document.getElementById('sbKey').value.trim();
-  if (!url || !key) {
-    alert('Please fill both fields.');
-    return;
-  }
-  localStorage.setItem('supabase_url', url);
-  localStorage.setItem('supabase_key', key);
-  closeSettings();
-  initSupabase();
-}
-
-function initSupabase() {
-  const url = localStorage.getItem('supabase_url');
-  const key = localStorage.getItem('supabase_key');
-  
-  if (!url || !key) {
-    document.getElementById('setupAlert').style.display = 'block';
-    return;
-  }
-  
-  document.getElementById('setupAlert').style.display = 'none';
-  
-  try {
-    supabase = supabase.createClient(url, key);
-    fetchOrders();
-    setupRealtime();
-  } catch (e) {
-    console.error(e);
-    alert('Connection failed. Please check credentials.');
-  }
-}
-
 async function fetchOrders() {
-  if (!supabase) return;
-  
   // Fetch pending and active orders
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('orders')
     .select('*')
     .in('status', ['pending', 'accepted'])
@@ -426,13 +276,11 @@ async function fetchOrders() {
 }
 
 function setupRealtime() {
-  if (!supabase) return;
-  
   if (ordersChannel) {
-    supabase.removeChannel(ordersChannel);
+    supabaseClient.removeChannel(ordersChannel);
   }
   
-  ordersChannel = supabase.channel('schema-db-changes')
+  ordersChannel = supabaseClient.channel('schema-db-changes')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'orders' },
@@ -519,9 +367,7 @@ function renderOrderItemMarkup(o, isPending) {
 }
 
 async function updateOrderStatus(orderId, newStatus) {
-  if (!supabase) return;
-  
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from('orders')
     .update({ status: newStatus })
     .eq('id', orderId);
@@ -536,7 +382,8 @@ async function updateOrderStatus(orderId, newStatus) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  initSupabase();
+  fetchOrders();
+  setupRealtime();
 });
 </script>
 </body>

@@ -143,18 +143,6 @@ header {
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700;
 }
-.settings-btn {
-  background: #F4F6F5;
-  border: 1px solid var(--border-light);
-  color: var(--text-dark);
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem;
-  transition: background 0.2s;
-}
-.settings-btn:hover { background: #E2E8E5; }
 
 /* ── STOREFRONT BODY ── */
 .storefront {
@@ -539,73 +527,6 @@ header {
 }
 .drawer-overlay.active { display: block; }
 
-/* ── SETTINGS MODAL ── */
-.settings-modal-bg {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 700;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.settings-modal-bg.open { display: flex; }
-.settings-modal {
-  background: white;
-  border-radius: 14px;
-  padding: 28px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.22);
-}
-.settings-modal h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  margin-bottom: 6px;
-}
-.settings-modal p {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 18px;
-  line-height: 1.5;
-}
-.settings-modal .form-group {
-  margin-bottom: 12px;
-}
-.settings-modal .form-group label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.settings-modal .form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1.5px solid var(--border-light);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-family: 'Outfit', sans-serif;
-  outline: none;
-}
-.settings-modal .form-group input:focus { border-color: var(--brand-primary); }
-
-.modal-actions {
-  display: flex; gap: 8px; margin-top: 16px;
-}
-.btn-cancel {
-  flex: 1; padding: 10px;
-  border: 1.5px solid var(--border-light);
-  background: white; color: var(--text-muted);
-  border-radius: 6px; font-size: 0.88rem; font-weight: 600;
-  cursor: pointer; font-family: 'Outfit', sans-serif;
-}
-.btn-save {
-  flex: 2; padding: 10px;
-  background: var(--brand-primary); color: white; border: none;
-  border-radius: 6px; font-size: 0.88rem; font-weight: 700;
-  cursor: pointer; font-family: 'Outfit', sans-serif;
-}
-
 /* ── ORDER FORM MODAL ── */
 .order-modal-bg {
   position: fixed; inset: 0;
@@ -915,36 +836,11 @@ header {
   <button class="btn-back-home" id="closeTrackerBtn" onclick="closeSuccess()" style="display:none">← Back to Shop</button>
 </div>
 
-<!-- SETTINGS MODAL -->
-<div class="settings-modal-bg" id="settingsModal">
-  <div class="settings-modal">
-    <h2>⚙️ Supabase Settings</h2>
-    <p>Configure your Supabase backend to enable database order storage and live order status tracking.</p>
-    <div class="form-group">
-      <label>Supabase Project URL</label>
-      <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co" />
-    </div>
-    <div class="form-group">
-      <label>Supabase Anon Key</label>
-      <input type="text" id="sbKey" placeholder="eyJhbGciOi..." />
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="btn-save" onclick="saveSettings()">Save &amp; Connect</button>
-    </div>
-  </div>
-</div>
-
 <!-- ORDER FORM MODAL -->
 <div class="order-modal-bg" id="orderModalBg">
   <div class="order-modal">
     <h2>📋 Confirm Your Order</h2>
     <p class="subtitle">Complete your details to place the order. Direct delivery to your door, pay cash on arrival.</p>
-
-    <!-- Supabase Status Hint -->
-    <div id="sbStatusHint" style="font-size: 0.72rem; padding: 6px; background:#FFF5F2; border:1px solid #FFE0B2; border-radius: 4px; color: var(--brand-accent); margin-bottom: 12px; display:none; text-align:center; font-weight:600;">
-      ⚠️ Please configure Supabase settings using the gear icon (⚙️) in the header before placing an order.
-    </div>
 
     <div class="form-group">
       <label>Your Name *</label>
@@ -996,7 +892,6 @@ header {
         🛒 Cart
         <span class="cart-badge" id="cartCount">0</span>
       </button>
-      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
     </div>
   </div>
 </header>
@@ -1239,49 +1134,14 @@ const PRODUCTS = [
 ];
 
 // ═══════════════════════════════════════════════
-// SUPABASE & CONFIG STATE
+// SUPABASE STATE (Hardcoded Credentials)
 // ═══════════════════════════════════════════════
-let supabase = null;
+const supabaseUrl = 'https://tnqntqpsrbvtgdvjelqj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucW50cXBzcmJ2dGdkdmplbHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjczNjYsImV4cCI6MjA5ODMwMzM2Nn0.w5GH-gGvtMsIHL34Qh60qImqoOyunPx0V1y1EOcyrRM';
+
+// Instantiate client (renamed to avoid conflict with global library object)
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 let liveOrderSubscription = null;
-
-function openSettings() {
-  document.getElementById('sbUrl').value = localStorage.getItem('supabase_url') || '';
-  document.getElementById('sbKey').value = localStorage.getItem('supabase_key') || '';
-  document.getElementById('settingsModal').classList.add('open');
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-}
-
-function saveSettings() {
-  const url = document.getElementById('sbUrl').value.trim();
-  const key = document.getElementById('sbKey').value.trim();
-  if (!url || !key) {
-    alert('Please fill both fields.');
-    return;
-  }
-  localStorage.setItem('supabase_url', url);
-  localStorage.setItem('supabase_key', key);
-  closeSettings();
-  initSupabase();
-}
-
-function initSupabase() {
-  const url = localStorage.getItem('supabase_url');
-  const key = localStorage.getItem('supabase_key');
-  
-  if (url && key) {
-    try {
-      supabase = supabase.createClient(url, key);
-      document.getElementById('sbStatusHint').style.display = 'none';
-    } catch(e) {
-      console.error(e);
-      document.getElementById('sbStatusHint').style.display = 'block';
-    }
-  } else {
-    document.getElementById('sbStatusHint').style.display = 'block';
-  }
-}
 
 // ═══════════════════════════════════════════════
 // CART STATE
@@ -1479,13 +1339,6 @@ function openOrderModal() {
     alert('Your cart is empty! Add some items first.');
     return;
   }
-  
-  if (!supabase) {
-    alert('Supabase connection is not configured. Please configure settings (⚙️ icon in header) first.');
-    openSettings();
-    return;
-  }
-  
   closeCartDrawer();
   document.getElementById('orderModalBg').classList.add('open');
 }
@@ -1509,11 +1362,6 @@ async function submitDirectOrder() {
     return;
   }
   
-  if (!supabase) {
-    alert('Supabase not configured.');
-    return;
-  }
-  
   const subtotal = calcSubtotal();
   const delivery = DELIVERY_FEE;
   const total    = subtotal + delivery;
@@ -1532,7 +1380,7 @@ async function submitDirectOrder() {
   orderBtn.disabled = true;
   orderBtn.textContent = 'Placing Order... ⌛';
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('orders')
     .insert([
       {
@@ -1578,11 +1426,11 @@ function openOrderTracker(order) {
   updateTrackerUI(order.status);
   
   if (liveOrderSubscription) {
-    supabase.removeChannel(liveOrderSubscription);
+    supabaseClient.removeChannel(liveOrderSubscription);
   }
   
   // Listen to live changes for this order
-  liveOrderSubscription = supabase.channel('order-status-channel')
+  liveOrderSubscription = supabaseClient.channel('order-status-channel')
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` },
@@ -1634,7 +1482,7 @@ function updateTrackerUI(status) {
     
     // Clean up subscription
     if (liveOrderSubscription) {
-      supabase.removeChannel(liveOrderSubscription);
+      supabaseClient.removeChannel(liveOrderSubscription);
       liveOrderSubscription = null;
     }
   }
@@ -1667,7 +1515,6 @@ function showToast(msg) {
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  initSupabase();
   renderProductGrid('all');
 
   // Pick up custom cuts from Butcher Mode (custom.html)
