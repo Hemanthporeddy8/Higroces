@@ -67,6 +67,24 @@ header {
   text-transform: uppercase;
 }
 
+.rider-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+.btn-logout {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Outfit';
+  font-weight: 600;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.3); }
+
 .dashboard {
   max-width: 900px;
   margin: 24px auto;
@@ -205,9 +223,102 @@ header {
   font-size: 0.88rem;
   padding: 40px 0;
 }
+
+/* ── LOGIN OVERLAY ── */
+.login-overlay {
+  position: fixed; inset: 0;
+  background: #EAECEB;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-overlay.open { display: flex; }
+.login-card {
+  background: white;
+  border-radius: 16px;
+  padding: 36px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-light);
+}
+.login-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  color: var(--brand-primary);
+}
+.login-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: 'Outfit';
+  outline: none;
+  background: white;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--brand-primary);
+}
+.btn-login {
+  width: 100%;
+  padding: 12px;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Outfit';
+  margin-top: 10px;
+}
+.btn-login:hover { background: var(--brand-primary-light); }
 </style>
 </head>
 <body>
+
+<!-- RIDER LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>🛵 Rider Sign-In</h2>
+    <p>Go active in your delivery zone to start receiving incoming grocery &amp; meat orders.</p>
+    
+    <div class="form-group">
+      <label>Rider Name</label>
+      <input type="text" id="riderNameInput" placeholder="e.g. Hemanth" required />
+    </div>
+    
+    <div class="form-group">
+      <label>Active Delivery Zone</label>
+      <select id="riderZoneInput">
+        <option value="HSR Layout">HSR Layout</option>
+        <option value="Koramangala">Koramangala</option>
+        <option value="Indiranagar">Indiranagar</option>
+        <option value="Jayanagar">Jayanagar</option>
+      </select>
+    </div>
+    
+    <button class="btn-login" onclick="loginRider()">Go Active 🟢</button>
+  </div>
+</div>
 
 <header>
   <div class="header-container">
@@ -218,26 +329,32 @@ header {
         <span class="logo-badge">Rider Dashboard</span>
       </div>
     </a>
+    
+    <div class="rider-status-bar" id="riderStatusBar" style="display:none">
+      <span>Rider: <strong id="riderNameDisplay" style="color:var(--brand-accent)"></strong></span>
+      <span>Zone: <strong id="riderZoneDisplay"></strong></span>
+      <button class="btn-logout" onclick="logoutRider()">Switch Zone</button>
+    </div>
   </div>
 </header>
 
 <div class="dashboard">
 
-  <!-- PENDING ORDERS -->
+  <!-- PENDING ORDERS IN RIDER'S ACTIVE ZONE -->
   <div class="card">
     <div class="card-title">
-      <span>📥 Incoming Orders (Pending)</span>
+      <span>📥 Incoming Orders in Zone</span>
       <span class="count-badge" id="pendingCount">0</span>
     </div>
     <div class="order-list" id="pendingList">
-      <div class="empty-orders">No incoming orders right now.</div>
+      <div class="empty-orders">No incoming orders in your zone.</div>
     </div>
   </div>
 
-  <!-- ACTIVE ORDERS -->
+  <!-- ACTIVE ORDERS ASSIGNED TO THIS RIDER -->
   <div class="card">
     <div class="card-title">
-      <span>🛵 Active Deliveries</span>
+      <span>🛵 My Active Deliveries</span>
       <span class="count-badge" id="activeCount" style="background:var(--warning)">0</span>
     </div>
     <div class="order-list" id="activeList">
@@ -259,20 +376,75 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 let ordersChannel = null;
 
+let currentRiderName = localStorage.getItem('rider_name') || '';
+let currentRiderZone = localStorage.getItem('rider_zone') || '';
+
+function checkRiderLogin() {
+  if (!currentRiderName || !currentRiderZone) {
+    document.getElementById('loginOverlay').classList.add('open');
+    document.getElementById('riderStatusBar').style.display = 'none';
+  } else {
+    document.getElementById('loginOverlay').classList.remove('open');
+    document.getElementById('riderStatusBar').style.display = 'flex';
+    document.getElementById('riderNameDisplay').textContent = currentRiderName;
+    document.getElementById('riderZoneDisplay').textContent = currentRiderZone;
+    
+    fetchOrders();
+    setupRealtime();
+  }
+}
+
+function loginRider() {
+  const name = document.getElementById('riderNameInput').value.trim();
+  const zone = document.getElementById('riderZoneInput').value;
+  if (!name) {
+    alert('Please enter your name.');
+    return;
+  }
+  localStorage.setItem('rider_name', name);
+  localStorage.setItem('rider_zone', zone);
+  currentRiderName = name;
+  currentRiderZone = zone;
+  checkRiderLogin();
+}
+
+function logoutRider() {
+  localStorage.removeItem('rider_name');
+  localStorage.removeItem('rider_zone');
+  currentRiderName = '';
+  currentRiderZone = '';
+  if (ordersChannel) {
+    supabaseClient.removeChannel(ordersChannel);
+    ordersChannel = null;
+  }
+  checkRiderLogin();
+}
+
 async function fetchOrders() {
-  // Fetch pending and active orders
-  const { data, error } = await supabaseClient
+  if (!currentRiderName || !currentRiderZone) return;
+  
+  // 1. Fetch pending orders in rider's active zone
+  const { data: pendingData, error: pendingErr } = await supabaseClient
     .from('orders')
     .select('*')
-    .in('status', ['pending', 'accepted'])
+    .eq('status', 'pending')
+    .eq('delivery_zone', currentRiderZone)
     .order('created_at', { ascending: false });
-    
-  if (error) {
-    console.error(error);
+
+  // 2. Fetch accepted orders assigned specifically to this rider
+  const { data: activeData, error: activeErr } = await supabaseClient
+    .from('orders')
+    .select('*')
+    .eq('status', 'accepted')
+    .eq('rider_name', currentRiderName)
+    .order('created_at', { ascending: false });
+
+  if (pendingErr || activeErr) {
+    console.error(pendingErr || activeErr);
     return;
   }
   
-  renderOrders(data);
+  renderOrdersList(pendingData, activeData);
 }
 
 function setupRealtime() {
@@ -287,8 +459,8 @@ function setupRealtime() {
       (payload) => {
         console.log('Realtime change:', payload);
         
-        // Play sound if a new order is inserted
-        if (payload.eventType === 'INSERT') {
+        // Play sound if a new order is inserted in this rider's zone
+        if (payload.eventType === 'INSERT' && payload.new.delivery_zone === currentRiderZone) {
           try {
             document.getElementById('bellSound').play();
           } catch(e){}
@@ -300,19 +472,16 @@ function setupRealtime() {
     .subscribe();
 }
 
-function renderOrders(orders) {
+function renderOrdersList(pendingOrders, activeOrders) {
   const pendingList = document.getElementById('pendingList');
   const activeList  = document.getElementById('activeList');
-  
-  const pendingOrders = orders.filter(o => o.status === 'pending');
-  const activeOrders  = orders.filter(o => o.status === 'accepted');
   
   document.getElementById('pendingCount').textContent = pendingOrders.length;
   document.getElementById('activeCount').textContent  = activeOrders.length;
   
   // Render Pending
   if (pendingOrders.length === 0) {
-    pendingList.innerHTML = `<div class="empty-orders">No incoming orders right now.</div>`;
+    pendingList.innerHTML = `<div class="empty-orders">No incoming orders in your zone (${currentRiderZone}).</div>`;
   } else {
     pendingList.innerHTML = pendingOrders.map(o => renderOrderItemMarkup(o, true)).join('');
   }
@@ -337,8 +506,8 @@ function renderOrderItemMarkup(o, isPending) {
   `).join('');
   
   const actionButton = isPending
-    ? `<button class="btn-action accept" onclick="updateOrderStatus('${o.id}', 'accepted')">Accept Order 🛵</button>`
-    : `<button class="btn-action deliver" onclick="updateOrderStatus('${o.id}', 'delivered')">Mark Delivered ✅</button>`;
+    ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">Accept Order 🛵</button>`
+    : `<button class="btn-action deliver" onclick="deliverOrder('${o.id}')">Mark Delivered ✅</button>`;
 
   return `
     <div class="order-item" id="order-${o.id}">
@@ -366,15 +535,35 @@ function renderOrderItemMarkup(o, isPending) {
   `;
 }
 
-async function updateOrderStatus(orderId, newStatus) {
+async function acceptOrder(orderId) {
   const { error } = await supabaseClient
     .from('orders')
-    .update({ status: newStatus })
+    .update({ 
+      status: 'accepted',
+      rider_name: currentRiderName 
+    })
     .eq('id', orderId);
     
   if (error) {
     console.error(error);
-    alert('Failed to update status.');
+    alert('Failed to accept order.');
+    return;
+  }
+  
+  fetchOrders();
+}
+
+async function deliverOrder(orderId) {
+  const { error } = await supabaseClient
+    .from('orders')
+    .update({ 
+      status: 'delivered'
+    })
+    .eq('id', orderId);
+    
+  if (error) {
+    console.error(error);
+    alert('Failed to deliver order.');
     return;
   }
   
@@ -382,8 +571,7 @@ async function updateOrderStatus(orderId, newStatus) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  fetchOrders();
-  setupRealtime();
+  checkRiderLogin();
 });
 </script>
 </body>

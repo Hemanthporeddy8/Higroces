@@ -80,10 +80,19 @@ header {
   border-radius: 20px;
   font-size: 0.82rem;
   color: var(--brand-primary);
-  font-weight: 500;
+  font-weight: 550;
   white-space: nowrap;
 }
-.delivery-badge strong { color: var(--brand-accent); }
+.delivery-badge select {
+  background: none;
+  border: none;
+  color: var(--brand-accent);
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  font-family: 'Outfit';
+  font-size: 0.82rem;
+}
 .search-bar-container {
   flex: 1;
   max-width: 440px;
@@ -878,8 +887,15 @@ header {
       </div>
     </a>
 
+    <!-- Location Dropdown Selector -->
     <div class="delivery-badge">
-      🛵 Delivering to <strong id="deliveryArea">Your Location</strong>
+      🛵 Delivering to
+      <select id="zoneSelector" onchange="changeActiveZone(this.value)">
+        <option value="HSR Layout">HSR Layout</option>
+        <option value="Koramangala">Koramangala</option>
+        <option value="Indiranagar">Indiranagar</option>
+        <option value="Jayanagar">Jayanagar</option>
+      </select>
     </div>
 
     <div class="search-bar-container">
@@ -1144,6 +1160,17 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 let liveOrderSubscription = null;
 
 // ═══════════════════════════════════════════════
+// ACTIVE ZONE STATE
+// ═══════════════════════════════════════════════
+let activeZone = localStorage.getItem('user_delivery_zone') || 'HSR Layout';
+
+function changeActiveZone(newZone) {
+  activeZone = newZone;
+  localStorage.setItem('user_delivery_zone', newZone);
+  showToast(`📍 Zone updated to ${newZone}`);
+}
+
+// ═══════════════════════════════════════════════
 // CART STATE
 // ═══════════════════════════════════════════════
 const cart = [];
@@ -1392,7 +1419,8 @@ async function submitDirectOrder() {
         subtotal: subtotal,
         delivery_fee: delivery,
         total_price: total,
-        status: 'pending'
+        status: 'pending',
+        delivery_zone: activeZone
       }
     ])
     .select();
@@ -1515,6 +1543,8 @@ function showToast(msg) {
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  // Set initial selector value
+  document.getElementById('zoneSelector').value = activeZone;
   renderProductGrid('all');
 
   // Pick up custom cuts from Butcher Mode (custom.html)
