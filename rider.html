@@ -333,6 +333,7 @@ header {
     <div class="rider-status-bar" id="riderStatusBar" style="display:none">
       <span>Rider: <strong id="riderNameDisplay" style="color:var(--brand-accent)"></strong></span>
       <span>Zone: <strong id="riderZoneDisplay"></strong></span>
+      <button class="btn-logout" id="btnRefresh" onclick="refreshOrdersManual()" style="background:var(--brand-accent); font-weight:700; margin-right:4px;">Refresh 🔄</button>
       <button class="btn-logout" onclick="logoutRider()">Switch Zone</button>
     </div>
   </div>
@@ -570,8 +571,27 @@ async function deliverOrder(orderId) {
   fetchOrders();
 }
 
+async function refreshOrdersManual() {
+  const btn = document.getElementById('btnRefresh');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Refreshing... ⏳';
+  await fetchOrders();
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = 'Refresh 🔄';
+  }, 600);
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   checkRiderLogin();
+  
+  // Auto-poll orders every 8 seconds as a robust fallback for mobile networks
+  setInterval(() => {
+    if (currentRiderName && currentRiderZone) {
+      fetchOrders();
+    }
+  }, 8000);
 });
 </script>
 </body>
