@@ -267,17 +267,44 @@ export function adjustCutQty(idx, amount) {
 export function setCutSize(idx, size) {
   const item = sessionCuts[idx];
   if (!item) return;
+
+  if (size === 'Exact (Premium 💎)') {
+    alert("💎 Custom Exact Carving is a HiGroces Premium feature.\nJoin Premium to carve exact weight parameters!");
+    // Reset selection in UI
+    renderSessionCuts();
+    return;
+  }
+
   item.size = size;
   
   const baseWeight = item.baseWeight || PART_WEIGHTS[item.partId] || 150;
-  const basePrice = item.basePrice || PART_PRICES[item.partId] || 2.0;
+  const basePrice = item.basePrice || PART_PRICES[item.partId] || 100;
 
-  let mult = 1.0;
-  if (size === 'Small') mult = 0.8;
-  if (size === 'Large') mult = 1.25;
-
-  item.weight = Math.round(baseWeight * mult);
-  item.price = Math.round(basePrice * mult);
+  if (size === 'Small') {
+    item.weight = Math.round(baseWeight * 0.8);
+    item.price = Math.round(basePrice * 0.8);
+  } else if (size === 'Medium') {
+    item.weight = baseWeight;
+    item.price = basePrice;
+  } else if (size === 'Large') {
+    item.weight = Math.round(baseWeight * 1.25);
+    item.price = Math.round(basePrice * 1.25);
+  } else if (size === '250g') {
+    item.weight = 250;
+    item.price = Math.round(basePrice * (250 / baseWeight));
+  } else if (size === '500g') {
+    item.weight = 500;
+    item.price = Math.round(basePrice * (500 / baseWeight));
+  } else if (size === '1kg') {
+    item.weight = 1000;
+    item.price = Math.round(basePrice * (1000 / baseWeight));
+  } else if (size === '2kg') {
+    item.weight = 2000;
+    item.price = Math.round(basePrice * (2000 / baseWeight));
+  } else if (size === '5kg') {
+    item.weight = 5000;
+    item.price = Math.round(basePrice * (5000 / baseWeight));
+  }
 
   renderSessionCuts();
 }

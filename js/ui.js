@@ -33,7 +33,7 @@ export function renderSessionCuts() {
       `;
     }
 
-    const sizes = ['Small', 'Medium', 'Large'];
+    const sizes = ['Small', 'Medium', 'Large', '250g', '500g', '1kg', '2kg', '5kg', 'Exact (Premium 💎)'];
     const currentSize = item.size || 'Medium';
 
     const sizeSelector = `
