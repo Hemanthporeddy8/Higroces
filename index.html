@@ -667,20 +667,75 @@ header {
 .success-overlay p {
   font-size: 1rem;
   opacity: 0.9;
-  max-width: 380px;
+  max-width: 440px;
   line-height: 1.65;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
+
+/* ── DEAD RECKONING ROUTE MAP ── */
+.route-map-container {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(10,30,22,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  backdrop-filter: blur(8px);
+}
+.map-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.hud-badge {
+  background: rgba(255,94,43,0.25);
+  color: #FFA384;
+  border: 1px solid rgba(255,94,43,0.4);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.hud-eta {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #FFD54F;
+}
+.map-canvas-wrapper {
+  width: 100%;
+  position: relative;
+}
+.route-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.map-stats-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #C0D2C8;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 10px;
+  margin-top: 8px;
+}
+.map-stats-bar strong { color: white; }
 
 /* Tracking progress steps styling */
 .tracker-container {
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   background: rgba(255,255,255,0.1);
-  padding: 20px;
+  padding: 16px 20px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.15);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .track-step {
   display: flex;
@@ -816,32 +871,86 @@ header {
 </head>
 <body>
 
-<!-- SUCCESS OVERLAY (LIVE TRACKER) -->
+<!-- SUCCESS OVERLAY (LIVE TRACKER WITH DEAD RECKONING) -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-checkmark" id="trackerEmoji">⏳</div>
   <h1 id="trackerTitle">Preparing Order</h1>
-  <p id="trackerSubtitle">Connecting to rider network...</p>
+  <p id="trackerSubtitle">Connecting to butcher &amp; rider dispatch...</p>
   
+  <!-- Dead Reckoning Live Route Simulation HUD -->
+  <div class="route-map-container" id="routeMapContainer">
+    <div class="map-hud">
+      <span class="hud-badge" id="hudStatus">🛵 ROUTE SIMULATION: PREP</span>
+      <span class="hud-eta" id="hudEta">ETA: 14 MINS</span>
+    </div>
+
+    <div class="map-canvas-wrapper">
+      <svg id="routeSvg" viewBox="0 0 360 130" class="route-svg">
+        <!-- Road Outer Border -->
+        <path d="M 35 65 Q 115 15, 180 65 T 325 65" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="20" stroke-linecap="round"/>
+        <!-- Road Surface -->
+        <path id="roadPath" d="M 35 65 Q 115 15, 180 65 T 325 65" fill="none" stroke="#17221E" stroke-width="14" stroke-linecap="round"/>
+        <!-- Road Center Yellow Dashes -->
+        <path d="M 35 65 Q 115 15, 180 65 T 325 65" fill="none" stroke="#FFB74D" stroke-width="2" stroke-dasharray="6,6" opacity="0.75"/>
+
+        <!-- Origin: Meat Hub / Butcher Shop -->
+        <g transform="translate(35, 65)">
+          <circle r="14" fill="#0C513F" stroke="#2ECC71" stroke-width="2"/>
+          <text text-anchor="middle" dominant-baseline="central" font-size="14">🏪</text>
+          <text y="22" text-anchor="middle" font-size="8.5" fill="#A8D5C2" font-weight="700">HUB</text>
+        </g>
+
+        <!-- Destination: Customer Home -->
+        <g transform="translate(325, 65)">
+          <circle r="14" fill="#0C513F" stroke="#FF5E2B" stroke-width="2"/>
+          <text text-anchor="middle" dominant-baseline="central" font-size="14">🏠</text>
+          <text y="22" text-anchor="middle" font-size="8.5" fill="#FFB74D" font-weight="700">HOME</text>
+        </g>
+
+        <!-- Dead Reckoning Moving Scooter -->
+        <g id="scooterGroup" transform="translate(35, 65)">
+          <circle r="15" fill="#FF5E2B" filter="drop-shadow(0 0 6px rgba(255,94,43,0.9))"/>
+          <text text-anchor="middle" dominant-baseline="central" font-size="15">🛵</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="map-stats-bar">
+      <span>Speed: <strong id="simSpeed">0 km/h</strong></span>
+      <span>•</span>
+      <span>Distance: <strong id="simDist">1.9 km</strong></span>
+      <span>•</span>
+      <span>Rider: <strong id="simRider">Assigning...</strong></span>
+    </div>
+  </div>
+
   <div class="tracker-container">
     <div class="track-step" id="step-pending">
       <div class="track-dot">1</div>
       <div>
-        <div class="track-label">Order Placed</div>
-        <div class="track-sub">Waiting for rider acceptance</div>
+        <div class="track-label">Order Confirmed</div>
+        <div class="track-sub">Sent to local meat hub &amp; dark store</div>
+      </div>
+    </div>
+    <div class="track-step" id="step-preparing">
+      <div class="track-dot">2</div>
+      <div>
+        <div class="track-label">Carving &amp; Packing (Butcher)</div>
+        <div class="track-sub">Fresh cuts being prepared and vacuum sealed</div>
       </div>
     </div>
     <div class="track-step" id="step-accepted">
-      <div class="track-dot">2</div>
+      <div class="track-dot">3</div>
       <div>
-        <div class="track-label">Accepted by Rider</div>
-        <div class="track-sub">Your cuts are packed &amp; in transit</div>
+        <div class="track-label">Rider Picked Up &amp; In Transit</div>
+        <div class="track-sub">Scooter en route to your doorstep</div>
       </div>
     </div>
     <div class="track-step" id="step-delivered">
-      <div class="track-dot">3</div>
+      <div class="track-dot">4</div>
       <div>
         <div class="track-label">Delivered</div>
-        <div class="track-sub">Pay cash to rider &amp; enjoy fresh cuts!</div>
+        <div class="track-sub">Pay cash or scan QR upon arrival</div>
       </div>
     </div>
   </div>
@@ -1449,11 +1558,94 @@ async function submitDirectOrder() {
   }
 }
 
+let trackerPollInterval = null;
+let deadReckoningAnimFrame = null;
+let transitStartTime = null;
+
+function animateDeadReckoning(status, riderName) {
+  const roadPath = document.getElementById('roadPath');
+  const scooter = document.getElementById('scooterGroup');
+  const hudStatus = document.getElementById('hudStatus');
+  const hudEta = document.getElementById('hudEta');
+  const simSpeed = document.getElementById('simSpeed');
+  const simDist = document.getElementById('simDist');
+  const simRider = document.getElementById('simRider');
+
+  if (!roadPath || !scooter) return;
+  const pathLen = roadPath.getTotalLength();
+
+  if (riderName && simRider) simRider.textContent = riderName;
+
+  if (status === 'pending') {
+    if (hudStatus) hudStatus.textContent = '🛵 MEAT HUB: ORDER RECEIVED';
+    if (hudEta) hudEta.textContent = 'ETA: 15 MINS';
+    if (simSpeed) simSpeed.textContent = '0 km/h';
+    if (simDist) simDist.textContent = '2.1 km';
+    const pt = roadPath.getPointAtLength(0);
+    scooter.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+    return;
+  }
+
+  if (status === 'preparing' || status === 'packed') {
+    if (hudStatus) hudStatus.textContent = status === 'packed' ? '📦 PACKED: WAITING RIDER' : '🔪 BUTCHER: CARVING FRESH CUTS';
+    if (hudEta) hudEta.textContent = 'ETA: 12 MINS';
+    if (simSpeed) simSpeed.textContent = '0 km/h';
+    if (simDist) simDist.textContent = '1.9 km';
+    const pt = roadPath.getPointAtLength(0.04 * pathLen);
+    scooter.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+    return;
+  }
+
+  if (status === 'accepted') {
+    if (!transitStartTime) transitStartTime = Date.now();
+    if (hudStatus) hudStatus.textContent = '🛵 EN ROUTE: LIVE DISPATCH';
+
+    if (deadReckoningAnimFrame) cancelAnimationFrame(deadReckoningAnimFrame);
+
+    function step() {
+      const elapsedSec = (Date.now() - transitStartTime) / 1000;
+      const totalSimDuration = 240; // 4 minutes simulated transit time
+      const progress = Math.min(0.96, 0.08 + (elapsedSec / totalSimDuration) * 0.88);
+
+      const currentDistKm = Math.max(0.1, (1.9 * (1 - progress))).toFixed(1);
+      const remainingMins = Math.max(1, Math.ceil(10 * (1 - progress)));
+      const simulatedSpeed = Math.floor(22 + Math.sin(elapsedSec) * 4);
+
+      if (hudEta) hudEta.textContent = `ETA: ${remainingMins} MINS`;
+      if (simSpeed) simSpeed.textContent = `${simulatedSpeed} km/h`;
+      if (simDist) simDist.textContent = `${currentDistKm} km`;
+
+      const pt = roadPath.getPointAtLength(progress * pathLen);
+      scooter.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+
+      if (progress < 0.96) {
+        deadReckoningAnimFrame = requestAnimationFrame(step);
+      }
+    }
+    step();
+    return;
+  }
+
+  if (status === 'delivered') {
+    if (hudStatus) hudStatus.textContent = '✅ ARRIVED AT DOORSTEP';
+    if (hudEta) hudEta.textContent = 'ARRIVED';
+    if (simSpeed) simSpeed.textContent = '0 km/h';
+    if (simDist) simDist.textContent = '0.0 km';
+    const pt = roadPath.getPointAtLength(pathLen);
+    scooter.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+    if (deadReckoningAnimFrame) {
+      cancelAnimationFrame(deadReckoningAnimFrame);
+      deadReckoningAnimFrame = null;
+    }
+  }
+}
+
 function openOrderTracker(order) {
   const overlay = document.getElementById('successOverlay');
   overlay.classList.add('open');
 
-  updateTrackerUI(order.status || 'pending');
+  transitStartTime = null;
+  updateTrackerUI(order.status || 'pending', order);
 
   if (trackerPollInterval) clearInterval(trackerPollInterval);
 
@@ -1464,7 +1656,7 @@ function openOrderTracker(order) {
       if (!res.ok) return;
       const data = await res.json();
       if (data && data.order) {
-        updateTrackerUI(data.order.status);
+        updateTrackerUI(data.order.status, data.order);
         if (data.order.status === 'delivered') {
           clearInterval(trackerPollInterval);
           trackerPollInterval = null;
@@ -1476,11 +1668,14 @@ function openOrderTracker(order) {
   }, 3000);
 }
 
-function updateTrackerUI(status) {
-  const steps = ['pending', 'accepted', 'delivered'];
-  const currentIdx = steps.indexOf(status);
+function updateTrackerUI(status, orderData) {
+  const steps = ['pending', 'preparing', 'accepted', 'delivered'];
+  let mappedStatus = status;
+  if (status === 'packed') mappedStatus = 'preparing';
 
-  // Update steps styling
+  const currentIdx = steps.indexOf(mappedStatus);
+
+  // Update step styles
   steps.forEach((step, idx) => {
     const el = document.getElementById('step-' + step);
     if (!el) return;
@@ -1500,18 +1695,28 @@ function updateTrackerUI(status) {
 
   if (status === 'pending') {
     emojiEl.textContent = '⏳';
-    titleEl.textContent = 'Preparing Order';
-    subtitleEl.textContent = 'Finding a nearby rider to accept your delivery...';
+    titleEl.textContent = 'Order Confirmed';
+    subtitleEl.textContent = 'Connecting to meat hub and butcher station...';
+    closeBtn.style.display = 'none';
+  } else if (status === 'preparing') {
+    emojiEl.textContent = '🔪';
+    titleEl.textContent = 'Carving Your Cuts';
+    subtitleEl.textContent = 'Butcher is slicing, weighing & packing your order fresh.';
+    closeBtn.style.display = 'none';
+  } else if (status === 'packed') {
+    emojiEl.textContent = '📦';
+    titleEl.textContent = 'Packed & Ready!';
+    subtitleEl.textContent = 'Meat sealed fresh. Waiting for rider pickup.';
     closeBtn.style.display = 'none';
   } else if (status === 'accepted') {
     emojiEl.textContent = '🛵';
     titleEl.textContent = 'Order in Transit!';
-    subtitleEl.textContent = 'A rider accepted your order! Your fresh cuts are on the way.';
+    subtitleEl.textContent = 'Rider picked up your pack. On the way to your door!';
     closeBtn.style.display = 'none';
   } else if (status === 'delivered') {
     emojiEl.textContent = '✅';
     titleEl.textContent = 'Delivered!';
-    subtitleEl.textContent = 'Order complete. Please pay cash to the rider. Enjoy!';
+    subtitleEl.textContent = 'Order complete. Please pay cash or scan UPI. Enjoy your cuts!';
     closeBtn.style.display = 'block';
 
     if (trackerPollInterval) {
@@ -1519,12 +1724,18 @@ function updateTrackerUI(status) {
       trackerPollInterval = null;
     }
   }
+
+  animateDeadReckoning(status, orderData ? orderData.rider_name : null);
 }
 
 function closeSuccess() {
   if (trackerPollInterval) {
     clearInterval(trackerPollInterval);
     trackerPollInterval = null;
+  }
+  if (deadReckoningAnimFrame) {
+    cancelAnimationFrame(deadReckoningAnimFrame);
+    deadReckoningAnimFrame = null;
   }
   document.getElementById('successOverlay').classList.remove('open');
   renderProductGrid(currentCategory, currentSearch);

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amorelot — Executive Admin Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0C513F">
+<style>
+:root {
+  --admin-bg: #0E1412;
+  --card-bg: #16201D;
+  --card-border: #23332E;
+  --primary: #0C513F;
+  --primary-light: #158265;
+  --accent: #FF5E2B;
+  --gold: #FFB74D;
+  --green: #2ECC71;
+  --blue: #3498DB;
+  --red: #E74C3C;
+  --text: #FFFFFF;
+  --text-muted: #8E9F98;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--admin-bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── SECURITY LOGIN OVERLAY ── */
+.auth-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10, 16, 14, 0.98);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.auth-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+.auth-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #0E1412;
+  border: 1.5px solid var(--card-border);
+  border-radius: 8px;
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 1rem;
+  outline: none;
+  text-align: center;
+  letter-spacing: 0.15em;
+  margin-bottom: 16px;
+}
+.auth-input:focus { border-color: var(--gold); }
+.btn-auth {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary-light);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+}
+.btn-auth:hover { background: #1CA37F; }
+
+/* ── ADMIN HEADER ── */
+header {
+  background: #090E0C;
+  border-bottom: 1.5px solid var(--card-border);
+  padding: 16px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+.brand-badge {
+  background: var(--accent);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-logout {
+  background: rgba(231,76,60,0.15);
+  color: #FFA39E;
+  border: 1px solid rgba(231,76,60,0.3);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-logout:hover { background: rgba(231,76,60,0.3); }
+
+/* ── DASHBOARD LAYOUT ── */
+.admin-content {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 24px;
+}
+
+/* Metrics Row */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.metric-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.metric-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.metric-icon { font-size: 1.2rem; }
+.metric-value {
+  font-size: 2rem;
+  font-weight: 900;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Master Filter Bar */
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.filter-select, .search-input {
+  background: #0E1412;
+  border: 1px solid var(--card-border);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+}
+.search-input { min-width: 240px; }
+
+/* Orders Table */
+.table-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--card-border);
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.orders-table th {
+  background: #0E1412;
+  padding: 12px 18px;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--card-border);
+}
+.orders-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+}
+.orders-table tr:hover { background: rgba(255,255,255,0.02); }
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.status-badge.pending   { background: rgba(255,94,43,0.2); color: var(--accent); border: 1px solid var(--accent); }
+.status-badge.preparing { background: rgba(255,183,77,0.2); color: var(--gold); border: 1px solid var(--gold); }
+.status-badge.packed    { background: rgba(52,152,219,0.2); color: var(--blue); border: 1px solid var(--blue); }
+.status-badge.accepted  { background: rgba(155,89,182,0.2); color: #C39BD3; border: 1px solid #C39BD3; }
+.status-badge.delivered { background: rgba(46,204,113,0.2); color: var(--green); border: 1px solid var(--green); }
+.status-badge.cancelled { background: rgba(231,76,60,0.2); color: var(--red); border: 1px solid var(--red); }
+
+.item-chip {
+  display: inline-block;
+  background: #0E1412;
+  border: 1px solid var(--card-border);
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin: 2px 2px 2px 0;
+}
+.btn-action-select {
+  background: #0E1412;
+  border: 1px solid var(--card-border);
+  color: var(--gold);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+</style>
+</head>
+<body>
+
+<!-- SECURE AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div style="font-size:2.6rem; margin-bottom:12px;">🛡️</div>
+    <h2>Amorelot Admin Access</h2>
+    <p>Please enter your master security key to decrypt executive controls and order dispatch.</p>
+    <input type="password" class="auth-input" id="authKeyInput" placeholder="ENTER MASTER KEY" onkeydown="if(event.key==='Enter') verifyAdminKey()"/>
+    <button class="btn-auth" onclick="verifyAdminKey()">Authenticate 🔓</button>
+  </div>
+</div>
+
+<header>
+  <div class="header-brand">
+    <div class="brand-title">Amorelot Command Center</div>
+    <span class="brand-badge">Super Admin</span>
+  </div>
+
+  <div class="header-actions">
+    <span id="syncIndicator" style="font-size:0.75rem; color:var(--green)">● Connected to D1</span>
+    <button class="btn-logout" onclick="logoutAdmin()">Lock Console</button>
+  </div>
+</header>
+
+<div class="admin-content">
+
+  <!-- TOP METRICS ROW -->
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Total Revenue</span>
+        <span class="metric-icon">💵</span>
+      </div>
+      <div class="metric-value" id="valRevenue" style="color:var(--green)">₹0</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Total Orders</span>
+        <span class="metric-icon">📦</span>
+      </div>
+      <div class="metric-value" id="valOrders">0</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">In Preparation / Hub</span>
+        <span class="metric-icon">🔪</span>
+      </div>
+      <div class="metric-value" id="valPrep" style="color:var(--gold)">0</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Completed Deliveries</span>
+        <span class="metric-icon">✅</span>
+      </div>
+      <div class="metric-value" id="valDelivered" style="color:var(--blue)">0</div>
+    </div>
+  </div>
+
+  <!-- FILTER & SEARCH BAR -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search customer, phone, or ID..." oninput="filterOrders()"/>
+      
+      <select class="filter-select" id="statusFilter" onchange="filterOrders()">
+        <option value="all">Status: All</option>
+        <option value="pending">Pending</option>
+        <option value="preparing">Carving / In Hub</option>
+        <option value="packed">Packed</option>
+        <option value="accepted">In Transit</option>
+        <option value="delivered">Delivered</option>
+      </select>
+
+      <select class="filter-select" id="zoneFilter" onchange="filterOrders()">
+        <option value="all">Zone: All Zones</option>
+        <option value="HSR Layout">HSR Layout</option>
+        <option value="Koramangala">Koramangala</option>
+        <option value="Indiranagar">Indiranagar</option>
+        <option value="Jayanagar">Jayanagar</option>
+      </select>
+    </div>
+
+    <button class="filter-select" style="cursor:pointer; font-weight:700" onclick="fetchAdminData()">
+      🔄 Force Sync
+    </button>
+  </div>
+
+  <!-- ORDERS TABLE -->
+  <div class="table-card">
+    <div class="table-header">Master Orders Ledger</div>
+    <div style="overflow-x:auto">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Order ID / Time</th>
+            <th>Customer &amp; Location</th>
+            <th>Zone</th>
+            <th>Ordered Cuts / Items</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Quick Action</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTbody">
+          <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted)">Loading encrypted ledger...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = '/api/orders';
+let masterKey = sessionStorage.getItem('amorelot_admin_key') || '';
+let cachedOrders = [];
+
+function checkAuth() {
+  if (!masterKey) {
+    document.getElementById('authOverlay').style.display = 'flex';
+  } else {
+    document.getElementById('authOverlay').style.display = 'none';
+    fetchAdminData();
+  }
+}
+
+async function verifyAdminKey() {
+  const key = document.getElementById('authKeyInput').value.trim();
+  if (!key) return;
+
+  try {
+    const res = await fetch(`${API_BASE}?admin=true&key=${encodeURIComponent(key)}`);
+    if (!res.ok) {
+      alert("Invalid Security Key. Access Denied.");
+      return;
+    }
+    masterKey = key;
+    sessionStorage.setItem('amorelot_admin_key', key);
+    checkAuth();
+  } catch(e) {
+    alert("Connection error: " + e.message);
+  }
+}
+
+function logoutAdmin() {
+  sessionStorage.removeItem('amorelot_admin_key');
+  masterKey = '';
+  location.reload();
+}
+
+async function fetchAdminData() {
+  if (!masterKey) return;
+  try {
+    const res = await fetch(`${API_BASE}?admin=true`, {
+      headers: { 'X-Admin-Key': masterKey }
+    });
+    if (!res.ok) {
+      logoutAdmin();
+      return;
+    }
+    const data = await res.json();
+    cachedOrders = data.orders || [];
+
+    // Render Metrics
+    document.getElementById('valRevenue').textContent = `₹${(data.stats.totalRevenue || 0).toLocaleString()}`;
+    document.getElementById('valOrders').textContent = data.stats.totalOrders || 0;
+    document.getElementById('valPrep').textContent = data.stats.preparingCount + data.stats.pendingCount;
+    document.getElementById('valDelivered').textContent = data.stats.deliveredCount || 0;
+
+    filterOrders();
+  } catch(e) {
+    console.warn("fetchAdminData error:", e);
+  }
+}
+
+function filterOrders() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const statusF = document.getElementById('statusFilter').value;
+  const zoneF = document.getElementById('zoneFilter').value;
+
+  let list = cachedOrders;
+
+  if (statusF !== 'all') {
+    list = list.filter(o => o.status === statusF);
+  }
+  if (zoneF !== 'all') {
+    list = list.filter(o => o.delivery_zone === zoneF);
+  }
+  if (q) {
+    list = list.filter(o => 
+      o.id.toLowerCase().includes(q) ||
+      o.customer_name.toLowerCase().includes(q) ||
+      o.customer_phone.includes(q)
+    );
+  }
+
+  renderTable(list);
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('ordersTbody');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted)">No matching records found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(o => {
+    const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
+    const timeStr = new Date(o.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+
+    const itemsChips = items.map(i => `
+      <span class="item-chip">
+        ${i.emoji || '🥩'} <strong>${i.name}</strong> (${i.qty || 1}x ${i.unit || ''})
+      </span>
+    `).join('');
+
+    return `
+      <tr>
+        <td>
+          <div style="font-family:'DM Mono'; font-weight:700; color:var(--gold)">#${o.id.substring(0,8)}...</div>
+          <div style="font-size:0.72rem; color:var(--text-muted)">${timeStr}</div>
+        </td>
+        <td>
+          <div style="font-weight:700">${o.customer_name}</div>
+          <div style="font-size:0.78rem; color:var(--primary-light)">📞 ${o.customer_phone}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">📍 ${o.delivery_address}</div>
+        </td>
+        <td><span style="font-weight:600">${o.delivery_zone || 'HSR'}</span></td>
+        <td style="max-width:320px">${itemsChips}</td>
+        <td><strong style="color:white; font-size:1rem;">₹${o.total_price}</strong></td>
+        <td><span class="status-badge ${o.status}">${o.status}</span></td>
+        <td>
+          <select class="btn-action-select" onchange="overrideStatus('${o.id}', this.value)">
+            <option value="">Update Status...</option>
+            <option value="preparing">Carving / Prep</option>
+            <option value="packed">Packed</option>
+            <option value="accepted">In Transit</option>
+            <option value="delivered">Delivered ✅</option>
+            <option value="cancelled">Cancel Order ❌</option>
+          </select>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function overrideStatus(id, newStatus) {
+  if (!newStatus) return;
+  if (!confirm(`Are you sure you want to update Order #${id.substring(0,8)} to ${newStatus.toUpperCase()}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Admin-Key': masterKey 
+      },
+      body: JSON.stringify({ id, status: newStatus })
+    });
+    if (!res.ok) {
+      alert("Failed to update order status.");
+      return;
+    }
+    fetchAdminData();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+  // Auto-sync every 8 seconds
+  setInterval(fetchAdminData, 8000);
+});
+</script>
+</body>
+</html>

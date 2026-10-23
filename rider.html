@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HiGroces — Rider Dashboard</title>
+<title>Amorelot — Rider Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0C513F">
@@ -155,6 +155,40 @@ header {
 .order-time {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.status-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-left: 6px;
+  display: inline-block;
+}
+.status-pill.packed {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #A5D6A7;
+}
+.status-pill.preparing {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFCC80;
+}
+.status-pill.pending {
+  background: #E3F2FD;
+  color: #1565C0;
+  border: 1px solid #90CAF9;
+}
+.cut-tag {
+  background: #FFF0EB;
+  color: #E65100;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 4px;
 }
 
 .cust-info {
@@ -326,7 +360,7 @@ header {
     <a href="#" class="logo">
       <span class="logo-icon">🛵</span>
       <div>
-        <span class="logo-title">HiGroces</span>
+        <span class="logo-title">Amorelot</span>
         <span class="logo-badge">Rider Dashboard</span>
       </div>
     </a>
@@ -466,11 +500,20 @@ function renderOrderItemMarkup(o, isPending) {
   
   const itemsHTML = items.map(i => `
     <div class="item-row">
-      <span>${i.emoji} ${i.name} ${i.isCustom ? '<b>(Custom)</b>' : ''}</span>
+      <span>${i.emoji || '🍗'} ${i.name} ${i.cutStyle ? `<span class="cut-tag">🔪 ${i.cutStyle}</span>` : (i.isCustom ? '<b>(Custom)</b>' : '')}</span>
       <span>${i.qty} × ${i.unit || 'pc'}</span>
     </div>
   `).join('');
   
+  let statusBadge = '';
+  if (o.status === 'packed') {
+    statusBadge = '<span class="status-pill packed">📦 Packed & Ready</span>';
+  } else if (o.status === 'preparing') {
+    statusBadge = '<span class="status-pill preparing">🔪 Butcher Cutting</span>';
+  } else if (o.status === 'pending') {
+    statusBadge = '<span class="status-pill pending">⏳ Order Placed</span>';
+  }
+
   const actionButton = isPending
     ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">Accept Order 🛵</button>`
     : `<button class="btn-action deliver" onclick="deliverOrder('${o.id}')">Mark Delivered ✅</button>`;
@@ -478,7 +521,10 @@ function renderOrderItemMarkup(o, isPending) {
   return `
     <div class="order-item" id="order-${o.id}">
       <div class="order-header">
-        <span class="order-id">ID: ${o.id.substring(0,8)}...</span>
+        <div>
+          <span class="order-id">ID: ${o.id.substring(0,8)}...</span>
+          ${statusBadge}
+        </div>
         <span class="order-time">🕒 ${dateStr}</span>
       </div>
       

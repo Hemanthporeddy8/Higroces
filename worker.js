@@ -1,11 +1,13 @@
 // Cloudflare Worker: worker.js
-// Serves static assets (HTML/CSS/JS/PWA) and handles /api/orders via Cloudflare D1
+// Serves static assets & handles APIs for Customer, Rider, Shop (Butcher), and Admin portals
+
+const ADMIN_SECRET_KEY = "amorelot2026"; // Master Admin Secret Key
 
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
     "Content-Type": "application/json"
   };
 }
@@ -23,11 +25,11 @@ export default {
     if (url.pathname === "/api/orders") {
       if (!env.DB) {
         return new Response(JSON.stringify({ 
-          error: "Cloudflare D1 is not bound. Please add a D1 binding named 'DB' in Cloudflare dashboard." 
+          error: "Cloudflare D1 is not bound (env.DB is missing)." 
         }), { status: 500, headers: corsHeaders() });
       }
 
-      // POST: Place a new order
+      // POST: Place a new order (Customer)
       if (request.method === "POST") {
         try {
           const body = await request.json();
@@ -63,14 +65,61 @@ export default {
         }
       }
 
-      // GET: Retrieve order tracking or rider orders
+      // GET: Query orders
       if (request.method === "GET") {
         try {
           const orderId = url.searchParams.get('orderId');
           const zone = url.searchParams.get('zone');
           const rider = url.searchParams.get('rider');
+          const isShop = url.searchParams.get('shop') === 'true';
+          const isAdmin = url.searchParams.get('admin') === 'true';
 
-          // Customer order status check
+          // A. Admin Portal Query (All orders + Real-time Revenue & Stats)
+          if (isAdmin) {
+            const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
+            if (adminKey !== ADMIN_SECRET_KEY) {
+              return new Response(JSON.stringify({ error: "Unauthorized: Invalid Admin Key" }), { 
+                status: 401, 
+                headers: corsHeaders() 
+              });
+            }
+
+            const allOrdersRes = await env.DB.prepare(`
+              SELECT * FROM orders ORDER BY datetime(created_at) DESC LIMIT 100
+            `).all();
+            const allOrders = allOrdersRes.results || [];
+
+            // Compute summary statistics
+            let totalRevenue = 0;
+            let pendingCount = 0;
+            let preparingCount = 0;
+            let inTransitCount = 0;
+            let deliveredCount = 0;
+
+            allOrders.forEach(o => {
+              if (o.status !== 'cancelled') {
+                totalRevenue += Number(o.total_price) || 0;
+              }
+              if (o.status === 'pending') pendingCount++;
+              else if (o.status === 'preparing' || o.status === 'packed') preparingCount++;
+              else if (o.status === 'accepted') inTransitCount++;
+              else if (o.status === 'delivered') deliveredCount++;
+            });
+
+            return new Response(JSON.stringify({
+              orders: allOrders,
+              stats: {
+                totalOrders: allOrders.length,
+                totalRevenue: Math.round(totalRevenue),
+                pendingCount,
+                preparingCount,
+                inTransitCount,
+                deliveredCount
+              }
+            }), { headers: corsHeaders() });
+          }
+
+          // B. Customer Tracking Query
           if (orderId) {
             const order = await env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(orderId).first();
             if (!order) {
@@ -79,14 +128,31 @@ export default {
             return new Response(JSON.stringify({ order }), { headers: corsHeaders() });
           }
 
-          // Rider dashboard query
+          // C. Shop / Butcher Portal Query (Orders to cut & pack)
+          if (isShop) {
+            let shopQuery = `SELECT * FROM orders WHERE status IN ('pending', 'preparing', 'packed')`;
+            let params = [];
+            if (zone) {
+              shopQuery += ` AND delivery_zone = ?`;
+              params.push(zone);
+            }
+            shopQuery += ` ORDER BY datetime(created_at) DESC LIMIT 50`;
+
+            const res = params.length > 0 
+              ? await env.DB.prepare(shopQuery).bind(...params).all()
+              : await env.DB.prepare(shopQuery).all();
+
+            return new Response(JSON.stringify({ orders: res.results || [] }), { headers: corsHeaders() });
+          }
+
+          // D. Rider Dashboard Query
           let pendingOrders = [];
           let activeOrders = [];
 
           if (zone) {
             const res = await env.DB.prepare(`
               SELECT * FROM orders 
-              WHERE status = 'pending' AND delivery_zone = ? 
+              WHERE (status = 'pending' OR status = 'packed') AND delivery_zone = ? 
               ORDER BY datetime(created_at) DESC
             `).bind(zone).all();
             pendingOrders = res.results || [];
@@ -107,7 +173,7 @@ export default {
         }
       }
 
-      // PATCH: Update order status (Accept / Mark Delivered)
+      // PATCH: Update order status (Shop 'packed', Rider 'accepted'/'delivered', Admin override)
       if (request.method === "PATCH") {
         try {
           const body = await request.json();
@@ -134,7 +200,7 @@ export default {
       }
     }
 
-    // 3. Static Assets: Serve index.html, rider.html, custom.html, PWA, CSS, etc.
+    // 3. Static Assets: Serve index.html, custom.html, rider.html, shop.html, admin.html, PWA, CSS
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }

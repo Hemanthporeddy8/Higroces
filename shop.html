@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amorelot — Butcher & Kitchen Station (KDS)</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B2421">
+<style>
+:root {
+  --bg-kds: #141A18;
+  --bg-card: #1E2623;
+  --bg-card-active: #25312D;
+  --accent-gold: #FFB74D;
+  --accent-orange: #FF5E2B;
+  --accent-green: #2ECC71;
+  --accent-blue: #3498DB;
+  --text-main: #FFFFFF;
+  --text-muted: #9AA7A1;
+  --border-color: #2F3B36;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-kds);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  background: #0E1311;
+  border-bottom: 2px solid var(--border-color);
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.station-badge {
+  background: var(--accent-orange);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.zone-select {
+  background: #25312D;
+  color: white;
+  border: 1.5px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+.btn-refresh {
+  background: #25312D;
+  color: white;
+  border: 1.5px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-refresh:hover { background: #32433D; }
+
+.kds-container {
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.kds-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.stat-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px 20px;
+  flex: 1;
+  min-width: 180px;
+}
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.stat-val {
+  font-size: 1.8rem;
+  font-weight: 900;
+  font-family: 'DM Mono', monospace;
+  margin-top: 4px;
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.order-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.order-card.status-pending {
+  border-color: var(--accent-orange);
+  background: #211B18;
+}
+.order-card.status-preparing {
+  border-color: var(--accent-gold);
+  background: #232219;
+}
+.order-card.status-packed {
+  border-color: var(--accent-green);
+  opacity: 0.8;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+.order-badge-id {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+}
+.order-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.status-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.status-pill.pending   { background: var(--accent-orange); color: white; }
+.status-pill.preparing { background: var(--accent-gold); color: black; }
+.status-pill.packed    { background: var(--accent-green); color: black; }
+
+.customer-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #D1DAD5;
+}
+
+/* Cuts / Items Table */
+.items-table {
+  background: #141A18;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+}
+.item-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.item-line:last-child { border-bottom: none; }
+.cut-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: white;
+}
+.cut-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.cut-tag {
+  background: rgba(255,183,77,0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(255,183,77,0.3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.cut-tag.custom {
+  background: rgba(255,94,43,0.18);
+  color: var(--accent-orange);
+  border-color: rgba(255,94,43,0.4);
+}
+.cut-qty {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent-gold);
+  white-space: nowrap;
+}
+
+.special-instruction {
+  background: rgba(255,94,43,0.12);
+  border-left: 3px solid var(--accent-orange);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #FFB399;
+}
+
+/* KDS Big Action Buttons */
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-kds {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.2s, transform 0.1s;
+}
+.btn-kds:active { transform: scale(0.98); }
+.btn-start-cut {
+  background: var(--accent-gold);
+  color: black;
+}
+.btn-start-cut:hover { filter: brightness(1.1); }
+.btn-mark-packed {
+  background: var(--accent-green);
+  color: black;
+}
+.btn-mark-packed:hover { filter: brightness(1.1); }
+
+.empty-kds {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+.empty-kds-icon { font-size: 3rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="station-badge">🔪 Butcher Station</span>
+    <div class="header-title">Amorelot / HiGroces KDS</div>
+  </div>
+
+  <div class="header-controls">
+    <select class="zone-select" id="zoneSelect" onchange="fetchShopOrders()">
+      <option value="HSR Layout">Zone: HSR Layout</option>
+      <option value="Koramangala">Zone: Koramangala</option>
+      <option value="Indiranagar">Zone: Indiranagar</option>
+      <option value="Jayanagar">Zone: Jayanagar</option>
+    </select>
+    <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()">
+      <span>🔄</span> Refresh
+    </button>
+  </div>
+</header>
+
+<div class="kds-container">
+  <div class="kds-stats">
+    <div class="stat-box">
+      <div class="stat-label">To Be Cut (Pending)</div>
+      <div class="stat-val" id="statPending" style="color:var(--accent-orange)">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Currently Carving</div>
+      <div class="stat-val" id="statPreparing" style="color:var(--accent-gold)">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Packed / Awaiting Rider</div>
+      <div class="stat-val" id="statPacked" style="color:var(--accent-green)">0</div>
+    </div>
+  </div>
+
+  <div class="orders-grid" id="ordersGrid">
+    <div class="empty-kds">
+      <div class="empty-kds-icon">🍗</div>
+      <h2>No incoming cuts in this zone</h2>
+      <p>Orders from customer Butcher Mode will appear here with exact slicing instructions.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Audio chime on new order -->
+<audio id="orderChime" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav" preload="auto"></audio>
+
+<script>
+const API_BASE = '/api/orders';
+let lastCount = null;
+
+async function fetchShopOrders() {
+  const zone = document.getElementById('zoneSelect').value;
+  try {
+    const res = await fetch(`${API_BASE}?shop=true&zone=${encodeURIComponent(zone)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const orders = data.orders || [];
+
+    // Chime if new orders arrived
+    if (lastCount !== null && orders.length > lastCount) {
+      try { document.getElementById('orderChime').play(); } catch(e) {}
+    }
+    lastCount = orders.length;
+
+    renderKdsOrders(orders);
+  } catch (err) {
+    console.warn("fetchShopOrders error:", err);
+  }
+}
+
+function renderKdsOrders(orders) {
+  const grid = document.getElementById('ordersGrid');
+  
+  let pendingN = 0, prepN = 0, packedN = 0;
+  orders.forEach(o => {
+    if (o.status === 'pending') pendingN++;
+    else if (o.status === 'preparing') prepN++;
+    else if (o.status === 'packed') packedN++;
+  });
+
+  document.getElementById('statPending').textContent = pendingN;
+  document.getElementById('statPreparing').textContent = prepN;
+  document.getElementById('statPacked').textContent = packedN;
+
+  if (orders.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-kds">
+        <div class="empty-kds-icon">🍗</div>
+        <h2>All caught up!</h2>
+        <p>No active butcher cuts needed right now.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = orders.map(o => {
+    const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
+    const timeStr = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    let statusPill = `<span class="status-pill pending">Pending Cut</span>`;
+    let actionBtn = `<button class="btn-kds btn-start-cut" onclick="updateOrderStatus('${o.id}', 'preparing')">🔪 Start Carving</button>`;
+
+    if (o.status === 'preparing') {
+      statusPill = `<span class="status-pill preparing">Carving in Progress</span>`;
+      actionBtn = `<button class="btn-kds btn-mark-packed" onclick="updateOrderStatus('${o.id}', 'packed')">📦 Packed &amp; Ready</button>`;
+    } else if (o.status === 'packed') {
+      statusPill = `<span class="status-pill packed">Ready for Rider 🛵</span>`;
+      actionBtn = `<div style="text-align:center; font-size:0.85rem; color:var(--accent-green); font-weight:700; padding:8px;">✅ Sealed in bag — Waiting for rider</div>`;
+    }
+
+    const itemsHTML = items.map(item => {
+      const isCustom = item.isCustom || item.name.toLowerCase().includes('custom');
+      return `
+        <div class="item-line">
+          <div>
+            <div class="cut-title">${item.emoji || '🥩'} ${item.name}</div>
+            <div class="cut-tags">
+              <span class="cut-tag">${item.unit || (item.weight + 'g')}</span>
+              ${isCustom ? `<span class="cut-tag custom">Custom Butcher Cut</span>` : ''}
+              ${item.size ? `<span class="cut-tag">${item.size}</span>` : ''}
+            </div>
+          </div>
+          <div class="cut-qty">${item.qty || 1}x</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="order-card status-${o.status}">
+        <div class="card-top">
+          <div>
+            <div class="order-badge-id">#${o.id.substring(0, 8).toUpperCase()}</div>
+            <div class="order-time">🕒 ${timeStr}</div>
+          </div>
+          ${statusPill}
+        </div>
+
+        <div class="customer-row">
+          <span>👤 ${o.customer_name}</span>
+          <span>📞 ${o.customer_phone}</span>
+        </div>
+
+        ${o.special_notes ? `<div class="special-instruction">📝 Instructions: ${o.special_notes}</div>` : ''}
+
+        <div class="items-table">
+          ${itemsHTML}
+        </div>
+
+        <div class="card-actions">
+          ${actionBtn}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function updateOrderStatus(id, status) {
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status })
+    });
+    if (!res.ok) {
+      alert("Failed to update status");
+      return;
+    }
+    fetchShopOrders();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('btnRefresh');
+  btn.innerHTML = '<span>⏳</span> Refreshing...';
+  await fetchShopOrders();
+  setTimeout(() => {
+    btn.innerHTML = '<span>🔄</span> Refresh';
+  }, 400);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  fetchShopOrders();
+  // Auto-poll every 5 seconds for incoming cuts
+  setInterval(fetchShopOrders, 5000);
+});
+</script>
+</body>
+</html>
