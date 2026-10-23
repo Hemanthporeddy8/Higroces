@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HiGroces — Rider Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0C513F">
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -369,16 +370,12 @@ header {
 <audio id="bellSound" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav" preload="auto"></audio>
 
 <script>
-// Supabase credentials hardcoded
-const supabaseUrl = 'https://tnqntqpsrbvtgdvjelqj.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucW50cXBzcmJ2dGdkdmplbHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjczNjYsImV4cCI6MjA5ODMwMzM2Nn0.w5GH-gGvtMsIHL34Qh60qImqoOyunPx0V1y1EOcyrRM';
-
-// Instantiate client (renamed to avoid conflict with global library object)
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-let ordersChannel = null;
+// Cloudflare D1 API endpoint
+const API_BASE = '/api/orders';
 
 let currentRiderName = localStorage.getItem('rider_name') || '';
 let currentRiderZone = localStorage.getItem('rider_zone') || '';
+let lastPendingCount = null;
 
 function checkRiderLogin() {
   if (!currentRiderName || !currentRiderZone) {
@@ -391,7 +388,6 @@ function checkRiderLogin() {
     document.getElementById('riderZoneDisplay').textContent = currentRiderZone;
     
     fetchOrders();
-    setupRealtime();
   }
 }
 
@@ -414,63 +410,32 @@ function logoutRider() {
   localStorage.removeItem('rider_zone');
   currentRiderName = '';
   currentRiderZone = '';
-  if (ordersChannel) {
-    supabaseClient.removeChannel(ordersChannel);
-    ordersChannel = null;
-  }
+  lastPendingCount = null;
   checkRiderLogin();
 }
 
 async function fetchOrders() {
   if (!currentRiderName || !currentRiderZone) return;
   
-  // 1. Fetch pending orders in rider's active zone
-  const { data: pendingData, error: pendingErr } = await supabaseClient
-    .from('orders')
-    .select('*')
-    .eq('status', 'pending')
-    .eq('delivery_zone', currentRiderZone)
-    .order('created_at', { ascending: false });
+  try {
+    const res = await fetch(`${API_BASE}?zone=${encodeURIComponent(currentRiderZone)}&rider=${encodeURIComponent(currentRiderName)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const pendingData = data.pendingOrders || [];
+    const activeData  = data.activeOrders  || [];
 
-  // 2. Fetch accepted orders assigned specifically to this rider
-  const { data: activeData, error: activeErr } = await supabaseClient
-    .from('orders')
-    .select('*')
-    .eq('status', 'accepted')
-    .eq('rider_name', currentRiderName)
-    .order('created_at', { ascending: false });
+    // Play bell sound if new pending order arrived
+    if (lastPendingCount !== null && pendingData.length > lastPendingCount) {
+      try {
+        document.getElementById('bellSound').play();
+      } catch(e) {}
+    }
+    lastPendingCount = pendingData.length;
 
-  if (pendingErr || activeErr) {
-    console.error(pendingErr || activeErr);
-    return;
+    renderOrdersList(pendingData, activeData);
+  } catch (err) {
+    console.warn("fetchOrders error:", err);
   }
-  
-  renderOrdersList(pendingData, activeData);
-}
-
-function setupRealtime() {
-  if (ordersChannel) {
-    supabaseClient.removeChannel(ordersChannel);
-  }
-  
-  ordersChannel = supabaseClient.channel('schema-db-changes')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'orders' },
-      (payload) => {
-        console.log('Realtime change:', payload);
-        
-        // Play sound if a new order is inserted in this rider's zone
-        if (payload.eventType === 'INSERT' && payload.new.delivery_zone === currentRiderZone) {
-          try {
-            document.getElementById('bellSound').play();
-          } catch(e){}
-        }
-        
-        fetchOrders();
-      }
-    )
-    .subscribe();
 }
 
 function renderOrdersList(pendingOrders, activeOrders) {
@@ -537,38 +502,41 @@ function renderOrderItemMarkup(o, isPending) {
 }
 
 async function acceptOrder(orderId) {
-  const { error } = await supabaseClient
-    .from('orders')
-    .update({ 
-      status: 'accepted',
-      rider_name: currentRiderName 
-    })
-    .eq('id', orderId);
-    
-  if (error) {
-    console.error(error);
-    alert('Failed to accept order.');
-    return;
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, status: 'accepted', rider_name: currentRiderName })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert('Failed to accept order: ' + (data.error || 'Server error'));
+      return;
+    }
+    fetchOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Network error while accepting order.');
   }
-  
-  fetchOrders();
 }
 
 async function deliverOrder(orderId) {
-  const { error } = await supabaseClient
-    .from('orders')
-    .update({ 
-      status: 'delivered'
-    })
-    .eq('id', orderId);
-    
-  if (error) {
-    console.error(error);
-    alert('Failed to deliver order.');
-    return;
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, status: 'delivered' })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert('Failed to deliver order: ' + (data.error || 'Server error'));
+      return;
+    }
+    fetchOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Network error while delivering order.');
   }
-  
-  fetchOrders();
 }
 
 async function refreshOrdersManual() {
@@ -586,12 +554,12 @@ async function refreshOrdersManual() {
 window.addEventListener('DOMContentLoaded', () => {
   checkRiderLogin();
   
-  // Auto-poll orders every 8 seconds as a robust fallback for mobile networks
+  // Auto-poll orders every 5 seconds for fast updates
   setInterval(() => {
     if (currentRiderName && currentRiderZone) {
       fetchOrders();
     }
-  }, 8000);
+  }, 5000);
 });
 </script>
 </body>

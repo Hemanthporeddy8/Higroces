@@ -1,0 +1,26 @@
+{
+  "name": "HiGroces — Fresh Meat & Daily Essentials",
+  "short_name": "HiGroces",
+  "description": "Hyperlocal farm-fresh meat, poultry, fish and daily groceries delivered fast.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F6F5",
+  "theme_color": "#0C513F",
+  "categories": ["shopping", "food", "lifestyle"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%230C513F'/><text x='50%25' y='55%25' dominant-baseline='central' text-anchor='middle' font-size='100'>🥬</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%230C513F'/><text x='50%25' y='55%25' dominant-baseline='central' text-anchor='middle' font-size='260'>🥬</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

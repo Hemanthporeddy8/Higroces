@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HiGroces — Fresh Meat, Eggs & Groceries | Delivered Fast</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0C513F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HiGroces">
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -1150,14 +1154,10 @@ const PRODUCTS = [
 ];
 
 // ═══════════════════════════════════════════════
-// SUPABASE STATE (Hardcoded Credentials)
+// CLOUDFLARE D1 API CONFIG
 // ═══════════════════════════════════════════════
-const supabaseUrl = 'https://tnqntqpsrbvtgdvjelqj.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucW50cXBzcmJ2dGdkdmplbHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjczNjYsImV4cCI6MjA5ODMwMzM2Nn0.w5GH-gGvtMsIHL34Qh60qImqoOyunPx0V1y1EOcyrRM';
-
-// Instantiate client (renamed to avoid conflict with global library object)
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-let liveOrderSubscription = null;
+const API_BASE = '/api/orders';
+let trackerPollInterval = null;
 
 // ═══════════════════════════════════════════════
 // ACTIVE ZONE STATE
@@ -1407,78 +1407,84 @@ async function submitDirectOrder() {
   orderBtn.disabled = true;
   orderBtn.textContent = 'Placing Order... ⌛';
 
-  const { data, error } = await supabaseClient
-    .from('orders')
-    .insert([
-      {
-        customer_name: name,
-        customer_phone: phone,
-        delivery_address: address,
-        special_notes: note,
-        items: orderItemsData,
-        subtotal: subtotal,
-        delivery_fee: delivery,
-        total_price: total,
-        status: 'pending',
-        delivery_zone: activeZone
-      }
-    ])
-    .select();
+  const orderPayload = {
+    customer_name: name,
+    customer_phone: phone,
+    delivery_address: address,
+    special_notes: note,
+    items: orderItemsData,
+    subtotal: subtotal,
+    delivery_fee: delivery,
+    total_price: total,
+    delivery_zone: activeZone
+  };
 
-  if (error) {
-    console.error(error);
-    alert('Failed to place order: ' + error.message);
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderPayload)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || 'Failed to place order');
+    }
+    const createdOrder = result.order;
+
+    // Clear cart and reset order button
+    cart.length = 0;
+    updateCartBadge();
+    closeOrderModal();
+
     orderBtn.disabled = false;
     orderBtn.textContent = '🚀 Place Order';
-    return;
-  }
 
-  const createdOrder = data[0];
-  
-  // Clear cart and reset order button
-  cart.length = 0;
-  updateCartBadge();
-  closeOrderModal();
-  
-  orderBtn.disabled = false;
-  orderBtn.textContent = '🚀 Place Order';
-  
-  // Show Live Tracker and listen for real-time status updates
-  openOrderTracker(createdOrder);
+    // Show Live Tracker and listen for status updates via Cloudflare API
+    openOrderTracker(createdOrder);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to place order: ' + err.message);
+    orderBtn.disabled = false;
+    orderBtn.textContent = '🚀 Place Order';
+  }
 }
 
 function openOrderTracker(order) {
   const overlay = document.getElementById('successOverlay');
   overlay.classList.add('open');
-  
-  updateTrackerUI(order.status);
-  
-  if (liveOrderSubscription) {
-    supabaseClient.removeChannel(liveOrderSubscription);
-  }
-  
-  // Listen to live changes for this order
-  liveOrderSubscription = supabaseClient.channel('order-status-channel')
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` },
-      (payload) => {
-        console.log('Order status updated:', payload.new);
-        updateTrackerUI(payload.new.status);
+
+  updateTrackerUI(order.status || 'pending');
+
+  if (trackerPollInterval) clearInterval(trackerPollInterval);
+
+  // Poll Cloudflare API every 3 seconds for status updates
+  trackerPollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}?orderId=${encodeURIComponent(order.id)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.order) {
+        updateTrackerUI(data.order.status);
+        if (data.order.status === 'delivered') {
+          clearInterval(trackerPollInterval);
+          trackerPollInterval = null;
+        }
       }
-    )
-    .subscribe();
+    } catch (e) {
+      console.warn("Tracker status check error:", e);
+    }
+  }, 3000);
 }
 
 function updateTrackerUI(status) {
   const steps = ['pending', 'accepted', 'delivered'];
   const currentIdx = steps.indexOf(status);
-  
+
   // Update steps styling
   steps.forEach((step, idx) => {
     const el = document.getElementById('step-' + step);
     if (!el) return;
-    
+
     el.classList.remove('active', 'done');
     if (idx < currentIdx) {
       el.classList.add('done');
@@ -1506,17 +1512,20 @@ function updateTrackerUI(status) {
     emojiEl.textContent = '✅';
     titleEl.textContent = 'Delivered!';
     subtitleEl.textContent = 'Order complete. Please pay cash to the rider. Enjoy!';
-    closeBtn.style.display = 'block'; // Sells are done, customer can go back
-    
-    // Clean up subscription
-    if (liveOrderSubscription) {
-      supabaseClient.removeChannel(liveOrderSubscription);
-      liveOrderSubscription = null;
+    closeBtn.style.display = 'block';
+
+    if (trackerPollInterval) {
+      clearInterval(trackerPollInterval);
+      trackerPollInterval = null;
     }
   }
 }
 
 function closeSuccess() {
+  if (trackerPollInterval) {
+    clearInterval(trackerPollInterval);
+    trackerPollInterval = null;
+  }
   document.getElementById('successOverlay').classList.remove('open');
   renderProductGrid(currentCategory, currentSearch);
 }
@@ -1572,6 +1581,15 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) {
     console.error('Failed to load custom cuts:', e);
+  }
+
+  // Register PWA Service Worker for local phone caching
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(() => {
+      console.log('HiGroces PWA Service Worker registered successfully');
+    }).catch(err => {
+      console.warn('PWA Service Worker registration failed:', err);
+    });
   }
 });
 </script>

@@ -1,0 +1,9 @@
+name = "higroces"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "."
+
+# Bind Cloudflare D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "higroces-db"
+database_id = "YOUR_D1_DATABASE_ID"
