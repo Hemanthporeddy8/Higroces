@@ -1,0 +1,12 @@
+name = "higroces"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "amorelot-db"
+database_id = "amorelot-db"
