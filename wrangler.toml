@@ -9,4 +9,4 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "amorelot-db"
-database_id = "amorelot-db"
+database_id = "13fc5e9d-a068-4e97-ba33-56b6b34bd4a0"
