@@ -201,6 +201,44 @@ header {
 .cust-address { font-size: 0.88rem; color: var(--text-dark); margin-top: 4px; background: #F8FAF9; padding: 8px; border-radius: 6px; border-left: 3px solid var(--brand-primary); }
 .order-note { font-size: 0.8rem; font-style: italic; color: var(--warning); margin-top: 4px; }
 
+.btn-navigate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #E8F0FE;
+  color: #1A73E8;
+  border: 1.5px solid #AECBFA;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-navigate:hover {
+  background: #1A73E8;
+  color: white;
+  border-color: #1A73E8;
+}
+.bag-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+.bag-tag.meat {
+  background: #FBE9E7;
+  color: #D84315;
+  border: 1px solid #FFAB91;
+}
+.bag-tag.grocery {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #A5D6A7;
+}
+
 .item-list {
   font-size: 0.82rem;
   background: #F4F6F5;
@@ -498,6 +536,34 @@ function renderOrderItemMarkup(o, isPending) {
   const dateStr = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
   
+  const hasMeat = items.some(i => {
+    const n = (i.name || '').toLowerCase();
+    const c = (i.category || '').toLowerCase();
+    return c === 'meat' || c === 'fish' || i.isButcher || i.isCustom || n.includes('chicken') || n.includes('fish') || n.includes('mutton') || n.includes('breast');
+  });
+  const hasGrocery = items.some(i => {
+    const n = (i.name || '').toLowerCase();
+    const c = (i.category || '').toLowerCase();
+    return !(c === 'meat' || c === 'fish' || i.isButcher || i.isCustom || n.includes('chicken') || n.includes('fish') || n.includes('mutton') || n.includes('breast'));
+  });
+
+  let bagTagsHtml = '';
+  if (hasMeat && hasGrocery) {
+    bagTagsHtml = '<span class="bag-tag meat">🍗 Meat Pack</span><span class="bag-tag grocery">🛒 Grocery Bag</span>';
+  } else if (hasMeat) {
+    bagTagsHtml = '<span class="bag-tag meat">🍗 Fresh Meat</span>';
+  } else {
+    bagTagsHtml = '<span class="bag-tag grocery">🛒 Grocery / FMCG</span>';
+  }
+
+  const destinationAddress = `${o.delivery_address || ''}, ${o.delivery_zone || ''}`.trim();
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationAddress)}`;
+  const navBtnHtml = `
+    <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-navigate">
+      🗺️ Open in Google Maps ↗
+    </a>
+  `;
+
   const itemsHTML = items.map(i => `
     <div class="item-row">
       <span>${i.emoji || '🍗'} ${i.name} ${i.cutStyle ? `<span class="cut-tag">🔪 ${i.cutStyle}</span>` : (i.isCustom ? '<b>(Custom)</b>' : '')}</span>
@@ -509,7 +575,7 @@ function renderOrderItemMarkup(o, isPending) {
   if (o.status === 'packed') {
     statusBadge = '<span class="status-pill packed">📦 Packed & Ready</span>';
   } else if (o.status === 'preparing') {
-    statusBadge = '<span class="status-pill preparing">🔪 Butcher Cutting</span>';
+    statusBadge = '<span class="status-pill preparing">🔪 Carving / Picking</span>';
   } else if (o.status === 'pending') {
     statusBadge = '<span class="status-pill pending">⏳ Order Placed</span>';
   }
@@ -529,9 +595,15 @@ function renderOrderItemMarkup(o, isPending) {
       </div>
       
       <div class="cust-info">
-        <div class="cust-name">👤 ${o.customer_name}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+          <div class="cust-name">👤 ${o.customer_name}</div>
+          <div>${bagTagsHtml}</div>
+        </div>
         <a href="tel:${o.customer_phone}" class="cust-phone">📞 ${o.customer_phone}</a>
-        <div class="cust-address">📍 Address: ${o.delivery_address}</div>
+        <div class="cust-address">
+          <div>📍 Address: <strong>${o.delivery_address}</strong></div>
+          <div style="margin-top:6px;">${navBtnHtml}</div>
+        </div>
         ${o.special_notes ? `<div class="order-note">📝 Note: ${o.special_notes}</div>` : ''}
       </div>
       

@@ -1057,11 +1057,12 @@ header {
   <div class="section-title" id="productsSection">🛒 Fresh Products</div>
   <div class="category-tabs">
     <button class="category-tab active" onclick="filterCategory('all', this)">All Items</button>
-    <button class="category-tab" onclick="filterCategory('meat', this)">🍗 Meat</button>
+    <button class="category-tab" onclick="filterCategory('meat', this)">🍗 Meat &amp; Cuts</button>
     <button class="category-tab" onclick="filterCategory('eggs', this)">🥚 Eggs</button>
     <button class="category-tab" onclick="filterCategory('dairy', this)">🥛 Dairy</button>
     <button class="category-tab" onclick="filterCategory('snacks', this)">🍟 Snacks</button>
-    <button class="category-tab" onclick="filterCategory('staples', this)">🛒 Staples</button>
+    <button class="category-tab" onclick="filterCategory('staples', this)">🛒 Grocery Staples</button>
+    <button class="category-tab" onclick="filterCategory('tech', this)">🔌 Tech &amp; Kitchen</button>
   </div>
 
   <!-- PRODUCT GRID -->
@@ -1260,6 +1261,42 @@ const PRODUCTS = [
     emoji: '🫙',
     category: 'staples'
   },
+
+  // ── TECH & KITCHEN APPLIANCES ──
+  {
+    id: 'tech_cable',
+    name: 'USB-C Fast Charging Cable (65W)',
+    desc: 'Braided 1.2m tangle-free fast charging cord for Android & iPhone 15/16.',
+    price: 199,
+    mrp: 399,
+    unit: '1 pc',
+    emoji: '🔌',
+    category: 'tech',
+    badge: 'Fast Delivery',
+    badgeClass: 'deal'
+  },
+  {
+    id: 'tech_scale',
+    name: 'Digital Kitchen Weighing Scale',
+    desc: 'High precision 1g–10kg LCD scale for weighing meat cuts and meal prep.',
+    price: 349,
+    mrp: 599,
+    unit: '1 pc',
+    emoji: '⚖️',
+    category: 'tech',
+    badge: 'Chef Choice',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'tech_thermometer',
+    name: 'Digital Meat Thermometer',
+    desc: 'Check chicken and steak core temperature in 3 seconds. Stainless probe.',
+    price: 249,
+    mrp: 499,
+    unit: '1 pc',
+    emoji: '🌡️',
+    category: 'tech'
+  }
 ];
 
 // ═══════════════════════════════════════════════

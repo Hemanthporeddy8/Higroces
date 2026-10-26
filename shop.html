@@ -97,6 +97,65 @@ header {
 }
 .btn-refresh:hover { background: #32433D; }
 
+.station-nav-bar {
+  background: #101614;
+  border-bottom: 2px solid var(--border-color);
+  padding: 12px 24px;
+}
+.station-nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.station-tab {
+  background: #1E2724;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.station-tab:hover {
+  color: white;
+  background: #283531;
+}
+.station-tab.active-butcher {
+  background: var(--accent-orange) !important;
+  color: white !important;
+  border-color: var(--accent-orange) !important;
+  box-shadow: 0 4px 14px rgba(255,94,43,0.35);
+}
+.station-tab.active-grocery {
+  background: #27AE60 !important;
+  color: white !important;
+  border-color: #27AE60 !important;
+  box-shadow: 0 4px 14px rgba(39,174,96,0.35);
+}
+.station-tab.active-all {
+  background: #2980B9 !important;
+  color: white !important;
+  border-color: #2980B9 !important;
+  box-shadow: 0 4px 14px rgba(41,128,185,0.35);
+}
+.sub-other-note {
+  font-size: 0.76rem;
+  color: #798E84;
+  font-style: italic;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+}
+
 .kds-container {
   max-width: 1400px;
   margin: 20px auto;
@@ -300,8 +359,8 @@ header {
 
 <header>
   <div class="header-left">
-    <span class="station-badge">🔪 Butcher Station</span>
-    <div class="header-title">Amorelot / HiGroces KDS</div>
+    <span class="station-badge" id="stationBadge">🔪 Butcher Station</span>
+    <div class="header-title" id="headerTitle">Amorelot KDS</div>
   </div>
 
   <div class="header-controls">
@@ -317,18 +376,33 @@ header {
   </div>
 </header>
 
+<!-- STATION TOGGLE NAVIGATION -->
+<div class="station-nav-bar">
+  <div class="station-nav-inner">
+    <button class="station-tab active-butcher" id="tabButcher" onclick="switchStation('butcher')">
+      🍗 Butcher Station (Raw Cuts)
+    </button>
+    <button class="station-tab" id="tabGrocery" onclick="switchStation('grocery')">
+      🛒 Grocery Station (Eggs, Spices, FMCG)
+    </button>
+    <button class="station-tab" id="tabAll" onclick="switchStation('all')">
+      🏢 All Stations (Master Dispatch)
+    </button>
+  </div>
+</div>
+
 <div class="kds-container">
   <div class="kds-stats">
     <div class="stat-box">
-      <div class="stat-label">To Be Cut (Pending)</div>
+      <div class="stat-label" id="labelPending">To Be Cut (Pending)</div>
       <div class="stat-val" id="statPending" style="color:var(--accent-orange)">0</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">Currently Carving</div>
+      <div class="stat-label" id="labelPreparing">Currently Carving</div>
       <div class="stat-val" id="statPreparing" style="color:var(--accent-gold)">0</div>
     </div>
     <div class="stat-box">
-      <div class="stat-label">Packed / Awaiting Rider</div>
+      <div class="stat-label" id="labelPacked">Packed &amp; Sealed</div>
       <div class="stat-val" id="statPacked" style="color:var(--accent-green)">0</div>
     </div>
   </div>
@@ -348,6 +422,57 @@ header {
 <script>
 const API_BASE = '/api/orders';
 let lastCount = null;
+let currentStation = 'butcher'; // 'butcher' | 'grocery' | 'all'
+let rawOrdersCache = [];
+
+function isMeatItem(item) {
+  const n = (item.name || '').toLowerCase();
+  const c = (item.category || '').toLowerCase();
+  if (c === 'meat' || c === 'fish') return true;
+  if (item.isButcher || item.isCustom) return true;
+  return n.includes('chicken') || n.includes('fish') || n.includes('mutton') || n.includes('meat') || n.includes('breast') || n.includes('keema') || n.includes('prawn') || n.includes('curry cut') || n.includes('biryani cut');
+}
+
+function isGroceryItem(item) {
+  return !isMeatItem(item);
+}
+
+function switchStation(station) {
+  currentStation = station;
+  
+  // Update Tab Styles
+  document.getElementById('tabButcher').className = 'station-tab' + (station === 'butcher' ? ' active-butcher' : '');
+  document.getElementById('tabGrocery').className = 'station-tab' + (station === 'grocery' ? ' active-grocery' : '');
+  document.getElementById('tabAll').className = 'station-tab' + (station === 'all' ? ' active-all' : '');
+
+  // Update Header & Labels
+  const badge = document.getElementById('stationBadge');
+  const labelPending = document.getElementById('labelPending');
+  const labelPreparing = document.getElementById('labelPreparing');
+  const labelPacked = document.getElementById('labelPacked');
+
+  if (station === 'butcher') {
+    badge.textContent = '🔪 Butcher Station';
+    badge.style.background = 'var(--accent-orange)';
+    labelPending.textContent = 'To Be Cut (Pending)';
+    labelPreparing.textContent = 'Currently Carving';
+    labelPacked.textContent = 'Meat Packed & Sealed';
+  } else if (station === 'grocery') {
+    badge.textContent = '🛒 Grocery Station';
+    badge.style.background = '#27AE60';
+    labelPending.textContent = 'To Be Picked (Pending)';
+    labelPreparing.textContent = 'Currently Picking';
+    labelPacked.textContent = 'Grocery Bagged & Ready';
+  } else {
+    badge.textContent = '🏢 Master Dispatch';
+    badge.style.background = '#2980B9';
+    labelPending.textContent = 'Total Orders Pending';
+    labelPreparing.textContent = 'In Preparation';
+    labelPacked.textContent = 'Packed & Waiting Rider';
+  }
+
+  renderKdsOrders(rawOrdersCache);
+}
 
 async function fetchShopOrders() {
   const zone = document.getElementById('zoneSelect').value;
@@ -355,25 +480,38 @@ async function fetchShopOrders() {
     const res = await fetch(`${API_BASE}?shop=true&zone=${encodeURIComponent(zone)}`);
     if (!res.ok) return;
     const data = await res.json();
-    const orders = data.orders || [];
+    rawOrdersCache = data.orders || [];
 
     // Chime if new orders arrived
-    if (lastCount !== null && orders.length > lastCount) {
+    if (lastCount !== null && rawOrdersCache.length > lastCount) {
       try { document.getElementById('orderChime').play(); } catch(e) {}
     }
-    lastCount = orders.length;
+    lastCount = rawOrdersCache.length;
 
-    renderKdsOrders(orders);
+    renderKdsOrders(rawOrdersCache);
   } catch (err) {
     console.warn("fetchShopOrders error:", err);
   }
 }
 
-function renderKdsOrders(orders) {
+function renderKdsOrders(allOrders) {
   const grid = document.getElementById('ordersGrid');
   
+  // Filter orders according to station
+  const filteredOrders = allOrders.filter(o => {
+    const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
+    if (currentStation === 'butcher') {
+      return items.some(isMeatItem);
+    }
+    if (currentStation === 'grocery') {
+      return items.some(isGroceryItem);
+    }
+    return true; // 'all'
+  });
+
+  // Calculate station-specific stats
   let pendingN = 0, prepN = 0, packedN = 0;
-  orders.forEach(o => {
+  filteredOrders.forEach(o => {
     if (o.status === 'pending') pendingN++;
     else if (o.status === 'preparing') prepN++;
     else if (o.status === 'packed') packedN++;
@@ -383,47 +521,94 @@ function renderKdsOrders(orders) {
   document.getElementById('statPreparing').textContent = prepN;
   document.getElementById('statPacked').textContent = packedN;
 
-  if (orders.length === 0) {
+  if (filteredOrders.length === 0) {
+    let emptyIcon = '🍗';
+    let emptyTitle = 'All caught up!';
+    let emptySub = 'No active butcher cuts needed in this zone.';
+    
+    if (currentStation === 'grocery') {
+      emptyIcon = '🛒';
+      emptyTitle = 'Grocery Shelves Clear!';
+      emptySub = 'No eggs or FMCG groceries to pick in this zone.';
+    } else if (currentStation === 'all') {
+      emptyIcon = '📦';
+      emptyTitle = 'Zero Pending Orders';
+      emptySub = 'No orders currently being processed.';
+    }
+
     grid.innerHTML = `
       <div class="empty-kds">
-        <div class="empty-kds-icon">🍗</div>
-        <h2>All caught up!</h2>
-        <p>No active butcher cuts needed right now.</p>
+        <div class="empty-kds-icon">${emptyIcon}</div>
+        <h2>${emptyTitle}</h2>
+        <p>${emptySub}</p>
       </div>`;
     return;
   }
 
-  grid.innerHTML = orders.map(o => {
+  grid.innerHTML = filteredOrders.map(o => {
     const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
     const timeStr = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    let statusPill = `<span class="status-pill pending">Pending Cut</span>`;
-    let actionBtn = `<button class="btn-kds btn-start-cut" onclick="updateOrderStatus('${o.id}', 'preparing')">🔪 Start Carving</button>`;
+    // Determine items to display on this specific station
+    let displayedItems = items;
+    let otherCount = 0;
+    let otherType = '';
+
+    if (currentStation === 'butcher') {
+      displayedItems = items.filter(isMeatItem);
+      const grocCount = items.filter(isGroceryItem).length;
+      if (grocCount > 0) {
+        otherCount = grocCount;
+        otherType = 'grocery';
+      }
+    } else if (currentStation === 'grocery') {
+      displayedItems = items.filter(isGroceryItem);
+      const meatCount = items.filter(isMeatItem).length;
+      if (meatCount > 0) {
+        otherCount = meatCount;
+        otherType = 'meat';
+      }
+    }
+
+    // Action button labels based on station
+    let statusPill = `<span class="status-pill pending">Pending</span>`;
+    let startBtnText = currentStation === 'butcher' ? '🔪 Start Carving' : (currentStation === 'grocery' ? '📋 Start Picking' : '🚀 Start Prep');
+    let packBtnText = currentStation === 'butcher' ? '📦 Meat Packed &amp; Sealed' : (currentStation === 'grocery' ? '🛍️ Grocery Bagged &amp; Ready' : '📦 Mark Packed &amp; Ready');
+
+    let actionBtn = `<button class="btn-kds btn-start-cut" onclick="updateOrderStatus('${o.id}', 'preparing')">${startBtnText}</button>`;
 
     if (o.status === 'preparing') {
-      statusPill = `<span class="status-pill preparing">Carving in Progress</span>`;
-      actionBtn = `<button class="btn-kds btn-mark-packed" onclick="updateOrderStatus('${o.id}', 'packed')">📦 Packed &amp; Ready</button>`;
+      statusPill = `<span class="status-pill preparing">${currentStation === 'butcher' ? 'Carving in Progress' : 'Picking in Progress'}</span>`;
+      actionBtn = `<button class="btn-kds btn-mark-packed" onclick="updateOrderStatus('${o.id}', 'packed')">${packBtnText}</button>`;
     } else if (o.status === 'packed') {
       statusPill = `<span class="status-pill packed">Ready for Rider 🛵</span>`;
       actionBtn = `<div style="text-align:center; font-size:0.85rem; color:var(--accent-green); font-weight:700; padding:8px;">✅ Sealed in bag — Waiting for rider</div>`;
     }
 
-    const itemsHTML = items.map(item => {
-      const isCustom = item.isCustom || item.name.toLowerCase().includes('custom');
+    const itemsHTML = displayedItems.map(item => {
+      const isCustom = item.isCustom || (item.name || '').toLowerCase().includes('custom');
+      const itemIsMeat = isMeatItem(item);
       return `
         <div class="item-line">
           <div>
-            <div class="cut-title">${item.emoji || '🥩'} ${item.name}</div>
+            <div class="cut-title">${item.emoji || (itemIsMeat ? '🥩' : '🛒')} ${item.name}</div>
             <div class="cut-tags">
-              <span class="cut-tag">${item.unit || (item.weight + 'g')}</span>
+              <span class="cut-tag">${item.unit || (item.weight ? item.weight + 'g' : '1 pc')}</span>
               ${isCustom ? `<span class="cut-tag custom">Custom Butcher Cut</span>` : ''}
               ${item.size ? `<span class="cut-tag">${item.size}</span>` : ''}
+              ${item.cutStyle ? `<span class="cut-tag">🔪 ${item.cutStyle}</span>` : ''}
             </div>
           </div>
           <div class="cut-qty">${item.qty || 1}x</div>
         </div>
       `;
     }).join('');
+
+    const otherNoteHTML = otherCount > 0 ? `
+      <div class="sub-other-note">
+        ℹ️ Note: Order also contains ${otherCount} ${otherType} item(s) handled by the ${otherType === 'grocery' ? 'Grocery Station' : 'Butcher Station'}.
+      </div>
+    ` : '';
 
     return `
       <div class="order-card status-${o.status}">
@@ -444,6 +629,7 @@ function renderKdsOrders(orders) {
 
         <div class="items-table">
           ${itemsHTML}
+          ${otherNoteHTML}
         </div>
 
         <div class="card-actions">
@@ -482,7 +668,7 @@ async function manualRefresh() {
 
 window.addEventListener('DOMContentLoaded', () => {
   fetchShopOrders();
-  // Auto-poll every 5 seconds for incoming cuts
+  // Auto-poll every 5 seconds for incoming station tasks
   setInterval(fetchShopOrders, 5000);
 });
 </script>
