@@ -29,19 +29,37 @@ export default {
         }), { status: 500, headers: corsHeaders() });
       }
 
+      // Ensure delivery_otp column exists
+      try {
+        await env.DB.prepare("ALTER TABLE orders ADD COLUMN delivery_otp TEXT").run();
+      } catch(e) {}
+
+      // Auto-expire pending orders older than 30 minutes
+      try {
+        await env.DB.prepare(`
+          UPDATE orders 
+          SET status = 'expired' 
+          WHERE status = 'pending' 
+          AND datetime(created_at) < datetime('now', '-30 minutes')
+        `).run();
+      } catch(e) {}
+
       // POST: Place a new order (Customer)
       if (request.method === "POST") {
         try {
           const body = await request.json();
           const id = crypto.randomUUID();
           const itemsStr = typeof body.items === 'string' ? body.items : JSON.stringify(body.items || []);
+          
+          // Generate 4-digit dynamic delivery OTP
+          const delivery_otp = Math.floor(1000 + Math.random() * 9000).toString();
 
           await env.DB.prepare(`
             INSERT INTO orders (
               id, customer_name, customer_phone, delivery_address, 
               special_notes, items, subtotal, delivery_fee, total_price, 
-              status, delivery_zone, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
+              status, delivery_zone, delivery_otp, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'))
           `).bind(
             id,
             body.customer_name || 'Customer',
@@ -52,10 +70,11 @@ export default {
             Number(body.subtotal) || 0,
             Number(body.delivery_fee) || 0,
             Number(body.total_price) || 0,
-            body.delivery_zone || 'HSR Layout'
+            body.delivery_zone || 'HSR Layout',
+            delivery_otp
           ).run();
 
-          const created = { id, status: 'pending', ...body };
+          const created = { id, status: 'pending', delivery_otp, ...body };
           return new Response(JSON.stringify({ success: true, order: created }), {
             status: 201,
             headers: corsHeaders()
@@ -89,7 +108,6 @@ export default {
             `).all();
             const allOrders = allOrdersRes.results || [];
 
-            // Compute summary statistics
             let totalRevenue = 0;
             let pendingCount = 0;
             let preparingCount = 0;
@@ -97,7 +115,7 @@ export default {
             let deliveredCount = 0;
 
             allOrders.forEach(o => {
-              if (o.status !== 'cancelled') {
+              if (o.status !== 'cancelled' && o.status !== 'expired') {
                 totalRevenue += Number(o.total_price) || 0;
               }
               if (o.status === 'pending') pendingCount++;
@@ -119,7 +137,7 @@ export default {
             }), { headers: corsHeaders() });
           }
 
-          // B. Customer Tracking Query
+          // B. Customer Tracking Query (Includes delivery_otp)
           if (orderId) {
             const order = await env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(orderId).first();
             if (!order) {
@@ -128,9 +146,13 @@ export default {
             return new Response(JSON.stringify({ order }), { headers: corsHeaders() });
           }
 
-          // C. Shop / Butcher Portal Query (Orders to cut & pack)
+          // C. Shop / Butcher Portal Query (Only today's active cuts within 8 hours)
           if (isShop) {
-            let shopQuery = `SELECT * FROM orders WHERE status IN ('pending', 'preparing', 'packed')`;
+            let shopQuery = `
+              SELECT * FROM orders 
+              WHERE status IN ('pending', 'preparing', 'packed') 
+              AND datetime(created_at) >= datetime('now', '-8 hours')
+            `;
             let params = [];
             if (zone) {
               shopQuery += ` AND delivery_zone = ?`;
@@ -145,17 +167,22 @@ export default {
             return new Response(JSON.stringify({ orders: res.results || [] }), { headers: corsHeaders() });
           }
 
-          // D. Rider Dashboard Query
+          // D. Rider Dashboard Query (Delivery OTP masked from rider for security)
           let pendingOrders = [];
           let activeOrders = [];
 
           if (zone) {
             const res = await env.DB.prepare(`
               SELECT * FROM orders 
-              WHERE (status = 'pending' OR status = 'packed') AND delivery_zone = ? 
+              WHERE (status = 'pending' OR status = 'packed') 
+              AND delivery_zone = ? 
+              AND datetime(created_at) >= datetime('now', '-8 hours')
               ORDER BY datetime(created_at) DESC
             `).bind(zone).all();
-            pendingOrders = res.results || [];
+            pendingOrders = (res.results || []).map(o => {
+              const { delivery_otp, ...safe } = o;
+              return safe;
+            });
           }
 
           if (rider) {
@@ -164,7 +191,10 @@ export default {
               WHERE status = 'accepted' AND rider_name = ? 
               ORDER BY datetime(created_at) DESC
             `).bind(rider).all();
-            activeOrders = res.results || [];
+            activeOrders = (res.results || []).map(o => {
+              const { delivery_otp, ...safe } = o;
+              return safe;
+            });
           }
 
           return new Response(JSON.stringify({ pendingOrders, activeOrders }), { headers: corsHeaders() });
@@ -173,16 +203,54 @@ export default {
         }
       }
 
-      // PATCH: Update order status (Shop 'packed', Rider 'accepted'/'delivered', Admin override)
+      // PATCH: Update order status (Cancellation, Shop 'packed', Rider 'accepted'/'delivered' with OTP)
       if (request.method === "PATCH") {
         try {
           const body = await request.json();
-          const { id, status, rider_name } = body;
+          const { id, status, rider_name, otp } = body;
 
           if (!id || !status) {
             return new Response(JSON.stringify({ error: "id and status are required" }), { status: 400, headers: corsHeaders() });
           }
 
+          const existing = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(id).first();
+          if (!existing) {
+            return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: corsHeaders() });
+          }
+
+          // 1. Customer Cancellation Handling
+          if (status === 'cancelled') {
+            if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
+              return new Response(JSON.stringify({ 
+                error: "Cannot cancel order: Butcher carving has already started." 
+              }), { status: 400, headers: corsHeaders() });
+            }
+            if (existing.status === 'delivered') {
+              return new Response(JSON.stringify({ error: "Order already delivered." }), { status: 400, headers: corsHeaders() });
+            }
+            await env.DB.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").bind(id).run();
+            return new Response(JSON.stringify({ success: true, id, status: 'cancelled' }), { headers: corsHeaders() });
+          }
+
+          // 2. Rider Handover Delivery with 4-Digit OTP Verification
+          if (status === 'delivered') {
+            const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
+            const isAdminOverride = adminKey === ADMIN_SECRET_KEY;
+
+            if (existing.delivery_otp && !isAdminOverride) {
+              const submittedOtp = (otp || '').toString().trim();
+              if (!submittedOtp || submittedOtp !== existing.delivery_otp.toString()) {
+                return new Response(JSON.stringify({ 
+                  error: "Invalid Handover PIN! Please ask the customer at the door for the 4-digit code shown on their tracking screen." 
+                }), { status: 400, headers: corsHeaders() });
+              }
+            }
+
+            await env.DB.prepare("UPDATE orders SET status = 'delivered' WHERE id = ?").bind(id).run();
+            return new Response(JSON.stringify({ success: true, id, status: 'delivered' }), { headers: corsHeaders() });
+          }
+
+          // 3. Regular Status Updates (preparing, packed, accepted)
           if (rider_name) {
             await env.DB.prepare(`
               UPDATE orders SET status = ?, rider_name = ? WHERE id = ?

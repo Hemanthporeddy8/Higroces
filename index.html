@@ -727,6 +727,56 @@ header {
 }
 .map-stats-bar strong { color: white; }
 
+/* ── DELIVERY OTP & CANCELLATION ── */
+.delivery-otp-card {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(135deg, rgba(255,183,77,0.18), rgba(255,94,43,0.14));
+  border: 1.5px dashed var(--brand-accent);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.otp-badge-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #FFA384;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.otp-number-display {
+  font-family: 'DM Mono', monospace;
+  font-size: 2.3rem;
+  font-weight: 900;
+  color: #FFD54F;
+  letter-spacing: 0.22em;
+  margin: 4px 0;
+  text-shadow: 0 0 14px rgba(255,213,79,0.5);
+}
+.otp-instruction {
+  font-size: 0.78rem;
+  color: #D1DAD5;
+  line-height: 1.35;
+}
+.btn-cancel-customer {
+  background: rgba(239,83,80,0.15);
+  color: #FF8A80;
+  border: 1.5px solid rgba(239,83,80,0.4);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-cancel-customer:hover {
+  background: #D32F2F;
+  color: white;
+  border-color: #D32F2F;
+}
+
 /* Tracking progress steps styling */
 .tracker-container {
   width: 100%;
@@ -924,6 +974,20 @@ header {
     </div>
   </div>
 
+  <!-- DELIVERY HANDOVER OTP CARD -->
+  <div class="delivery-otp-card" id="deliveryOtpCard" style="display:none;">
+    <div class="otp-badge-label">🔑 HANDOVER CODE FOR RIDER</div>
+    <div class="otp-number-display" id="otpDisplay">----</div>
+    <div class="otp-instruction">Share this 4-digit code with the rider at your door to confirm delivery.</div>
+  </div>
+
+  <!-- 60-SECOND CANCELLATION BUTTON -->
+  <div id="cancelOrderWrapper" style="display:none; margin: 0 0 16px 0;">
+    <button class="btn-cancel-customer" id="btnCancelCustomer" onclick="cancelCustomerOrder()">
+      ✕ Cancel Order (<span id="cancelTimer">60</span>s)
+    </button>
+  </div>
+
   <div class="tracker-container">
     <div class="track-step" id="step-pending">
       <div class="track-dot">1</div>
@@ -962,7 +1026,7 @@ header {
 <div class="order-modal-bg" id="orderModalBg">
   <div class="order-modal">
     <h2>📋 Confirm Your Order</h2>
-    <p class="subtitle">Complete your details to place the order. Direct delivery to your door, pay cash on arrival.</p>
+    <p class="subtitle">Complete your details to place the order. Direct delivery to your door in 15 minutes.</p>
 
     <div class="form-group">
       <label>Your Name *</label>
@@ -975,6 +1039,19 @@ header {
     <div class="form-group">
       <label>Delivery Address *</label>
       <textarea id="custAddress" placeholder="House no., Street, Landmark, Area..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Payment Method *</label>
+      <div style="display:flex; gap:10px; margin-top:4px;">
+        <label style="flex:1; display:flex; align-items:center; gap:8px; background:#F4F6F5; border:1.5px solid var(--border-light); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:0.88rem; font-weight:600;">
+          <input type="radio" name="payMethod" value="COD" checked />
+          <span>💵 Cash on Delivery</span>
+        </label>
+        <label style="flex:1; display:flex; align-items:center; gap:8px; background:#F4F6F5; border:1.5px solid var(--border-light); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:0.88rem; font-weight:600;">
+          <input type="radio" name="payMethod" value="UPI" />
+          <span>📱 Scan UPI on Arrival</span>
+        </label>
+      </div>
     </div>
     <div class="form-group">
       <label>Any Special Instructions? (optional)</label>
@@ -1677,11 +1754,31 @@ function animateDeadReckoning(status, riderName) {
   }
 }
 
+let currentActiveOrder = null;
+let cancelTimerInterval = null;
+let cancelSecsLeft = 60;
+
 function openOrderTracker(order) {
+  currentActiveOrder = order;
   const overlay = document.getElementById('successOverlay');
   overlay.classList.add('open');
 
   transitStartTime = null;
+  cancelSecsLeft = 60;
+  
+  if (cancelTimerInterval) clearInterval(cancelTimerInterval);
+  cancelTimerInterval = setInterval(() => {
+    cancelSecsLeft--;
+    const timerSpan = document.getElementById('cancelTimer');
+    if (timerSpan) timerSpan.textContent = Math.max(0, cancelSecsLeft);
+    if (cancelSecsLeft <= 0) {
+      clearInterval(cancelTimerInterval);
+      cancelTimerInterval = null;
+      const wrap = document.getElementById('cancelOrderWrapper');
+      if (wrap) wrap.style.display = 'none';
+    }
+  }, 1000);
+
   updateTrackerUI(order.status || 'pending', order);
 
   if (trackerPollInterval) clearInterval(trackerPollInterval);
@@ -1693,8 +1790,9 @@ function openOrderTracker(order) {
       if (!res.ok) return;
       const data = await res.json();
       if (data && data.order) {
+        currentActiveOrder = data.order;
         updateTrackerUI(data.order.status, data.order);
-        if (data.order.status === 'delivered') {
+        if (data.order.status === 'delivered' || data.order.status === 'cancelled') {
           clearInterval(trackerPollInterval);
           trackerPollInterval = null;
         }
@@ -1729,6 +1827,24 @@ function updateTrackerUI(status, orderData) {
   const titleEl    = document.getElementById('trackerTitle');
   const subtitleEl = document.getElementById('trackerSubtitle');
   const closeBtn   = document.getElementById('closeTrackerBtn');
+  const otpCard    = document.getElementById('deliveryOtpCard');
+  const otpDisplay = document.getElementById('otpDisplay');
+  const cancelWrap = document.getElementById('cancelOrderWrapper');
+
+  // Handle Dynamic Delivery OTP Display
+  if (orderData && orderData.delivery_otp && status !== 'delivered' && status !== 'cancelled') {
+    if (otpDisplay) otpDisplay.textContent = orderData.delivery_otp;
+    if (otpCard) otpCard.style.display = 'block';
+  } else {
+    if (otpCard) otpCard.style.display = 'none';
+  }
+
+  // Handle Grace Cancellation Button Visibility (only if pending and time left)
+  if (status === 'pending' && cancelSecsLeft > 0) {
+    if (cancelWrap) cancelWrap.style.display = 'block';
+  } else {
+    if (cancelWrap) cancelWrap.style.display = 'none';
+  }
 
   if (status === 'pending') {
     emojiEl.textContent = '⏳';
@@ -1760,9 +1876,56 @@ function updateTrackerUI(status, orderData) {
       clearInterval(trackerPollInterval);
       trackerPollInterval = null;
     }
+  } else if (status === 'cancelled') {
+    emojiEl.textContent = '❌';
+    titleEl.textContent = 'Order Cancelled';
+    subtitleEl.textContent = 'This order has been cancelled.';
+    closeBtn.style.display = 'block';
+
+    if (trackerPollInterval) {
+      clearInterval(trackerPollInterval);
+      trackerPollInterval = null;
+    }
   }
 
   animateDeadReckoning(status, orderData ? orderData.rider_name : null);
+}
+
+async function cancelCustomerOrder() {
+  if (!currentActiveOrder || !currentActiveOrder.id) return;
+  if (!confirm('Are you sure you want to cancel this order?')) return;
+  
+  const btn = document.getElementById('btnCancelCustomer');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentActiveOrder.id, status: 'cancelled' })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Failed to cancel order');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = `✕ Cancel Order (${cancelSecsLeft}s)`;
+      }
+      return;
+    }
+    showToast('Order cancelled.');
+    updateTrackerUI('cancelled', { ...currentActiveOrder, status: 'cancelled' });
+  } catch (err) {
+    console.error(err);
+    alert('Network error while cancelling order.');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = `✕ Cancel Order (${cancelSecsLeft}s)`;
+    }
+  }
 }
 
 function closeSuccess() {

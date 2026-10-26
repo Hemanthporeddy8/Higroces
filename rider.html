@@ -239,6 +239,50 @@ header {
   border: 1px solid #A5D6A7;
 }
 
+.delivery-verify-box {
+  width: 100%;
+  background: #FFF9E6;
+  border: 1.5px solid #FFE082;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.otp-box-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #B78103;
+  margin-bottom: 6px;
+}
+.otp-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rider-otp-input {
+  width: 120px;
+  padding: 8px 10px;
+  border: 2px solid #E0B84D;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.18em;
+  outline: none;
+  background: white;
+}
+.rider-otp-input:focus {
+  border-color: #F57F17;
+  box-shadow: 0 0 0 3px rgba(245,127,23,0.15);
+}
+.otp-err-msg {
+  font-size: 0.8rem;
+  color: #D32F2F;
+  font-weight: 700;
+  margin-top: 6px;
+  display: none;
+}
+
 .item-list {
   font-size: 0.82rem;
   background: #F4F6F5;
@@ -580,9 +624,22 @@ function renderOrderItemMarkup(o, isPending) {
     statusBadge = '<span class="status-pill pending">⏳ Order Placed</span>';
   }
 
-  const actionButton = isPending
+  const actionSection = isPending
     ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">Accept Order 🛵</button>`
-    : `<button class="btn-action deliver" onclick="deliverOrder('${o.id}')">Mark Delivered ✅</button>`;
+    : `
+      <div class="delivery-verify-box">
+        <div class="otp-box-title">🔐 Ask Customer for 4-Digit Delivery Code:</div>
+        <div class="otp-input-row">
+          <input type="text" inputmode="numeric" maxlength="4" class="rider-otp-input" id="otp-input-${o.id}" placeholder="e.g. 5832" />
+          <button class="btn-action deliver" id="btn-del-${o.id}" onclick="deliverWithOtp('${o.id}')">Verify &amp; Deliver ✅</button>
+        </div>
+        <div class="otp-err-msg" id="otp-err-${o.id}"></div>
+      </div>
+    `;
+
+  const maskedPhone = o.customer_phone && o.customer_phone.length >= 10
+    ? o.customer_phone.substring(0, 5) + '-XXXXX'
+    : (o.customer_phone || '');
 
   return `
     <div class="order-item" id="order-${o.id}">
@@ -599,7 +656,7 @@ function renderOrderItemMarkup(o, isPending) {
           <div class="cust-name">👤 ${o.customer_name}</div>
           <div>${bagTagsHtml}</div>
         </div>
-        <a href="tel:${o.customer_phone}" class="cust-phone">📞 ${o.customer_phone}</a>
+        <a href="tel:${o.customer_phone}" class="cust-phone">📞 ${maskedPhone} (Tap to Call 📞)</a>
         <div class="cust-address">
           <div>📍 Address: <strong>${o.delivery_address}</strong></div>
           <div style="margin-top:6px;">${navBtnHtml}</div>
@@ -613,7 +670,7 @@ function renderOrderItemMarkup(o, isPending) {
       
       <div class="order-footer">
         <div class="order-total">Total: ₹${o.total_price}</div>
-        ${actionButton}
+        ${actionSection}
       </div>
     </div>
   `;
@@ -638,22 +695,57 @@ async function acceptOrder(orderId) {
   }
 }
 
-async function deliverOrder(orderId) {
+async function deliverWithOtp(orderId) {
+  const input = document.getElementById(`otp-input-${orderId}`);
+  const errMsg = document.getElementById(`otp-err-${orderId}`);
+  const btn = document.getElementById(`btn-del-${orderId}`);
+  
+  if (!input) return;
+  const otp = input.value.trim();
+  if (!otp || otp.length !== 4) {
+    if (errMsg) {
+      errMsg.textContent = 'Please enter the 4-digit code given by the customer.';
+      errMsg.style.display = 'block';
+    }
+    input.focus();
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Verifying... ⏳';
+  }
+  if (errMsg) errMsg.style.display = 'none';
+
   try {
     const res = await fetch(API_BASE, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: orderId, status: 'delivered' })
+      body: JSON.stringify({ id: orderId, status: 'delivered', otp })
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      alert('Failed to deliver order: ' + (data.error || 'Server error'));
+      if (errMsg) {
+        errMsg.textContent = data.error || 'Invalid code! Please verify with customer.';
+        errMsg.style.display = 'block';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Verify & Deliver ✅';
+      }
       return;
     }
     fetchOrders();
   } catch (err) {
     console.error(err);
-    alert('Network error while delivering order.');
+    if (errMsg) {
+      errMsg.textContent = 'Network error while verifying OTP.';
+      errMsg.style.display = 'block';
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Verify & Deliver ✅';
+    }
   }
 }
 
