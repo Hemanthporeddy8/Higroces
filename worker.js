@@ -219,14 +219,17 @@ export default {
     // API: /api/orders
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/orders") {
-      // Auto-expire only INSTANT pending orders older than 30 minutes (Never touches scheduled Fresh Tmrw!)
+      // Auto-expire instant orders (pending > 30m, or uncompleted stuck orders > 4 hours)
       try {
         await env.DB.prepare(`
           UPDATE orders 
           SET status = 'expired' 
-          WHERE status = 'pending' 
-          AND (order_type IS NULL OR order_type = 'instant')
-          AND datetime(created_at) < datetime('now', '-30 minutes')
+          WHERE (order_type IS NULL OR order_type = 'instant')
+          AND (
+            (status = 'pending' AND datetime(created_at) < datetime('now', '-30 minutes'))
+            OR
+            (status IN ('preparing', 'packed', 'accepted') AND datetime(created_at) < datetime('now', '-4 hours'))
+          )
         `).run();
       } catch(e) {}
 
@@ -414,11 +417,24 @@ export default {
             return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: corsHeaders() });
           }
 
-          // Cancellation Handling
+          const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
+          const isAdminOverride = adminKey === ADMIN_SECRET_KEY;
+
+          // 1. Super Admin Override: Full authority to force ANY status (cancelled, delivered, expired, etc.)
+          if (isAdminOverride) {
+            if (rider_name) {
+              await env.DB.prepare("UPDATE orders SET status = ?, rider_name = ? WHERE id = ?").bind(status, rider_name, id).run();
+            } else {
+              await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?").bind(status, id).run();
+            }
+            return new Response(JSON.stringify({ success: true, id, status, adminOverride: true }), { headers: corsHeaders() });
+          }
+
+          // 2. Customer Cancellation Handling
           if (status === 'cancelled') {
             if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
               return new Response(JSON.stringify({ 
-                error: "Cannot cancel order: Butcher carving has already started." 
+                error: "Cannot cancel order: Butcher carving or delivery transit has already started." 
               }), { status: 400, headers: corsHeaders() });
             }
             if (existing.status === 'delivered') {
@@ -428,12 +444,9 @@ export default {
             return new Response(JSON.stringify({ success: true, id, status: 'cancelled' }), { headers: corsHeaders() });
           }
 
-          // Rider Handover Delivery with 4-Digit OTP Verification
+          // 3. Rider Handover Delivery with 4-Digit OTP Verification
           if (status === 'delivered') {
-            const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
-            const isAdminOverride = adminKey === ADMIN_SECRET_KEY;
-
-            if (existing.delivery_otp && !isAdminOverride) {
+            if (existing.delivery_otp) {
               const submittedOtp = (otp || '').toString().trim();
               if (!submittedOtp || submittedOtp !== existing.delivery_otp.toString()) {
                 return new Response(JSON.stringify({ 
@@ -446,19 +459,33 @@ export default {
             return new Response(JSON.stringify({ success: true, id, status: 'delivered' }), { headers: corsHeaders() });
           }
 
-          // Status Updates
+          // 4. Shop & Rider Status Updates
           if (rider_name) {
-            await env.DB.prepare(`
-              UPDATE orders SET status = ?, rider_name = ? WHERE id = ?
-            `).bind(status, rider_name, id).run();
+            await env.DB.prepare("UPDATE orders SET status = ?, rider_name = ? WHERE id = ?").bind(status, rider_name, id).run();
           } else {
-            await env.DB.prepare(`
-              UPDATE orders SET status = ? WHERE id = ?
-            `).bind(status, id).run();
+            await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?").bind(status, id).run();
           }
 
           return new Response(JSON.stringify({ success: true, id, status, rider_name }), { headers: corsHeaders() });
         } catch (err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+
+      // DELETE: Super Admin can delete test orders
+      if (request.method === "DELETE") {
+        try {
+          const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
+          if (adminKey !== ADMIN_SECRET_KEY) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Invalid Admin Key" }), { status: 401, headers: corsHeaders() });
+          }
+          const orderId = url.searchParams.get('id') || (await request.json().catch(() => ({}))).id;
+          if (!orderId) {
+            return new Response(JSON.stringify({ error: "Order ID is required" }), { status: 400, headers: corsHeaders() });
+          }
+          await env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(orderId).run();
+          return new Response(JSON.stringify({ success: true, deleted: orderId }), { headers: corsHeaders() });
+        } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
       }

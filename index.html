@@ -1608,7 +1608,6 @@ const SUBSCRIPTION_PLANS = [
 // CLOUDFLARE D1 API CONFIG
 // ═══════════════════════════════════════════════
 const API_BASE = '/api/orders';
-let trackerPollInterval = null;
 
 // ═══════════════════════════════════════════════
 // ACTIVE ZONE STATE
@@ -2374,12 +2373,22 @@ window.addEventListener('DOMContentLoaded', () => {
     console.error('Failed to load custom cuts:', e);
   }
 
-  // Register PWA Service Worker for local phone caching
+  // Register PWA Service Worker for local phone caching & force update
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(() => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
       console.log('HiGroces PWA Service Worker registered successfully');
+      reg.update();
     }).catch(err => {
       console.warn('PWA Service Worker registration failed:', err);
+    });
+  }
+
+  // Purge legacy v1 and v2 client cache
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        if (k === 'higroces-cache-v1' || k === 'higroces-cache-v2') caches.delete(k);
+      });
     });
   }
 });

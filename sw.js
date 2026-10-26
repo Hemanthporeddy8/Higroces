@@ -1,12 +1,14 @@
 // HiGroces Service Worker (sw.js)
 // Provides offline capability & caches product assets on device memory (Zepto-style client caching)
 
-const CACHE_NAME = 'higroces-cache-v1';
+const CACHE_NAME = 'higroces-cache-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/custom.html',
   '/rider.html',
+  '/admin.html',
+  '/shop.html',
   '/manifest.json'
 ];
 
@@ -14,30 +16,33 @@ const CORE_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Pre-caching core app shell');
+      console.log('[SW] Pre-caching core app shell v3');
       return cache.addAll(CORE_ASSETS).catch(err => console.warn('[SW] Pre-cache warning:', err));
     })
   );
   self.skipWaiting();
 });
 
-// Activate: clear old caches
+// Activate: purge all old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE_NAME).map(key => {
+          console.log('[SW] Deleting stale cache:', key);
+          return caches.delete(key);
+        })
       );
     })
   );
   self.clients.claim();
 });
 
-// Fetch: Network-first for /api/orders, Cache-first for images/assets
+// Fetch Strategy
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // 1. API calls (never cache live orders)
+  // 1. API calls (never cache live orders or settings)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -50,7 +55,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Static assets & images: Stale-While-Revalidate
+  // 2. HTML navigation requests: Network-First! (Ensures latest features show immediately)
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(event.request).then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. Static assets & images: Stale-While-Revalidate
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       const fetchPromise = fetch(event.request).then(networkResponse => {

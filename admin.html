@@ -799,14 +799,16 @@ function renderTable(list) {
         <td><strong style="color:white; font-size:1rem;">₹${o.total_price}</strong></td>
         <td><span class="status-badge ${o.status}">${o.status}</span></td>
         <td>
-          <select class="btn-action-select" onchange="overrideStatus('${o.id}', this.value)">
+          <select class="btn-action-select" onchange="overrideStatus('${o.id}', this.value); this.value='';">
             <option value="">Update Status...</option>
-            <option value="scheduled">Scheduled (Tmrw)</option>
-            <option value="preparing">Carving / Prep</option>
-            <option value="packed">Packed</option>
-            <option value="accepted">In Transit</option>
-            <option value="delivered">Delivered ✅</option>
-            <option value="cancelled">Cancel Order ❌</option>
+            <option value="scheduled">🌱 Scheduled (Tmrw)</option>
+            <option value="preparing">🔪 Carving / Prep</option>
+            <option value="packed">📦 Packed</option>
+            <option value="accepted">🛵 In Transit</option>
+            <option value="delivered">✅ Delivered</option>
+            <option value="cancelled">❌ Cancel Order</option>
+            <option value="expired">⌛ Mark Expired</option>
+            <option value="delete" style="color:var(--danger)">🗑️ Delete Order</option>
           </select>
         </td>
       </tr>
@@ -816,6 +818,28 @@ function renderTable(list) {
 
 async function overrideStatus(id, newStatus) {
   if (!newStatus) return;
+  const currentKey = masterKey || sessionStorage.getItem('amorelot_admin_key') || 'amorelot2026';
+
+  if (newStatus === 'delete') {
+    if (!confirm(`Are you sure you want to PERMANENTLY DELETE Order #${id.substring(0,8)}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'X-Admin-Key': currentKey }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert("Failed to delete order: " + (err.error || res.statusText));
+        return;
+      }
+      fetchAdminData();
+    } catch(e) {
+      console.error(e);
+      alert("Error: " + e.message);
+    }
+    return;
+  }
+
   if (!confirm(`Are you sure you want to update Order #${id.substring(0,8)} to ${newStatus.toUpperCase()}?`)) return;
 
   try {
@@ -823,17 +847,19 @@ async function overrideStatus(id, newStatus) {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
-        'X-Admin-Key': masterKey 
+        'X-Admin-Key': currentKey 
       },
       body: JSON.stringify({ id, status: newStatus })
     });
     if (!res.ok) {
-      alert("Failed to update order status.");
+      const err = await res.json().catch(() => ({}));
+      alert("Failed to update order status: " + (err.error || res.statusText));
       return;
     }
     fetchAdminData();
   } catch(e) {
     console.error(e);
+    alert("Connection error: " + e.message);
   }
 }
 
