@@ -281,6 +281,102 @@ header {
   color: white;
 }
 
+/* ── FRESH TMRW BANNER ── */
+.fresh-tmrw-banner {
+  background: linear-gradient(135deg, #0C513F 0%, #158265 100%);
+  color: white;
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(12,81,63,0.18);
+}
+.tmrw-badge {
+  display: inline-block;
+  background: var(--brand-accent);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.fresh-tmrw-banner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  margin-bottom: 6px;
+}
+.fresh-tmrw-banner p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.tmrw-timer {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  background: rgba(0,0,0,0.25);
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #FFD54F;
+}
+
+/* ── SUBSCRIPTION PLAN CARDS ── */
+.subs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 48px;
+}
+.subs-card {
+  background: white;
+  border: 2px solid var(--border-light);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  transition: transform 0.2s, border-color 0.2s;
+}
+.subs-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand-primary);
+}
+.subs-card-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+}
+.subs-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.subs-card-price {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--brand-primary);
+  font-family: 'DM Mono', monospace;
+}
+.btn-subscribe {
+  background: var(--brand-accent);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Outfit', sans-serif;
+  margin-top: 14px;
+}
+.btn-subscribe:hover { background: var(--brand-accent-hover); }
+
 /* ── PRODUCT GRID ── */
 .product-grid {
   display: grid;
@@ -1130,9 +1226,17 @@ header {
     </button>
   </div>
 
+  <!-- FRESH TMRW BANNER (Dynamically shown only when feature flag is ON) -->
+  <div class="fresh-tmrw-banner" id="freshTmrwBanner" style="display:none;">
+    <div class="tmrw-badge">🌱 FRESH TMRW™ PRE-ORDERS</div>
+    <h2>Zero Cold-Storage. Harvested at 5 AM Tomorrow from Mandi.</h2>
+    <p>Pre-order before 10 PM tonight. Picked fresh from wholesale APMC Mandi and dropped at your door by 7:30 AM.</p>
+    <div class="tmrw-timer">⏰ Order in the next <strong id="mandiCountdown">4h 20m</strong> for tomorrow morning delivery</div>
+  </div>
+
   <!-- CATEGORY TABS -->
   <div class="section-title" id="productsSection">🛒 Fresh Products</div>
-  <div class="category-tabs">
+  <div class="category-tabs" id="categoryTabsContainer">
     <button class="category-tab active" onclick="filterCategory('all', this)">All Items</button>
     <button class="category-tab" onclick="filterCategory('meat', this)">🍗 Meat &amp; Cuts</button>
     <button class="category-tab" onclick="filterCategory('eggs', this)">🥚 Eggs</button>
@@ -1140,6 +1244,13 @@ header {
     <button class="category-tab" onclick="filterCategory('snacks', this)">🍟 Snacks</button>
     <button class="category-tab" onclick="filterCategory('staples', this)">🛒 Grocery Staples</button>
     <button class="category-tab" onclick="filterCategory('tech', this)">🔌 Tech &amp; Kitchen</button>
+    <button class="category-tab" id="tabFreshTmrw" style="display:none;" onclick="filterCategory('fresh_tmrw', this)">🌱 Fresh Tmrw (Farm Mandi)</button>
+    <button class="category-tab" id="tabSubscriptions" style="display:none;" onclick="openSubscriptionsView(this)">🔄 Daily Subscriptions</button>
+  </div>
+
+  <!-- SUBSCRIPTIONS PLAN GRID (Visible when Subscriptions tab clicked) -->
+  <div class="subs-grid" id="subsGrid" style="display:none;">
+    <!-- Populated by JS -->
   </div>
 
   <!-- PRODUCT GRID -->
@@ -1147,6 +1258,43 @@ header {
     <!-- Populated by JS -->
   </div>
 
+</div>
+
+<!-- SUBSCRIPTION MODAL -->
+<div class="order-modal-bg" id="subModalBg">
+  <div class="order-modal">
+    <h2>🔄 Start Daily Morning Subscription</h2>
+    <p class="subtitle" id="subModalPlanTitle">Daily Doorstep Drop</p>
+    
+    <div class="form-group">
+      <label>Your Name *</label>
+      <input type="text" id="subName" placeholder="e.g. Rahul Sharma" required />
+    </div>
+    <div class="form-group">
+      <label>Phone Number *</label>
+      <input type="tel" id="subPhone" placeholder="e.g. 9876543210" maxlength="10" required />
+    </div>
+    <div class="form-group">
+      <label>Doorstep Delivery Address *</label>
+      <textarea id="subAddress" placeholder="Flat No., Building, Gate instructions..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Delivery Frequency</label>
+      <select id="subFreq" style="width:100%; padding:10px; border-radius:8px; border:1.5px solid var(--border-light); font-family:'Outfit';">
+        <option value="daily">Everyday (Mon - Sun)</option>
+        <option value="weekdays">Weekdays Only (Mon - Fri)</option>
+      </select>
+    </div>
+    <div style="background:#E8F5E9; border-left:3px solid #2ECC71; padding:8px 12px; font-size:0.8rem; color:#1B5E20; border-radius:4px; margin-bottom:14px;">
+      🌅 <strong>Silent Drop:</strong> Delivered between 6:30 AM – 7:30 AM daily. No doorbell ringing.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeSubModal()">Cancel</button>
+      <button class="btn-modal-confirm" id="btnConfirmSub" onclick="confirmSubscription()">
+        🚀 Start Subscription
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- DRAWER OVERLAY -->
@@ -1373,6 +1521,86 @@ const PRODUCTS = [
     unit: '1 pc',
     emoji: '🌡️',
     category: 'tech'
+  },
+
+  // ── FRESH TMRW (FARM-TO-DOOR MANDI PRODUCE) ──
+  {
+    id: 'mandi_spinach',
+    name: 'Farm Fresh Spinach (Palak)',
+    desc: 'Picked 4:30 AM from APMC Mandi. Crisp green leaves, zero cold-storage.',
+    price: 25,
+    mrp: 35,
+    unit: '1 Bunch',
+    emoji: '🥬',
+    category: 'fresh_tmrw',
+    badge: 'Mandi Fresh',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'mandi_tomato',
+    name: 'Desi Country Tomatoes (1kg)',
+    desc: 'Naturally ripened, firm tomatoes straight from the wholesale farm crates.',
+    price: 38,
+    mrp: 50,
+    unit: '1kg',
+    emoji: '🍅',
+    category: 'fresh_tmrw',
+    badge: 'Zero Storage',
+    badgeClass: 'deal'
+  },
+  {
+    id: 'mandi_coriander',
+    name: 'Fresh Coriander & Mint Combo',
+    desc: 'Fragrant morning harvest herb bunch with roots intact.',
+    price: 20,
+    unit: '1 Big Bunch',
+    emoji: '🌿',
+    category: 'fresh_tmrw',
+    badge: 'Morning Cut',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'mandi_papaya',
+    name: 'Sweet Farm Papaya (~1kg)',
+    desc: 'Rich sweet orange flesh. Plucked yesterday, delivered today.',
+    price: 55,
+    mrp: 75,
+    unit: '~1kg',
+    emoji: '🍈',
+    category: 'fresh_tmrw'
+  }
+];
+
+// ═══════════════════════════════════════════════
+// V3: SUBSCRIPTION PLANS
+// ═══════════════════════════════════════════════
+const SUBSCRIPTION_PLANS = [
+  {
+    id: 'gym_chicken_breast',
+    title: '🏋️ The Gym Rat 30-Day Protein Plan',
+    desc: '300g freshly trimmed, skinless raw chicken breast delivered every morning at 7:00 AM.',
+    price: 140,
+    unit: 'per day',
+    emoji: '🍗',
+    badge: 'Bestseller for Gym Goers'
+  },
+  {
+    id: 'daily_milk_eggs',
+    title: '🥛 Daily Pure Milk (1L) + 6 Farm Eggs',
+    desc: 'Chilled unadulterated pasteurized milk + 6 fresh farm eggs at your door before 7:30 AM.',
+    price: 105,
+    unit: 'per day',
+    emoji: '🥛',
+    badge: 'Family Daily Essential'
+  },
+  {
+    id: 'fruit_bowl',
+    title: '🥗 Daily Morning Cut Fruit Bowl',
+    desc: 'Freshly sliced seasonal fruits (Papaya, Pomegranate, Watermelon). Ready to eat breakfast.',
+    price: 89,
+    unit: 'per day',
+    emoji: '🍉',
+    badge: 'Office & Health Pack'
   }
 ];
 
@@ -1504,10 +1732,136 @@ function renderProductGrid(category = 'all', search = '') {
   }).join('');
 }
 
+let appSettings = { feature_fresh_tmrw: false, feature_subscriptions: false };
+
+async function loadAppSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    if (!res.ok) return;
+    appSettings = await res.json();
+    applyFeatureVisibility();
+  } catch(e) {
+    console.warn("loadAppSettings error:", e);
+  }
+}
+
+function applyFeatureVisibility() {
+  const tabTmrw = document.getElementById('tabFreshTmrw');
+  const bannerTmrw = document.getElementById('freshTmrwBanner');
+  const tabSubs = document.getElementById('tabSubscriptions');
+
+  if (tabTmrw) tabTmrw.style.display = appSettings.feature_fresh_tmrw ? 'inline-block' : 'none';
+  if (bannerTmrw) bannerTmrw.style.display = appSettings.feature_fresh_tmrw ? 'block' : 'none';
+  if (tabSubs) tabSubs.style.display = appSettings.feature_subscriptions ? 'inline-block' : 'none';
+}
+
 function filterCategory(cat, btn) {
   document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+
+  const pGrid = document.getElementById('productGrid');
+  const sGrid = document.getElementById('subsGrid');
+  const banner = document.getElementById('freshTmrwBanner');
+
+  if (sGrid) sGrid.style.display = 'none';
+  if (pGrid) pGrid.style.display = 'grid';
+
+  if (cat === 'fresh_tmrw' && appSettings.feature_fresh_tmrw) {
+    if (banner) banner.style.display = 'block';
+  } else if (!appSettings.feature_fresh_tmrw) {
+    if (banner) banner.style.display = 'none';
+  }
+
   renderProductGrid(cat, currentSearch);
+}
+
+function openSubscriptionsView(btn) {
+  document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const pGrid = document.getElementById('productGrid');
+  const sGrid = document.getElementById('subsGrid');
+  const banner = document.getElementById('freshTmrwBanner');
+
+  if (pGrid) pGrid.style.display = 'none';
+  if (banner) banner.style.display = 'none';
+  if (sGrid) {
+    sGrid.style.display = 'grid';
+    renderSubscriptionsGrid();
+  }
+}
+
+function renderSubscriptionsGrid() {
+  const sGrid = document.getElementById('subsGrid');
+  sGrid.innerHTML = SUBSCRIPTION_PLANS.map(plan => `
+    <div class="subs-card">
+      <div>
+        <div style="font-size:2.4rem; margin-bottom:8px;">${plan.emoji}</div>
+        <div style="display:inline-block; background:#E8F5E9; color:#2E7D32; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:4px; margin-bottom:8px;">${plan.badge}</div>
+        <div class="subs-card-title">${plan.title}</div>
+        <p class="subs-card-desc">${plan.desc}</p>
+      </div>
+      <div>
+        <div class="subs-card-price">₹${plan.price} <span style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">/ day</span></div>
+        <button class="btn-subscribe" onclick="openSubModal('${plan.id}')">Start Subscription 🚀</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let activeSubPlan = null;
+function openSubModal(planId) {
+  activeSubPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
+  if (!activeSubPlan) return;
+  document.getElementById('subModalPlanTitle').textContent = `${activeSubPlan.title} (₹${activeSubPlan.price}/day)`;
+  document.getElementById('subModalBg').classList.add('open');
+}
+
+function closeSubModal() {
+  document.getElementById('subModalBg').classList.remove('open');
+}
+
+async function confirmSubscription() {
+  const name = document.getElementById('subName').value.trim();
+  const phone = document.getElementById('subPhone').value.trim();
+  const address = document.getElementById('subAddress').value.trim();
+  const freq = document.getElementById('subFreq').value;
+
+  if (!name || !phone || !address) {
+    alert('Please enter Name, Phone, and Address to start subscription.');
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmSub');
+  btn.disabled = true;
+  btn.textContent = 'Enrolling... ⌛';
+
+  try {
+    const res = await fetch('/api/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_name: name,
+        customer_phone: phone,
+        delivery_address: address,
+        delivery_zone: activeZone,
+        plan_type: activeSubPlan.id,
+        plan_title: activeSubPlan.title,
+        price_per_day: activeSubPlan.price,
+        frequency: freq
+      })
+    });
+    if (!res.ok) throw new Error('Failed to create subscription');
+    closeSubModal();
+    alert(`🎉 Subscribed to ${activeSubPlan.title}! Your first silent doorstep drop starts tomorrow morning between 6:30 AM – 7:30 AM.`);
+    btn.disabled = false;
+    btn.textContent = '🚀 Start Subscription';
+  } catch(e) {
+    console.error(e);
+    alert('Error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '🚀 Start Subscription';
+  }
 }
 
 function filterProducts(q) {
@@ -1616,6 +1970,10 @@ async function submitDirectOrder() {
   const delivery = DELIVERY_FEE;
   const total    = subtotal + delivery;
   
+  const hasFreshTmrw = cart.some(i => i.category === 'fresh_tmrw');
+  const order_type = hasFreshTmrw ? 'fresh_tmrw' : 'instant';
+  const delivery_slot = hasFreshTmrw ? 'Tomorrow Morning (6:30 AM - 8:00 AM)' : 'Instant (15 mins)';
+
   const orderItemsData = cart.map(i => ({
     id: i.id,
     name: i.name,
@@ -1623,6 +1981,7 @@ async function submitDirectOrder() {
     qty: i.qty,
     unit: i.unit,
     emoji: i.emoji,
+    category: i.category,
     isCustom: !!i.isCustom
   }));
 
@@ -1639,7 +1998,9 @@ async function submitDirectOrder() {
     subtotal: subtotal,
     delivery_fee: delivery,
     total_price: total,
-    delivery_zone: activeZone
+    delivery_zone: activeZone,
+    order_type: order_type,
+    delivery_slot: delivery_slot
   };
 
   try {
@@ -1806,6 +2167,7 @@ function openOrderTracker(order) {
 function updateTrackerUI(status, orderData) {
   const steps = ['pending', 'preparing', 'accepted', 'delivered'];
   let mappedStatus = status;
+  if (status === 'scheduled') mappedStatus = 'pending';
   if (status === 'packed') mappedStatus = 'preparing';
 
   const currentIdx = steps.indexOf(mappedStatus);
@@ -1839,14 +2201,19 @@ function updateTrackerUI(status, orderData) {
     if (otpCard) otpCard.style.display = 'none';
   }
 
-  // Handle Grace Cancellation Button Visibility (only if pending and time left)
-  if (status === 'pending' && cancelSecsLeft > 0) {
+  // Handle Grace Cancellation Button Visibility (only if pending or scheduled and time left)
+  if ((status === 'pending' || status === 'scheduled') && cancelSecsLeft > 0) {
     if (cancelWrap) cancelWrap.style.display = 'block';
   } else {
     if (cancelWrap) cancelWrap.style.display = 'none';
   }
 
-  if (status === 'pending') {
+  if (status === 'scheduled') {
+    emojiEl.textContent = '🌱';
+    titleEl.textContent = 'Scheduled for Tomorrow';
+    subtitleEl.textContent = orderData && orderData.delivery_slot ? `Delivery window: ${orderData.delivery_slot}. Mandi procurement kicks off at 5 AM!` : 'Procuring farm-fresh at 5 AM tomorrow morning!';
+    closeBtn.style.display = 'block';
+  } else if (status === 'pending') {
     emojiEl.textContent = '⏳';
     titleEl.textContent = 'Order Confirmed';
     subtitleEl.textContent = 'Connecting to meat hub and butcher station...';
@@ -1963,6 +2330,9 @@ function showToast(msg) {
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  // Load remote feature flags (Fresh Tmrw, Subscriptions)
+  loadAppSettings();
+
   // Set initial selector value
   document.getElementById('zoneSelector').value = activeZone;
   renderProductGrid('all');

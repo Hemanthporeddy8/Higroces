@@ -148,16 +148,16 @@ header {
   padding: 0 24px;
 }
 
-/* Metrics Row */
+/* ── METRICS ROW ── */
 .metrics-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 .metric-card {
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 1.5px solid var(--card-border);
   border-radius: 12px;
   padding: 18px 20px;
 }
@@ -169,84 +169,195 @@ header {
 }
 .metric-label {
   font-size: 0.78rem;
-  color: var(--text-muted);
   font-weight: 700;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .metric-icon { font-size: 1.2rem; }
 .metric-value {
-  font-size: 2rem;
-  font-weight: 900;
   font-family: 'DM Mono', monospace;
+  font-size: 1.9rem;
+  font-weight: 900;
 }
 
-/* Master Filter Bar */
-.filter-bar {
+/* ── FEATURE FLAGS PANEL ── */
+.features-control-panel {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+}
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--card-bg);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.btn-save-flags {
+  background: var(--gold);
+  color: black;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-save-flags:hover { filter: brightness(1.1); }
+
+.flags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.flag-card {
+  background: #0E1412;
   border: 1px solid var(--card-border);
   border-radius: 10px;
-  padding: 12px 18px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.flag-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: white;
+}
+.flag-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background-color: #273631;
+  transition: .3s;
+  border-radius: 28px;
+  border: 1px solid var(--card-border);
+}
+.toggle-slider:before {
+  position: absolute; content: "";
+  height: 20px; width: 20px;
+  left: 4px; bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+input:checked + .toggle-slider {
+  background-color: var(--green);
+}
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* ── ADMIN NAVIGATION TABS ── */
+.admin-nav-tabs {
+  display: flex;
+  gap: 12px;
   margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--card-border);
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+}
+.nav-tab-btn {
+  background: #0E1412;
+  border: 1.5px solid var(--card-border);
+  color: var(--text-muted);
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-tab-btn:hover { color: white; background: #1B2823; }
+.nav-tab-btn.active {
+  background: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light);
+}
+
+/* ── TABLE STYLING ── */
+.table-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+.filter-bar {
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px;
 }
 .filter-group {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: center;
   flex-wrap: wrap;
 }
-.filter-select, .search-input {
+.search-input, .filter-select {
   background: #0E1412;
-  border: 1px solid var(--card-border);
-  color: white;
-  padding: 8px 12px;
+  border: 1.5px solid var(--card-border);
   border-radius: 6px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
+  padding: 8px 14px;
+  color: white;
+  font-size: 0.88rem;
   outline: none;
+  font-family: 'Outfit', sans-serif;
 }
-.search-input { min-width: 240px; }
+.search-input:focus, .filter-select:focus { border-color: var(--gold); }
+.search-input { min-width: 250px; }
 
-/* Orders Table */
-.table-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.table-header {
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--card-border);
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
-  font-weight: 900;
-}
 .orders-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  text-align: left;
 }
 .orders-table th {
   background: #0E1412;
-  padding: 12px 18px;
-  text-align: left;
+  color: var(--text-muted);
+  font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--card-border);
+  padding: 12px 18px;
+  border-bottom: 1.5px solid var(--card-border);
 }
 .orders-table td {
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  vertical-align: top;
+  border-bottom: 1px solid var(--card-border);
+  vertical-align: middle;
 }
-.orders-table tr:hover { background: rgba(255,255,255,0.02); }
+.orders-table tr:hover td {
+  background: rgba(255,255,255,0.015);
+}
 
 .status-badge {
   display: inline-block;
@@ -257,12 +368,15 @@ header {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.status-badge.scheduled { background: rgba(52,152,219,0.2); color: var(--blue); border: 1px solid var(--blue); }
 .status-badge.pending   { background: rgba(255,94,43,0.2); color: var(--accent); border: 1px solid var(--accent); }
 .status-badge.preparing { background: rgba(255,183,77,0.2); color: var(--gold); border: 1px solid var(--gold); }
 .status-badge.packed    { background: rgba(52,152,219,0.2); color: var(--blue); border: 1px solid var(--blue); }
 .status-badge.accepted  { background: rgba(155,89,182,0.2); color: #C39BD3; border: 1px solid #C39BD3; }
 .status-badge.delivered { background: rgba(46,204,113,0.2); color: var(--green); border: 1px solid var(--green); }
 .status-badge.cancelled { background: rgba(231,76,60,0.2); color: var(--red); border: 1px solid var(--red); }
+.status-badge.active    { background: rgba(46,204,113,0.2); color: var(--green); border: 1px solid var(--green); }
+.status-badge.paused    { background: rgba(255,183,77,0.2); color: var(--gold); border: 1px solid var(--gold); }
 
 .item-chip {
   display: inline-block;
@@ -349,70 +463,170 @@ header {
     </div>
   </div>
 
-  <!-- FILTER & SEARCH BAR -->
-  <div class="filter-bar">
-    <div class="filter-group">
-      <input type="text" class="search-input" id="searchInput" placeholder="Search customer, phone, or ID..." oninput="filterOrders()"/>
-      
-      <select class="filter-select" id="statusFilter" onchange="filterOrders()">
-        <option value="all">Status: All</option>
-        <option value="pending">Pending</option>
-        <option value="preparing">Carving / In Hub</option>
-        <option value="packed">Packed</option>
-        <option value="accepted">In Transit</option>
-        <option value="delivered">Delivered</option>
-      </select>
-
-      <select class="filter-select" id="zoneFilter" onchange="filterOrders()">
-        <option value="all">Zone: All Zones</option>
-        <option value="HSR Layout">HSR Layout</option>
-        <option value="Koramangala">Koramangala</option>
-        <option value="Indiranagar">Indiranagar</option>
-        <option value="Jayanagar">Jayanagar</option>
-      </select>
+  <!-- FEATURE FLAGS CONTROL PANEL -->
+  <div class="features-control-panel">
+    <div class="panel-header">
+      <div>
+        <h3 style="font-size:1.1rem; color:var(--gold);">⚙️ Growth &amp; Expansion Feature Flags (V2 &amp; V3)</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+          Turn features ON/OFF instantly. Default is OFF to keep public app 100% focused on 15-min instant MVP.
+        </p>
+      </div>
+      <button class="btn-save-flags" id="btnSaveFlags" onclick="saveFeatureFlags()">Save Feature Flags 💾</button>
     </div>
 
-    <button class="filter-select" style="cursor:pointer; font-weight:700" onclick="fetchAdminData()">
-      🔄 Force Sync
-    </button>
+    <div class="flags-grid">
+      <div class="flag-card">
+        <div class="flag-info">
+          <div class="flag-title">🌱 Feature 1: "Fresh Tmrw" (Next-Day Mandi Produce)</div>
+          <div class="flag-desc">Zero cold-storage pre-orders. Sourced at 5 AM from APMC Mandi. Customer orders overnight, delivered 6:30 AM – 8:00 AM.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="flagFreshTmrw" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="flag-card">
+        <div class="flag-info">
+          <div class="flag-title">🔄 Feature 2: "Daily Subscriptions" (Gym Rat Protein &amp; Milk)</div>
+          <div class="flag-desc">Recurring morning silent doorstep drops: 300g trimmed raw chicken breast, 1L milk + 6 eggs, and fresh fruit bowls.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="flagSubscriptions" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
   </div>
 
-  <!-- ORDERS TABLE -->
-  <div class="table-card">
-    <div class="table-header">Master Orders Ledger</div>
-    <div style="overflow-x:auto">
-      <table class="orders-table">
-        <thead>
-          <tr>
-            <th>Order ID / Time</th>
-            <th>Customer &amp; Location</th>
-            <th>Zone</th>
-            <th>Ordered Cuts / Items</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Quick Action</th>
-          </tr>
-        </thead>
-        <tbody id="ordersTbody">
-          <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted)">Loading encrypted ledger...</td></tr>
-        </tbody>
-      </table>
+  <!-- ADMIN NAVIGATION TABS -->
+  <div class="admin-nav-tabs">
+    <button class="nav-tab-btn active" id="tabBtnOrders" onclick="switchAdminTab('orders')">📦 Orders Directory</button>
+    <button class="nav-tab-btn" id="tabBtnMandi" onclick="switchAdminTab('mandi')">🌾 5 AM Mandi Procurement Sheet</button>
+    <button class="nav-tab-btn" id="tabBtnSubs" onclick="switchAdminTab('subs')">🔄 Active Subscriptions Manager</button>
+  </div>
+
+  <!-- VIEW 1: ORDERS DIRECTORY TABLE -->
+  <div class="table-card" id="viewOrders">
+    <div class="filter-bar">
+      <div class="filter-group">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search customer, phone, or ID..." oninput="filterOrders()"/>
+        
+        <select class="filter-select" id="statusFilter" onchange="filterOrders()">
+          <option value="all">Status: All</option>
+          <option value="scheduled">Scheduled (Fresh Tmrw)</option>
+          <option value="pending">Pending Instant</option>
+          <option value="preparing">Carving / In Hub</option>
+          <option value="packed">Packed</option>
+          <option value="accepted">In Transit</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
+        <select class="filter-select" id="zoneFilter" onchange="filterOrders()">
+          <option value="all">Zone: All Zones</option>
+          <option value="HSR Layout">HSR Layout</option>
+          <option value="Koramangala">Koramangala</option>
+          <option value="Indiranagar">Indiranagar</option>
+          <option value="Jayanagar">Jayanagar</option>
+        </select>
+      </div>
+
+      <div style="font-size:0.8rem; color:var(--text-muted)">
+        Showing: <strong id="showingCount" style="color:white">0</strong> orders
+      </div>
     </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID &amp; Time</th>
+          <th>Customer Details</th>
+          <th>Zone &amp; Type</th>
+          <th>Items Ordered</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Override</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTbody">
+        <tr><td colspan="7" style="text-align:center; padding:30px;">Loading orders from Cloudflare D1...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VIEW 2: MANDI WHOLESALE PROCUREMENT SHEET -->
+  <div class="table-card" id="viewMandi" style="display:none;">
+    <div class="filter-bar">
+      <div>
+        <h3 style="color:var(--gold); font-size:1.05rem;">🌾 Tomorrow 5:00 AM APMC Mandi Bulk Purchase Sheet</h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Aggregates all overnight pre-orders so your buyer purchases exact wholesale quantities.</p>
+      </div>
+      <button class="btn-auth" style="width:auto; padding:6px 14px; font-size:0.82rem;" onclick="loadMandiSheet()">Refresh Mandi Sheet 🔄</button>
+    </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Produce Item</th>
+          <th>Total Bulk Quantity to Buy</th>
+          <th>Number of Customer Orders</th>
+          <th>Procurement Status</th>
+        </tr>
+      </thead>
+      <tbody id="mandiTbody">
+        <tr><td colspan="4" style="text-align:center; padding:30px;">Loading Mandi list...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VIEW 3: ACTIVE SUBSCRIPTIONS MANAGER -->
+  <div class="table-card" id="viewSubs" style="display:none;">
+    <div class="filter-bar">
+      <div>
+        <h3 style="color:var(--green); font-size:1.05rem;">🔄 Daily Repeat Subscribers (Gym Rat &amp; Milk)</h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Recurring morning doorstep drop list (6:30 AM – 7:30 AM).</p>
+      </div>
+      <button class="btn-auth" style="width:auto; padding:6px 14px; font-size:0.82rem;" onclick="loadSubscriptions()">Refresh Subscribers 🔄</button>
+    </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Subscriber</th>
+          <th>Plan &amp; Daily Price</th>
+          <th>Delivery Slot &amp; Zone</th>
+          <th>Frequency</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="subsTbody">
+        <tr><td colspan="6" style="text-align:center; padding:30px;">Loading subscriptions from D1...</td></tr>
+      </tbody>
+    </table>
   </div>
 
 </div>
 
 <script>
 const API_BASE = '/api/orders';
+const SETTINGS_API = '/api/settings';
+const SUBS_API = '/api/subscriptions';
+const MANDI_API = '/api/mandi-sheet';
+
 let masterKey = sessionStorage.getItem('amorelot_admin_key') || '';
 let cachedOrders = [];
+let currentAdminTab = 'orders';
 
 function checkAuth() {
-  if (!masterKey) {
-    document.getElementById('authOverlay').style.display = 'flex';
-  } else {
+  if (masterKey) {
     document.getElementById('authOverlay').style.display = 'none';
     fetchAdminData();
+    loadFeatureFlags();
+  } else {
+    document.getElementById('authOverlay').style.display = 'flex';
   }
 }
 
@@ -440,6 +654,66 @@ function logoutAdmin() {
   location.reload();
 }
 
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  document.getElementById('tabBtnOrders').className = 'nav-tab-btn' + (tab === 'orders' ? ' active' : '');
+  document.getElementById('tabBtnMandi').className  = 'nav-tab-btn' + (tab === 'mandi'  ? ' active' : '');
+  document.getElementById('tabBtnSubs').className   = 'nav-tab-btn' + (tab === 'subs'   ? ' active' : '');
+
+  document.getElementById('viewOrders').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('viewMandi').style.display  = tab === 'mandi'  ? 'block' : 'none';
+  document.getElementById('viewSubs').style.display   = tab === 'subs'   ? 'block' : 'none';
+
+  if (tab === 'mandi') loadMandiSheet();
+  if (tab === 'subs') loadSubscriptions();
+}
+
+// ── FEATURE FLAGS MANAGEMENT ──
+async function loadFeatureFlags() {
+  try {
+    const res = await fetch(SETTINGS_API);
+    if (!res.ok) return;
+    const settings = await res.json();
+    document.getElementById('flagFreshTmrw').checked = !!settings.feature_fresh_tmrw;
+    document.getElementById('flagSubscriptions').checked = !!settings.feature_subscriptions;
+  } catch(e) {
+    console.warn("loadFeatureFlags error:", e);
+  }
+}
+
+async function saveFeatureFlags() {
+  const freshTmrw = document.getElementById('flagFreshTmrw').checked;
+  const subs = document.getElementById('flagSubscriptions').checked;
+  const btn = document.getElementById('btnSaveFlags');
+  btn.textContent = 'Saving... ⌛';
+
+  try {
+    const res = await fetch(SETTINGS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': masterKey
+      },
+      body: JSON.stringify({
+        feature_fresh_tmrw: freshTmrw,
+        feature_subscriptions: subs
+      })
+    });
+    if (!res.ok) {
+      alert("Failed to save settings.");
+      btn.textContent = 'Save Feature Flags 💾';
+      return;
+    }
+    btn.textContent = 'Saved! ✅';
+    setTimeout(() => { btn.textContent = 'Save Feature Flags 💾'; }, 1500);
+  } catch(e) {
+    console.error(e);
+    alert("Connection error: " + e.message);
+    btn.textContent = 'Save Feature Flags 💾';
+  }
+}
+
+// ── ORDERS DIRECTORY ──
 async function fetchAdminData() {
   if (!masterKey) return;
   try {
@@ -453,10 +727,9 @@ async function fetchAdminData() {
     const data = await res.json();
     cachedOrders = data.orders || [];
 
-    // Render Metrics
     document.getElementById('valRevenue').textContent = `₹${(data.stats.totalRevenue || 0).toLocaleString()}`;
     document.getElementById('valOrders').textContent = data.stats.totalOrders || 0;
-    document.getElementById('valPrep').textContent = data.stats.preparingCount + data.stats.pendingCount;
+    document.getElementById('valPrep').textContent = (data.stats.preparingCount || 0) + (data.stats.pendingCount || 0);
     document.getElementById('valDelivered').textContent = data.stats.deliveredCount || 0;
 
     filterOrders();
@@ -472,17 +745,13 @@ function filterOrders() {
 
   let list = cachedOrders;
 
-  if (statusF !== 'all') {
-    list = list.filter(o => o.status === statusF);
-  }
-  if (zoneF !== 'all') {
-    list = list.filter(o => o.delivery_zone === zoneF);
-  }
+  if (statusF !== 'all') list = list.filter(o => o.status === statusF);
+  if (zoneF !== 'all') list = list.filter(o => o.delivery_zone === zoneF);
   if (q) {
     list = list.filter(o => 
       o.id.toLowerCase().includes(q) ||
-      o.customer_name.toLowerCase().includes(q) ||
-      o.customer_phone.includes(q)
+      (o.customer_name || '').toLowerCase().includes(q) ||
+      (o.customer_phone || '').includes(q)
     );
   }
 
@@ -491,6 +760,8 @@ function filterOrders() {
 
 function renderTable(list) {
   const tbody = document.getElementById('ordersTbody');
+  document.getElementById('showingCount').textContent = list.length;
+
   if (list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted)">No matching records found.</td></tr>`;
     return;
@@ -499,6 +770,7 @@ function renderTable(list) {
   tbody.innerHTML = list.map(o => {
     const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
     const timeStr = new Date(o.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+    const isPreorder = o.order_type === 'fresh_tmrw';
 
     const itemsChips = items.map(i => `
       <span class="item-chip">
@@ -517,13 +789,17 @@ function renderTable(list) {
           <div style="font-size:0.78rem; color:var(--primary-light)">📞 ${o.customer_phone}</div>
           <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">📍 ${o.delivery_address}</div>
         </td>
-        <td><span style="font-weight:600">${o.delivery_zone || 'HSR'}</span></td>
-        <td style="max-width:320px">${itemsChips}</td>
+        <td>
+          <span style="font-weight:600">${o.delivery_zone || 'HSR'}</span>
+          <div style="font-size:0.7rem; color:${isPreorder ? 'var(--blue)' : 'var(--text-muted)'}">${isPreorder ? '🌱 Fresh Tmrw' : '⚡ 15-Min Instant'}</div>
+        </td>
+        <td style="max-width:300px">${itemsChips}</td>
         <td><strong style="color:white; font-size:1rem;">₹${o.total_price}</strong></td>
         <td><span class="status-badge ${o.status}">${o.status}</span></td>
         <td>
           <select class="btn-action-select" onchange="overrideStatus('${o.id}', this.value)">
             <option value="">Update Status...</option>
+            <option value="scheduled">Scheduled (Tmrw)</option>
             <option value="preparing">Carving / Prep</option>
             <option value="packed">Packed</option>
             <option value="accepted">In Transit</option>
@@ -538,9 +814,7 @@ function renderTable(list) {
 
 async function overrideStatus(id, newStatus) {
   if (!newStatus) return;
-  if (!confirm(`Are you sure you want to update Order #${id.substring(0,8)} to ${newStatus.toUpperCase()}?`)) {
-    return;
-  }
+  if (!confirm(`Are you sure you want to update Order #${id.substring(0,8)} to ${newStatus.toUpperCase()}?`)) return;
 
   try {
     const res = await fetch(API_BASE, {
@@ -561,10 +835,91 @@ async function overrideStatus(id, newStatus) {
   }
 }
 
+// ── MANDI PROCUREMENT SHEET ──
+async function loadMandiSheet() {
+  const tbody = document.getElementById('mandiTbody');
+  try {
+    const res = await fetch(MANDI_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = data.mandiList || [];
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted)">No 'Fresh Tmrw' scheduled farm orders right now. Enable the feature flag to start collecting morning orders.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(item => `
+      <tr>
+        <td><strong>${item.emoji} ${item.name}</strong></td>
+        <td><strong style="color:var(--gold); font-size:1.1rem;">${item.totalQty} ${item.unit}</strong></td>
+        <td>${item.orderCount} customer bag(s)</td>
+        <td><span style="color:var(--blue); font-weight:700;">Ready for 5 AM Purchase</span></td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    console.warn("loadMandiSheet error:", e);
+  }
+}
+
+// ── SUBSCRIPTIONS MANAGEMENT ──
+async function loadSubscriptions() {
+  const tbody = document.getElementById('subsTbody');
+  try {
+    const res = await fetch(SUBS_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const subs = data.subscriptions || [];
+
+    if (subs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted)">No active repeat subscriptions yet. Enable the Subscriptions feature flag to start enrolling daily customers.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = subs.map(s => `
+      <tr>
+        <td>
+          <strong>${s.customer_name}</strong>
+          <div style="font-size:0.75rem; color:var(--primary-light)">📞 ${s.customer_phone}</div>
+          <div style="font-size:0.72rem; color:var(--text-muted)">📍 ${s.delivery_address}</div>
+        </td>
+        <td>
+          <strong>${s.plan_title}</strong>
+          <div style="color:var(--gold); font-weight:700; font-size:0.85rem;">₹${s.price_per_day} / day</div>
+        </td>
+        <td>${s.delivery_slot}<br><span style="color:var(--text-muted); font-size:0.75rem;">${s.delivery_zone}</span></td>
+        <td><span style="text-transform:capitalize;">${s.frequency}</span></td>
+        <td><span class="status-badge ${s.status}">${s.status}</span></td>
+        <td>
+          <button class="btn-action-select" onclick="toggleSubStatus('${s.id}', '${s.status === 'active' ? 'paused' : 'active'}')">
+            ${s.status === 'active' ? 'Pause ⏸️' : 'Resume ▶️'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    console.warn("loadSubscriptions error:", e);
+  }
+}
+
+async function toggleSubStatus(id, newStatus) {
+  try {
+    const res = await fetch(SUBS_API, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: newStatus })
+    });
+    if (res.ok) loadSubscriptions();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   checkAuth();
-  // Auto-sync every 8 seconds
-  setInterval(fetchAdminData, 8000);
+  setInterval(() => {
+    if (currentAdminTab === 'orders' && masterKey) fetchAdminData();
+  }, 8000);
 });
 </script>
 </body>
