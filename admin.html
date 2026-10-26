@@ -482,7 +482,7 @@ input:checked + .toggle-slider:before {
           <div class="flag-desc">Zero cold-storage pre-orders. Sourced at 5 AM from APMC Mandi. Customer orders overnight, delivered 6:30 AM – 8:00 AM.</div>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" id="flagFreshTmrw" />
+          <input type="checkbox" id="flagFreshTmrw" onchange="saveFeatureFlags()" />
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -493,7 +493,7 @@ input:checked + .toggle-slider:before {
           <div class="flag-desc">Recurring morning silent doorstep drops: 300g trimmed raw chicken breast, 1L milk + 6 eggs, and fresh fruit bowls.</div>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" id="flagSubscriptions" />
+          <input type="checkbox" id="flagSubscriptions" onchange="saveFeatureFlags()" />
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -671,7 +671,7 @@ function switchAdminTab(tab) {
 // ── FEATURE FLAGS MANAGEMENT ──
 async function loadFeatureFlags() {
   try {
-    const res = await fetch(SETTINGS_API);
+    const res = await fetch(`${SETTINGS_API}?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return;
     const settings = await res.json();
     document.getElementById('flagFreshTmrw').checked = !!settings.feature_fresh_tmrw;
@@ -682,17 +682,18 @@ async function loadFeatureFlags() {
 }
 
 async function saveFeatureFlags() {
+  const currentKey = masterKey || sessionStorage.getItem('amorelot_admin_key') || 'amorelot2026';
   const freshTmrw = document.getElementById('flagFreshTmrw').checked;
   const subs = document.getElementById('flagSubscriptions').checked;
   const btn = document.getElementById('btnSaveFlags');
-  btn.textContent = 'Saving... ⌛';
+  if (btn) btn.textContent = 'Saving... ⌛';
 
   try {
     const res = await fetch(SETTINGS_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Admin-Key': masterKey
+        'X-Admin-Key': currentKey
       },
       body: JSON.stringify({
         feature_fresh_tmrw: freshTmrw,
@@ -700,16 +701,17 @@ async function saveFeatureFlags() {
       })
     });
     if (!res.ok) {
-      alert("Failed to save settings.");
-      btn.textContent = 'Save Feature Flags 💾';
+      const err = await res.json().catch(() => ({}));
+      alert("Failed to save settings: " + (err.error || res.statusText));
+      if (btn) btn.textContent = 'Save Feature Flags 💾';
       return;
     }
-    btn.textContent = 'Saved! ✅';
-    setTimeout(() => { btn.textContent = 'Save Feature Flags 💾'; }, 1500);
+    if (btn) btn.textContent = 'Saved to D1! ✅';
+    setTimeout(() => { if (btn) btn.textContent = 'Save Feature Flags 💾'; }, 1800);
   } catch(e) {
     console.error(e);
     alert("Connection error: " + e.message);
-    btn.textContent = 'Save Feature Flags 💾';
+    if (btn) btn.textContent = 'Save Feature Flags 💾';
   }
 }
 

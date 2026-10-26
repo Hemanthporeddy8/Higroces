@@ -8,7 +8,8 @@ function corsHeaders() {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate"
   };
 }
 

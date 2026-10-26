@@ -1676,6 +1676,9 @@ function renderProductGrid(category = 'all', search = '') {
   currentSearch   = search;
   const grid = document.getElementById('productGrid');
   let list = PRODUCTS;
+  if (!appSettings.feature_fresh_tmrw) {
+    list = list.filter(p => p.category !== 'fresh_tmrw');
+  }
   if (category !== 'all') list = list.filter(p => p.category === category);
   if (search.trim()) {
     const q = search.toLowerCase();
@@ -1736,14 +1739,19 @@ let appSettings = { feature_fresh_tmrw: false, feature_subscriptions: false };
 
 async function loadAppSettings() {
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return;
     appSettings = await res.json();
     applyFeatureVisibility();
+    renderProductGrid(currentCategory, currentSearch);
   } catch(e) {
     console.warn("loadAppSettings error:", e);
   }
 }
+
+// Auto-sync feature flags on tab focus
+window.addEventListener('focus', loadAppSettings);
+setInterval(loadAppSettings, 10000);
 
 function applyFeatureVisibility() {
   const tabTmrw = document.getElementById('tabFreshTmrw');
@@ -1751,7 +1759,9 @@ function applyFeatureVisibility() {
   const tabSubs = document.getElementById('tabSubscriptions');
 
   if (tabTmrw) tabTmrw.style.display = appSettings.feature_fresh_tmrw ? 'inline-block' : 'none';
-  if (bannerTmrw) bannerTmrw.style.display = appSettings.feature_fresh_tmrw ? 'block' : 'none';
+  if (bannerTmrw) {
+    bannerTmrw.style.display = (appSettings.feature_fresh_tmrw && currentCategory === 'fresh_tmrw') ? 'block' : 'none';
+  }
   if (tabSubs) tabSubs.style.display = appSettings.feature_subscriptions ? 'inline-block' : 'none';
 }
 
