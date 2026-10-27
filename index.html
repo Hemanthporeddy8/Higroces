@@ -2029,11 +2029,12 @@ async function submitDirectOrder() {
     updateCartBadge();
     closeOrderModal();
 
-    orderBtn.disabled = false;
-    orderBtn.textContent = '🚀 Place Order';
+    // Save last order ID & Navigate directly to dedicated live tracking page
+    try {
+      localStorage.setItem('amorelot_last_order', JSON.stringify(createdOrder));
+    } catch(e) {}
 
-    // Show Live Tracker and listen for status updates via Cloudflare API
-    openOrderTracker(createdOrder);
+    window.location.href = `/track.html?orderId=${encodeURIComponent(createdOrder.id)}`;
   } catch (err) {
     console.error(err);
     alert('Failed to place order: ' + err.message);

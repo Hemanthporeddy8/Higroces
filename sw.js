@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   '/rider.html',
   '/admin.html',
   '/shop.html',
+  '/track.html',
   '/manifest.json'
 ];
 

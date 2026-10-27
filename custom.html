@@ -643,6 +643,18 @@ body {
     </div>
     <div style="font-size:0.6rem; color:var(--ink-light); margin-top:-10px; margin-bottom: 16px; font-style:italic; opacity:0.8;">Click to extract edible offal / extras.</div>
 
+    <!-- Total Cumulative Meat Weight & Price Card -->
+    <div id="carcassWeightSummary" style="background:#F0FDF4; border:1.5px solid #86EFAC; border-radius:8px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:0.68rem; text-transform:uppercase; font-weight:700; color:#166534; letter-spacing:0.06em;">⚖️ Total Meat Weight</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#14532D; font-family:'DM Mono', monospace;" id="totalWeightDisplay">0g (0.00 kg)</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.68rem; text-transform:uppercase; font-weight:700; color:#166534; letter-spacing:0.06em;">Total Price</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#14532D; font-family:'DM Mono', monospace;" id="totalPriceDisplay">₹0</div>
+      </div>
+    </div>
+
     <div class="workshop-footer-actions">
       <button class="btn-workshop-save" onclick="saveCustomCutsToCart()">
         🛒 Add cuts to Cart &amp; Checkout
@@ -2503,6 +2515,11 @@ function setupSVGInteractions() {
       if (currentTool === 'knife') {
         if ((partId.startsWith('thigh') || partId.startsWith('leg')) && legStates[side] === 'whole') {
           splitLeg(side, e.clientX, e.clientY);
+          // Directly harvest the clicked part immediately for smooth UX
+          setTimeout(() => {
+            const targetEl = document.getElementById(`el-chicken-${partId}`) || el;
+            cut2DPart(targetEl, e.clientX, e.clientY);
+          }, 350);
         } else {
           cut2DPart(el, e.clientX, e.clientY);
         }
@@ -2518,8 +2535,28 @@ function setupSVGInteractions() {
 // MODULE: ui.js
 // ==========================================
 
+function updateCarcassWeightSummary() {
+  const weightEl = document.getElementById('totalWeightDisplay');
+  const priceEl = document.getElementById('totalPriceDisplay');
+  if (!weightEl || !priceEl) return;
+
+  let totalGrams = 0;
+  let totalPrice = 0;
+  sessionCuts.forEach(item => {
+    const qty = item.qty || 1;
+    totalGrams += (item.weight || 0) * qty;
+    totalPrice += (item.price || 0) * qty;
+  });
+
+  const kg = (totalGrams / 1000).toFixed(2);
+  weightEl.textContent = `${totalGrams}g (${kg} kg)`;
+  priceEl.textContent = `₹${totalPrice.toFixed(0)}`;
+}
+
 function renderSessionCuts() {
   const container = document.getElementById('sessionCutsList');
+  updateCarcassWeightSummary();
+
   if (sessionCuts.length === 0) {
     container.innerHTML = '<div class="empty-session-message">Use the knife tool to carve parts from the meat.</div>';
     return;
