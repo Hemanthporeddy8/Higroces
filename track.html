@@ -500,8 +500,8 @@
     const protocol = new pmtiles.Protocol();
     maplibregl.addProtocol('pmtiles', protocol.tile);
 
-    // Direct byte-range link to your 2.42 GB Hugging Face India Map
-    const PMTILES_URL = 'https://huggingface.co/datasets/RydealotMaps/rydealot-maps/resolve/main/india.pmtiles';
+    // Live Supermaps Edge Proxy on Cloudflare (with CORS & byte-range streaming)
+    const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
 
     // Protomaps Vector Style (Daylight Quick-Commerce Mode)
     const supermapsStyle = {
