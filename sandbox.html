@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Amorelot — UI Sandbox & Navigation Testbed</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;700;800;900&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0C513F">
+
+<style>
+:root {
+  --primary: #0C513F;
+  --primary-light: #158265;
+  --accent: #FF5E2B;
+  --gold: #FFB74D;
+  --bg-dark: #0A100E;
+  --card-bg: #141E1A;
+  --card-border: #20312B;
+  --text-main: #FFFFFF;
+  --text-muted: #8E9F98;
+  --green: #2ECC71;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  padding-bottom: 120px;
+}
+
+/* ── TOP SANDBOX CONTROLLER (STICKY ON TOP) ── */
+.sandbox-top-control {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  background: rgba(8, 14, 12, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid #283C35;
+  padding: 10px 14px;
+}
+.sandbox-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.sandbox-toggle-bar {
+  display: flex;
+  gap: 8px;
+  background: #141F1B;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+.btn-sandbox-mode {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+.btn-sandbox-mode.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(12,81,63,0.4);
+}
+
+/* ── HEADER ── */
+header {
+  background: #0E1614;
+  border-bottom: 1px solid var(--card-border);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-hamburger {
+  background: #1A2622;
+  border: 1px solid var(--card-border);
+  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.btn-hamburger:active { transform: scale(0.92); }
+.btn-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+}
+.brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-install-demo {
+  background: rgba(255,183,77,0.15);
+  border: 1px solid rgba(255,183,77,0.35);
+  color: var(--gold);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.cart-badge {
+  background: #1A2622;
+  border: 1px solid var(--card-border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── INTERACTIVE FEEDBACK CARD ── */
+.interactive-status-box {
+  background: linear-gradient(135deg, #10241E 0%, #17382F 100%);
+  border: 1.5px solid #234E41;
+  border-radius: 14px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.status-pill-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.status-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: white;
+}
+.status-desc {
+  font-size: 0.8rem;
+  color: #BDC8C3;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* ── MOCK STOREFRONT PRODUCTS ── */
+.mock-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 0 16px;
+}
+.mock-product-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.mock-emoji { font-size: 2.2rem; margin-bottom: 8px; text-align: center; }
+.mock-name { font-size: 0.88rem; font-weight: 700; color: white; line-height: 1.25; }
+.mock-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.mock-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.mock-price { font-family: 'DM Mono', monospace; font-size: 0.95rem; font-weight: 700; }
+.btn-mock-add {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   OPTION A: FLOATING QUICK-SWITCH DOCK
+   ═══════════════════════════════════════════════ */
+.floating-dock-wrap {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: calc(100% - 28px);
+  max-width: 480px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.floating-dock {
+  background: rgba(14, 24, 20, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(12, 81, 63, 0.3);
+  border-radius: 40px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.dock-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 6px;
+  border-radius: 28px;
+  color: var(--text-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s;
+}
+.dock-btn .dock-icon { font-size: 1.25rem; transition: transform 0.2s; }
+.dock-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.dock-btn.active .dock-icon { transform: scale(1.15); }
+
+/* Dock Minimize / Expand Pill */
+.btn-minimize-dock {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.floating-dock-wrap.minimized .floating-dock {
+  display: none;
+}
+.floating-dock-wrap.minimized .dock-mini-pill {
+  display: flex;
+}
+.dock-mini-pill {
+  display: none;
+  background: var(--primary);
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  padding: 10px 18px;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-size: 0.82rem;
+  font-weight: 800;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   OPTION B: SLIDE-OUT MOBILE NAVIGATION DRAWER
+   ═══════════════════════════════════════════════ */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.side-drawer {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 300px;
+  height: 100vh;
+  background: #0E1614;
+  border-right: 1.5px solid var(--card-border);
+  z-index: 2001;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+  transition: left 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 24px 18px;
+}
+.side-drawer.open {
+  left: 0;
+}
+.drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--card-border);
+  margin-bottom: 20px;
+}
+.profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.profile-info h4 { font-size: 0.95rem; color: white; }
+.profile-info p { font-size: 0.75rem; color: var(--gold); font-weight: 700; margin-top: 2px; }
+
+.drawer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #141E1A;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.drawer-link:active, .drawer-link.active {
+  background: var(--primary);
+  border-color: var(--primary-light);
+}
+.drawer-link-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.drawer-link-left span:first-child { font-size: 1.25rem; }
+.drawer-link-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.drawer-footer-note {
+  margin-top: auto;
+  padding: 12px;
+  background: #090E0C;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOP SANDBOX CONTROLLER ── -->
+<div class="sandbox-top-control">
+  <div class="sandbox-label">🧪 Interactive Navigation Sandbox (Test On Mobile)</div>
+  <div class="sandbox-toggle-bar">
+    <button class="btn-sandbox-mode active" id="btnModeA" onclick="setSandboxMode('A')">
+      <span>📱</span> Option A: Floating Dock
+    </button>
+    <button class="btn-sandbox-mode" id="btnModeB" onclick="setSandboxMode('B')">
+      <span>☰</span> Option B: Side Drawer
+    </button>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-left">
+    <!-- Visible ONLY in Option B mode -->
+    <button class="btn-hamburger" id="hamburgerBtn" style="display:none;" onclick="openSideDrawer()">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand-name">🥬 Amorelot</div>
+  </div>
+
+  <div class="header-actions">
+    <button class="btn-install-demo" onclick="demoInstallPrompt()">
+      <span>📲</span> Install App
+    </button>
+    <div class="cart-badge">🛒 3</div>
+  </div>
+</header>
+
+<!-- ── INTERACTIVE FEEDBACK & INSTRUCTIONS BOX ── -->
+<div class="interactive-status-box">
+  <div class="status-pill-badge" id="activeModeBadge">OPTION A ACTIVE</div>
+  <h2 class="status-title" id="activeModeTitle">Floating Quick-Switch Dock Active</h2>
+  <p class="status-desc" id="activeModeDesc">
+    Tap the dock buttons at the bottom: <strong>🛒 Customer, 🔪 Butcher, 🛵 Rider, 📍 Track</strong>.
+    You can also tap the <strong>minimize arrow (▼)</strong> on the dock to collapse it while browsing!
+  </p>
+  <div id="actionFeedback" style="margin-top:10px; font-size:0.8rem; color:var(--gold); font-weight:700;">
+    👉 Currently Viewing: Customer Storefront
+  </div>
+</div>
+
+<!-- ── MOCK STOREFRONT PRODUCTS ── -->
+<div style="padding:0 16px 10px; font-size:0.95rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">
+  Featured Cuts &amp; Groceries
+</div>
+
+<div class="mock-products-grid">
+  <div class="mock-product-card">
+    <div class="mock-emoji">🍗</div>
+    <div>
+      <div class="mock-name">Fresh Chicken Curry Cut</div>
+      <div class="mock-meta">500g • Skinless</div>
+    </div>
+    <div class="mock-bottom">
+      <span class="mock-price">₹145</span>
+      <button class="btn-mock-add">+ Add</button>
+    </div>
+  </div>
+
+  <div class="mock-product-card">
+    <div class="mock-emoji">🥚</div>
+    <div>
+      <div class="mock-name">Desi Farm Eggs (6 pcs)</div>
+      <div class="mock-meta">Fresh Desi Lay</div>
+    </div>
+    <div class="mock-bottom">
+      <span class="mock-price">₹48</span>
+      <button class="btn-mock-add">+ Add</button>
+    </div>
+  </div>
+
+  <div class="mock-product-card">
+    <div class="mock-emoji">🧈</div>
+    <div>
+      <div class="mock-name">Amul Butter (100g)</div>
+      <div class="mock-meta">Cold Dairy Tier</div>
+    </div>
+    <div class="mock-bottom">
+      <span class="mock-price">₹57</span>
+      <button class="btn-mock-add">+ Add</button>
+    </div>
+  </div>
+
+  <div class="mock-product-card">
+    <div class="mock-emoji">🐟</div>
+    <div>
+      <div class="mock-name">Fresh Whole Catch Fish</div>
+      <div class="mock-meta">~500g • Cleaned</div>
+    </div>
+    <div class="mock-bottom">
+      <span class="mock-price">₹220</span>
+      <button class="btn-mock-add">+ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     OPTION A COMPONENT: FLOATING DOCK
+     ═══════════════════════════════════════════════ -->
+<div class="floating-dock-wrap" id="floatingDockWrap">
+  <div class="floating-dock" id="floatingDock">
+    <button class="dock-btn active" onclick="simulateRoleSwitch('customer', this)">
+      <span class="dock-icon">🛒</span>
+      <span>Customer</span>
+    </button>
+    <button class="dock-btn" onclick="simulateRoleSwitch('butcher', this)">
+      <span class="dock-icon">🔪</span>
+      <span>Butcher</span>
+    </button>
+    <button class="dock-btn" onclick="simulateRoleSwitch('rider', this)">
+      <span class="dock-icon">🛵</span>
+      <span>Rider</span>
+    </button>
+    <button class="dock-btn" onclick="simulateRoleSwitch('track', this)">
+      <span class="dock-icon">📍</span>
+      <span>Track</span>
+    </button>
+    <button class="btn-minimize-dock" onclick="toggleDockMinimize()" title="Minimize Dock">
+      ▼
+    </button>
+  </div>
+
+  <div class="dock-mini-pill" id="dockMiniPill" onclick="toggleDockMinimize()">
+    <span>⚡ Switch Portal</span>
+    <span style="font-size:0.7rem;">▲</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     OPTION B COMPONENT: SLIDE-OUT DRAWER
+     ═══════════════════════════════════════════════ -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeSideDrawer()"></div>
+
+<div class="side-drawer" id="sideDrawer">
+  <div class="drawer-profile">
+    <div class="profile-avatar">🛵</div>
+    <div class="profile-info">
+      <h4>Amorelot Operations</h4>
+      <p>● Live Field System</p>
+    </div>
+  </div>
+
+  <div class="drawer-links">
+    <div class="drawer-link active" onclick="simulateDrawerSwitch('customer', '/index.html')">
+      <div class="drawer-link-left">
+        <span>🛒</span>
+        <span>Customer Storefront</span>
+      </div>
+      <span class="drawer-link-badge">Active</span>
+    </div>
+
+    <div class="drawer-link" onclick="simulateDrawerSwitch('butcher', '/shop.html')">
+      <div class="drawer-link-left">
+        <span>🔪</span>
+        <span>Butcher &amp; Dark Store</span>
+      </div>
+      <span class="drawer-link-badge">KDS 120s</span>
+    </div>
+
+    <div class="drawer-link" onclick="simulateDrawerSwitch('rider', '/rider.html')">
+      <div class="drawer-link-left">
+        <span>🛵</span>
+        <span>Rider Delivery App</span>
+      </div>
+      <span class="drawer-link-badge">OTP Ready</span>
+    </div>
+
+    <div class="drawer-link" onclick="simulateDrawerSwitch('track', '/track.html')">
+      <div class="drawer-link-left">
+        <span>📍</span>
+        <span>Live Road Tracker</span>
+      </div>
+      <span class="drawer-link-badge">Protomaps</span>
+    </div>
+  </div>
+
+  <div class="drawer-footer-note">
+    🔒 <strong>Security Policy:</strong><br>
+    Admin Console (`admin.html`) is restricted to authorized Desktop PC workstations only.
+  </div>
+</div>
+
+<script>
+let currentMode = 'A'; // 'A' | 'B'
+
+function setSandboxMode(mode) {
+  currentMode = mode;
+  document.getElementById('btnModeA').className = 'btn-sandbox-mode' + (mode === 'A' ? ' active' : '');
+  document.getElementById('btnModeB').className = 'btn-sandbox-mode' + (mode === 'B' ? ' active' : '');
+
+  const dockWrap = document.getElementById('floatingDockWrap');
+  const hamburger = document.getElementById('hamburgerBtn');
+  const badge = document.getElementById('activeModeBadge');
+  const title = document.getElementById('activeModeTitle');
+  const desc = document.getElementById('activeModeDesc');
+
+  if (mode === 'A') {
+    dockWrap.style.display = 'block';
+    hamburger.style.display = 'none';
+    closeSideDrawer();
+    badge.textContent = 'OPTION A ACTIVE';
+    title.textContent = 'Floating Quick-Switch Dock Active';
+    desc.innerHTML = 'Test the floating pill at the bottom: <strong>🛒 Customer, 🔪 Butcher, 🛵 Rider, 📍 Track</strong>. Tap the <strong>minimize arrow (▼)</strong> to see how it collapses!';
+  } else {
+    dockWrap.style.display = 'none';
+    hamburger.style.display = 'flex';
+    badge.textContent = 'OPTION B ACTIVE';
+    title.textContent = 'Slide-Out Navigation Drawer Active';
+    desc.innerHTML = 'Tap the <strong>☰ hamburger icon</strong> at the top-left to slide open the side navigation drawer with smooth animations!';
+  }
+}
+
+// ── OPTION A: DOCK LOGIC ──
+function simulateRoleSwitch(role, btnEl) {
+  document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+
+  const feedback = document.getElementById('actionFeedback');
+  const urls = {
+    customer: '/index.html',
+    butcher: '/shop.html',
+    rider: '/rider.html',
+    track: '/track.html'
+  };
+  const roleNames = {
+    customer: '🛒 Customer Storefront (index.html)',
+    butcher: '🔪 Butcher & Dark Store Hub (shop.html)',
+    rider: '🛵 Rider Delivery Station (rider.html)',
+    track: '📍 Live Road Tracker (track.html)'
+  };
+
+  feedback.innerHTML = `
+    ✅ Tapped <strong>${roleNames[role]}</strong>!<br>
+    <a href="${urls[role]}" style="color:#2ECC71; text-decoration:underline; font-weight:800; margin-top:4px; display:inline-block;">
+      🚀 Tap here to open real ${role.toUpperCase()} page →
+    </a>
+  `;
+}
+
+function toggleDockMinimize() {
+  const wrap = document.getElementById('floatingDockWrap');
+  wrap.classList.toggle('minimized');
+}
+
+// ── OPTION B: DRAWER LOGIC ──
+function openSideDrawer() {
+  document.getElementById('sideDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+
+function closeSideDrawer() {
+  document.getElementById('sideDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+function simulateDrawerSwitch(role, url) {
+  closeSideDrawer();
+  const feedback = document.getElementById('actionFeedback');
+  feedback.innerHTML = `
+    ✅ Selected from Drawer: <strong>${role.toUpperCase()}</strong>!<br>
+    <a href="${url}" style="color:#2ECC71; text-decoration:underline; font-weight:800; margin-top:4px; display:inline-block;">
+      🚀 Tap here to open real ${role.toUpperCase()} page →
+    </a>
+  `;
+}
+
+// ── INSTALL BUTTON DEMO ──
+function demoInstallPrompt() {
+  alert("📲 'Install App' Demo:\n\nWhen a customer opens the website in Chrome on Android, clicking this triggers the native 'Add to Home Screen' modal.\n\nOnce installed, this button automatically disappears so the app feels 100% native!");
+}
+</script>
+</body>
+</html>
