@@ -530,8 +530,22 @@ header {
   </div>
 </div>
 
+<!-- ── CONTEXTUAL ACTIVE ORDER TRACKER DEMO ── -->
+<div class="active-order-floating-bar" onclick="alert('🗺️ This Live Road Tracking bar only appears when a customer actually has an active order on the way!\n\nWhen no order is active, it stays 100% hidden.')" style="margin:0 16px 14px; background:linear-gradient(135deg, #0E241C 0%, #17382D 100%); border:1.5px solid var(--green); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 6px 18px rgba(46,204,113,0.18); cursor:pointer;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="font-size:1.4rem;">🛵</span>
+    <div>
+      <div style="font-weight:800; font-size:0.85rem; color:white;">Live Order in Transit • Arriving in 11 mins</div>
+      <div style="font-size:0.72rem; color:#A2D9CE;">Rider Suresh on the way • Tap to view live road route</div>
+    </div>
+  </div>
+  <div style="background:var(--green); color:black; font-weight:800; font-size:0.75rem; padding:5px 12px; border-radius:20px;">
+    Track ➔
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════
-     OPTION A COMPONENT: FLOATING DOCK
+     OPTION A COMPONENT: FLOATING DOCK (3 FIELD PORTALS)
      ═══════════════════════════════════════════════ -->
 <div class="floating-dock-wrap" id="floatingDockWrap">
   <div class="floating-dock" id="floatingDock">
@@ -547,10 +561,6 @@ header {
       <span class="dock-icon">🛵</span>
       <span>Rider</span>
     </button>
-    <button class="dock-btn" onclick="simulateRoleSwitch('track', this)">
-      <span class="dock-icon">📍</span>
-      <span>Track</span>
-    </button>
     <button class="btn-minimize-dock" onclick="toggleDockMinimize()" title="Minimize Dock">
       ▼
     </button>
@@ -563,7 +573,7 @@ header {
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     OPTION B COMPONENT: SLIDE-OUT DRAWER
+     OPTION B COMPONENT: SLIDE-OUT DRAWER (3 FIELD PORTALS)
      ═══════════════════════════════════════════════ -->
 <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeSideDrawer()"></div>
 
@@ -588,7 +598,7 @@ header {
     <div class="drawer-link" onclick="simulateDrawerSwitch('butcher', '/shop.html')">
       <div class="drawer-link-left">
         <span>🔪</span>
-        <span>Butcher &amp; Dark Store</span>
+        <span>Butcher &amp; Dark Store Hub</span>
       </div>
       <span class="drawer-link-badge">KDS 120s</span>
     </div>
@@ -599,14 +609,6 @@ header {
         <span>Rider Delivery App</span>
       </div>
       <span class="drawer-link-badge">OTP Ready</span>
-    </div>
-
-    <div class="drawer-link" onclick="simulateDrawerSwitch('track', '/track.html')">
-      <div class="drawer-link-left">
-        <span>📍</span>
-        <span>Live Road Tracker</span>
-      </div>
-      <span class="drawer-link-badge">Protomaps</span>
     </div>
   </div>
 
@@ -636,7 +638,7 @@ function setSandboxMode(mode) {
     closeSideDrawer();
     badge.textContent = 'OPTION A ACTIVE';
     title.textContent = 'Floating Quick-Switch Dock Active';
-    desc.innerHTML = 'Test the floating pill at the bottom: <strong>🛒 Customer, 🔪 Butcher, 🛵 Rider, 📍 Track</strong>. Tap the <strong>minimize arrow (▼)</strong> to see how it collapses!';
+    desc.innerHTML = 'Test the 3 field portals at the bottom: <strong>🛒 Customer, 🔪 Butcher, 🛵 Rider</strong>. Tap the <strong>minimize arrow (▼)</strong> to see how it collapses!';
   } else {
     dockWrap.style.display = 'none';
     hamburger.style.display = 'flex';
@@ -655,14 +657,12 @@ function simulateRoleSwitch(role, btnEl) {
   const urls = {
     customer: '/index.html',
     butcher: '/shop.html',
-    rider: '/rider.html',
-    track: '/track.html'
+    rider: '/rider.html'
   };
   const roleNames = {
     customer: '🛒 Customer Storefront (index.html)',
     butcher: '🔪 Butcher & Dark Store Hub (shop.html)',
-    rider: '🛵 Rider Delivery Station (rider.html)',
-    track: '📍 Live Road Tracker (track.html)'
+    rider: '🛵 Rider Delivery Station (rider.html)'
   };
 
   feedback.innerHTML = `
