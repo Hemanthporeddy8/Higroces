@@ -353,6 +353,104 @@ header {
   color: var(--text-muted);
 }
 .empty-kds-icon { font-size: 3rem; margin-bottom: 12px; }
+
+/* ── INVENTORY STATION VIEW ── */
+.station-tab.active-inventory {
+  background: #8E44AD !important;
+  color: white !important;
+  border-color: #8E44AD !important;
+  box-shadow: 0 4px 14px rgba(142,68,173,0.35);
+}
+.inventory-station-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.inv-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.inv-info { flex: 1; }
+.inv-name { font-weight: 700; font-size: 0.95rem; color: white; display: flex; align-items: center; gap: 8px; }
+.inv-bin { font-size: 0.72rem; color: var(--accent-gold); margin-top: 4px; }
+.inv-price { font-size: 0.8rem; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+/* Switch Toggle */
+.toggle-switch {
+  position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0; background-color: #2F3B36; transition: .3s; border-radius: 26px;
+}
+.toggle-slider:before {
+  position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%;
+}
+input:checked + .toggle-slider { background-color: var(--accent-green); }
+input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+/* ── ZEPTO SMART PICKER ASSISTANT MODAL ── */
+.picker-modal-overlay {
+  position: fixed; inset: 0; background: rgba(10, 16, 14, 0.96); backdrop-filter: blur(10px);
+  z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.picker-modal-card {
+  background: #16201D; border: 1.5px solid var(--border-color); border-radius: 16px;
+  max-width: 650px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+.picker-header {
+  padding: 16px 20px; background: #0E1412; border-bottom: 1.5px solid var(--border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.picker-title { font-size: 1.15rem; font-weight: 800; color: white; display: flex; align-items: center; gap: 8px; }
+.picker-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; padding: 4px 8px; }
+.picker-close:hover { color: white; }
+.picker-body { padding: 20px; overflow-y: auto; flex: 1; }
+.picker-timer-box {
+  background: #0E1412; border: 1.5px solid var(--border-color); border-radius: 12px;
+  padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.picker-timer-val { font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 900; }
+.picker-speed-badge { font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+.picker-speed-blitz { background: rgba(46,204,113,0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+.picker-speed-standard { background: rgba(255,183,77,0.2); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+.picker-speed-hurry { background: rgba(231,76,60,0.2); color: #E74C3C; border: 1px solid #E74C3C; animation: hurryPulse 1s infinite; }
+@keyframes hurryPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.picker-step-card {
+  background: #1C2623; border: 1.5px solid var(--border-color); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 12px; transition: all 0.2s;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.picker-step-card.picked {
+  background: rgba(46,204,113,0.08); border-color: var(--accent-green);
+}
+.picker-location-pill {
+  background: rgba(255,183,77,0.12); color: var(--accent-gold); border: 1px solid rgba(255,183,77,0.25);
+  font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px;
+}
+.btn-pick-action {
+  background: #25312D; color: white; border: 1.5px solid var(--border-color);
+  padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.2s; white-space: nowrap;
+}
+.btn-pick-action.picked {
+  background: var(--accent-green); color: black; border-color: var(--accent-green); font-weight: 800;
+}
+.btn-complete-pick {
+  width: 100%; padding: 14px; background: var(--accent-green); color: black; border: none;
+  border-radius: 10px; font-weight: 900; font-size: 1.05rem; cursor: pointer; margin-top: 14px;
+  transition: transform 0.1s, filter 0.2s;
+}
+.btn-complete-pick:hover { filter: brightness(1.1); transform: scale(1.01); }
 </style>
 </head>
 <body>
@@ -388,30 +486,88 @@ header {
     <button class="station-tab" id="tabAll" onclick="switchStation('all')">
       🏢 All Stations (Master Dispatch)
     </button>
+    <button class="station-tab" id="tabInventory" onclick="switchStation('inventory')">
+      📦 Stock &amp; Inventory Toggles
+    </button>
   </div>
 </div>
 
 <div class="kds-container">
-  <div class="kds-stats">
-    <div class="stat-box">
-      <div class="stat-label" id="labelPending">To Be Cut (Pending)</div>
-      <div class="stat-val" id="statPending" style="color:var(--accent-orange)">0</div>
+  <!-- ORDERS VIEW (KDS) -->
+  <div id="kdsOrdersContainer">
+    <div class="kds-stats">
+      <div class="stat-box">
+        <div class="stat-label" id="labelPending">To Be Cut (Pending)</div>
+        <div class="stat-val" id="statPending" style="color:var(--accent-orange)">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="labelPreparing">Currently Carving</div>
+        <div class="stat-val" id="statPreparing" style="color:var(--accent-gold)">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="labelPacked">Packed &amp; Sealed</div>
+        <div class="stat-val" id="statPacked" style="color:var(--accent-green)">0</div>
+      </div>
     </div>
-    <div class="stat-box">
-      <div class="stat-label" id="labelPreparing">Currently Carving</div>
-      <div class="stat-val" id="statPreparing" style="color:var(--accent-gold)">0</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label" id="labelPacked">Packed &amp; Sealed</div>
-      <div class="stat-val" id="statPacked" style="color:var(--accent-green)">0</div>
+
+    <div class="orders-grid" id="ordersGrid">
+      <div class="empty-kds">
+        <div class="empty-kds-icon">🍗</div>
+        <h2>No incoming cuts in this zone</h2>
+        <p>Orders from customer Butcher Mode will appear here with exact slicing instructions.</p>
+      </div>
     </div>
   </div>
 
-  <div class="orders-grid" id="ordersGrid">
-    <div class="empty-kds">
-      <div class="empty-kds-icon">🍗</div>
-      <h2>No incoming cuts in this zone</h2>
-      <p>Orders from customer Butcher Mode will appear here with exact slicing instructions.</p>
+  <!-- INVENTORY VIEW (SHOPKEEPER / BUTCHER STOCK TOGGLES) -->
+  <div id="kdsInventoryContainer" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:1.3rem; color:var(--text-main);">📦 Dark Store &amp; Butcher Stock Toggles</h2>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">
+          Toggle items out-of-stock when finished. Updates customer storefront immediately.
+        </p>
+      </div>
+      <input type="text" id="shopInvSearch" placeholder="Filter inventory items..." oninput="renderShopInventory()" style="background:#1E2623; border:1.5px solid var(--border-color); color:white; padding:8px 14px; border-radius:8px; font-size:0.88rem; outline:none;" />
+    </div>
+
+    <div class="inventory-station-grid" id="shopInventoryGrid">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ZEPTO SMART PICKER ASSISTANT MODAL -->
+<div class="picker-modal-overlay" id="pickerModalOverlay">
+  <div class="picker-modal-card">
+    <div class="picker-header">
+      <div>
+        <div class="picker-title" id="pickerModalTitle">⚡ Smart Dark Store Picker Assistant</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;" id="pickerModalSubtitle">Optimal Walking Path Sequence</div>
+      </div>
+      <button class="picker-close" onclick="closeSmartPickerModal()">&times;</button>
+    </div>
+
+    <div class="picker-body">
+      <!-- 120s Blitz Countdown Timer -->
+      <div class="picker-timer-box">
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Zepto 120s Pick Countdown</div>
+          <div class="picker-timer-val" id="pickerTimerDisplay" style="color:var(--accent-green);">02:00</div>
+        </div>
+        <div>
+          <span class="picker-speed-badge picker-speed-blitz" id="pickerSpeedBadge">⚡ Blitz Tier</span>
+        </div>
+      </div>
+
+      <!-- Walking Path Optimized Items List -->
+      <div id="pickerItemsList">
+        <!-- Rendered by JS -->
+      </div>
+
+      <button class="btn-complete-pick" id="btnCompletePick" onclick="finishSmartPick()">
+        🎉 Pack &amp; Seal Bag (Handover to Rider)
+      </button>
     </div>
   </div>
 </div>
@@ -421,9 +577,55 @@ header {
 
 <script>
 const API_BASE = '/api/orders';
+const INVENTORY_API = '/api/inventory';
 let lastCount = null;
-let currentStation = 'butcher'; // 'butcher' | 'grocery' | 'all'
+let currentStation = 'butcher'; // 'butcher' | 'grocery' | 'all' | 'inventory'
 let rawOrdersCache = [];
+let liveInventoryMap = {};
+
+// Unified Catalog with Dark Store Warehouse Bins & Walk-Sequence Order
+const STORE_CATALOG = [
+  // 1. Heavy Staples (Walk Priority 1 - Bottom of bag)
+  { id: 'sunflower_oil', name: 'Sunflower Oil (1L)', category: 'staples', emoji: '🫙', price: 135, unit: '1 Litre', bin: '🫙 Aisle A1 - Shelf 3 (Heavy Staples)', walkOrder: 1 },
+  { id: 'bread', name: 'Bread Loaf (400g)', category: 'staples', emoji: '🍞', price: 42, unit: '400g', bin: '🍞 Rack B1 (Bakery Tier)', walkOrder: 4 },
+  // 2. Snacks & Instant Food (Walk Priority 2)
+  { id: 'maggi', name: 'Maggi Noodles (Pack of 4)', category: 'snacks', emoji: '🍜', price: 60, unit: '4 × 70g', bin: '🍜 Aisle A2 - Shelf 1 (Instant Food)', walkOrder: 2 },
+  { id: 'lays', name: "Lay's Chips (Classic)", category: 'snacks', emoji: '🍟', price: 20, unit: '26g', bin: '🍟 Aisle B1 - Shelf 2 (Snacks)', walkOrder: 2 },
+  { id: 'parle_g', name: 'Parle-G Biscuits', category: 'snacks', emoji: '🍪', price: 30, unit: 'Big Pack', bin: '🍪 Aisle B1 - Shelf 3 (Biscuits)', walkOrder: 2 },
+  // 3. Tech & Appliances (Walk Priority 3)
+  { id: 'tech_cable', name: 'USB-C Fast Charging Cable (65W)', category: 'tech', emoji: '🔌', price: 199, unit: '1 pc', bin: '🔌 Tech Locker T1', walkOrder: 3 },
+  { id: 'tech_scale', name: 'Digital Kitchen Weighing Scale', category: 'tech', emoji: '⚖️', price: 349, unit: '1 pc', bin: '⚖️ Tech Locker T2', walkOrder: 3 },
+  { id: 'tech_thermometer', name: 'Digital Meat Thermometer', category: 'tech', emoji: '🌡️', price: 249, unit: '1 pc', bin: '🌡️ Tech Locker T2', walkOrder: 3 },
+  // 4. Dairy & Beverages (Walk Priority 5 - Chilled)
+  { id: 'pepsi', name: 'Pepsi (500ml)', category: 'snacks', emoji: '🥤', price: 35, unit: '500ml', bin: '🥤 Cooler C1 (Chilled Soda)', walkOrder: 5 },
+  { id: 'amul_butter', name: 'Amul Butter (100g)', category: 'dairy', emoji: '🧈', price: 57, unit: '100g', bin: '🥛 Refrigerator R1 (Dairy Bay)', walkOrder: 5 },
+  { id: 'curd_500', name: 'Fresh Curd (500g)', category: 'dairy', emoji: '🥛', price: 40, unit: '500g', bin: '🥛 Refrigerator R2 (Dairy Bay)', walkOrder: 5 },
+  // 5. Fragile Eggs (Walk Priority 6 - Top of bag)
+  { id: 'eggs_6', name: 'Farm Eggs (6 pcs)', category: 'eggs', emoji: '🥚', price: 48, unit: '6 pcs', bin: '🥚 Rack E1 (Fragile Top Tier)', walkOrder: 6 },
+  { id: 'eggs_tray', name: 'Egg Tray (30 pcs)', category: 'eggs', emoji: '🥚', price: 225, unit: '30 pcs', bin: '🥚 Rack E2 (Fragile Stack)', walkOrder: 6 },
+  // 6. APMC Mandi Produce (Walk Priority 7)
+  { id: 'mandi_spinach', name: 'Farm Fresh Spinach (Palak)', category: 'fresh_tmrw', emoji: '🥬', price: 25, unit: '1 Bunch', bin: '🥬 APMC Mandi Crates F1', walkOrder: 7 },
+  { id: 'mandi_tomato', name: 'Country Tomatoes (APMC)', category: 'fresh_tmrw', emoji: '🍅', price: 32, unit: '1 kg', bin: '🍅 APMC Mandi Crates F2', walkOrder: 7 },
+  { id: 'mandi_coriander', name: 'Fresh Coriander (Dhaniya)', category: 'fresh_tmrw', emoji: '🌿', price: 15, unit: '1 Bunch', bin: '🌿 APMC Mandi Crates F3', walkOrder: 7 },
+  { id: 'mandi_papaya', name: 'Farm Papaya (Semi-Ripe)', category: 'fresh_tmrw', emoji: '🍈', price: 45, unit: '1 pc (~800g)', bin: '🍈 APMC Mandi Crates F4', walkOrder: 7 },
+  // 7. Meat & Seafood (Walk Priority 8 - Cold Room Last to preserve cold chain)
+  { id: 'whole_chicken', name: 'Whole Chicken (Butchered)', category: 'meat', emoji: '🐔', price: 280, unit: '~1kg', bin: '❄️ Chiller Bay C1 (Cold Room)', walkOrder: 8 },
+  { id: 'chicken_500', name: 'Chicken (500g Pack)', category: 'meat', emoji: '🍗', price: 145, unit: '500g', bin: '❄️ Chiller Bay C2 (Cold Room)', walkOrder: 8 },
+  { id: 'chicken_1kg', name: 'Chicken (1kg Pack)', category: 'meat', emoji: '🍗', price: 285, unit: '1kg', bin: '❄️ Chiller Bay C2 (Cold Room)', walkOrder: 8 },
+  { id: 'fish_fresh', name: 'Fresh Fish (Whole)', category: 'meat', emoji: '🐟', price: 220, unit: '~500g', bin: '🐟 Ice Bed Bay S1 (Seafood)', walkOrder: 8 }
+];
+
+function getProductMeta(item) {
+  const byId = STORE_CATALOG.find(p => p.id === item.id);
+  if (byId) return byId;
+  const nameL = (item.name || '').toLowerCase();
+  const byName = STORE_CATALOG.find(p => nameL.includes(p.name.toLowerCase()));
+  if (byName) return byName;
+  if (isMeatItem(item)) {
+    return { bin: '❄️ Butcher Carving Block 1', walkOrder: 8 };
+  }
+  return { bin: '📦 General Shelf G1', walkOrder: 3 };
+}
 
 function isMeatItem(item) {
   const n = (item.name || '').toLowerCase();
@@ -444,6 +646,20 @@ function switchStation(station) {
   document.getElementById('tabButcher').className = 'station-tab' + (station === 'butcher' ? ' active-butcher' : '');
   document.getElementById('tabGrocery').className = 'station-tab' + (station === 'grocery' ? ' active-grocery' : '');
   document.getElementById('tabAll').className = 'station-tab' + (station === 'all' ? ' active-all' : '');
+  document.getElementById('tabInventory').className = 'station-tab' + (station === 'inventory' ? ' active-inventory' : '');
+
+  const ordersContainer = document.getElementById('kdsOrdersContainer');
+  const inventoryContainer = document.getElementById('kdsInventoryContainer');
+
+  if (station === 'inventory') {
+    ordersContainer.style.display = 'none';
+    inventoryContainer.style.display = 'block';
+    loadShopInventory();
+    return;
+  } else {
+    ordersContainer.style.display = 'block';
+    inventoryContainer.style.display = 'none';
+  }
 
   // Update Header & Labels
   const badge = document.getElementById('stationBadge');
@@ -488,7 +704,9 @@ async function fetchShopOrders() {
     }
     lastCount = rawOrdersCache.length;
 
-    renderKdsOrders(rawOrdersCache);
+    if (currentStation !== 'inventory') {
+      renderKdsOrders(rawOrdersCache);
+    }
   } catch (err) {
     console.warn("fetchShopOrders error:", err);
   }
@@ -549,7 +767,6 @@ function renderKdsOrders(allOrders) {
     const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
     const timeStr = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Determine items to display on this specific station
     let displayedItems = items;
     let otherCount = 0;
     let otherType = '';
@@ -570,7 +787,6 @@ function renderKdsOrders(allOrders) {
       }
     }
 
-    // Action button labels based on station
     let statusPill = `<span class="status-pill pending">Pending</span>`;
     let startBtnText = currentStation === 'butcher' ? '🔪 Start Carving' : (currentStation === 'grocery' ? '📋 Start Picking' : '🚀 Start Prep');
     let packBtnText = currentStation === 'butcher' ? '📦 Meat Packed &amp; Sealed' : (currentStation === 'grocery' ? '🛍️ Grocery Bagged &amp; Ready' : '📦 Mark Packed &amp; Ready');
@@ -588,12 +804,14 @@ function renderKdsOrders(allOrders) {
     const itemsHTML = displayedItems.map(item => {
       const isCustom = item.isCustom || (item.name || '').toLowerCase().includes('custom');
       const itemIsMeat = isMeatItem(item);
+      const meta = getProductMeta(item);
       return `
         <div class="item-line">
           <div>
             <div class="cut-title">${item.emoji || (itemIsMeat ? '🥩' : '🛒')} ${item.name}</div>
             <div class="cut-tags">
               <span class="cut-tag">${item.unit || (item.weight ? item.weight + 'g' : '1 pc')}</span>
+              <span class="cut-tag" style="color:var(--accent-gold); border-color:rgba(255,183,77,0.3);">${meta.bin}</span>
               ${isCustom ? `<span class="cut-tag custom">Custom Butcher Cut</span>` : ''}
               ${item.size ? `<span class="cut-tag">${item.size}</span>` : ''}
               ${item.cutStyle ? `<span class="cut-tag">🔪 ${item.cutStyle}</span>` : ''}
@@ -632,12 +850,211 @@ function renderKdsOrders(allOrders) {
           ${otherNoteHTML}
         </div>
 
-        <div class="card-actions">
+        <div class="card-actions" style="flex-direction:column; gap:8px;">
           ${actionBtn}
+          <button class="btn-kds" onclick="openSmartPickerModal('${o.id}')" style="background:#1B2E28; color:var(--accent-gold); border:1.5px solid var(--accent-gold); font-size:0.85rem;">
+            ⚡ Zepto Smart Picker Assistant (120s)
+          </button>
         </div>
       </div>
     `;
   }).join('');
+}
+
+// ── ZEPTO SMART PICKER ASSISTANT LOGIC ──
+let activePickerOrderId = null;
+let pickerTimerInterval = null;
+let pickerSecondsLeft = 120;
+let pickerPickedItems = {};
+
+function openSmartPickerModal(orderId) {
+  const order = rawOrdersCache.find(o => o.id === orderId);
+  if (!order) return;
+
+  activePickerOrderId = orderId;
+  pickerPickedItems = {};
+  pickerSecondsLeft = 120;
+
+  document.getElementById('pickerModalTitle').textContent = `⚡ Smart Picker Assistant — Order #${order.id.substring(0,8).toUpperCase()}`;
+  document.getElementById('pickerModalSubtitle').textContent = `Customer: ${order.customer_name} • Zone: ${order.delivery_zone} • Optimal Warehouse Path`;
+  
+  const items = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
+  
+  // Zepto Smart Walk Sequence Sorting: Dry Staples -> Snacks -> Tech -> Bakery -> Dairy -> Eggs -> Mandi -> Meat
+  const sortedItems = [...items].map((it, origIdx) => {
+    const meta = getProductMeta(it);
+    return { ...it, bin: meta.bin, walkOrder: meta.walkOrder, origIdx };
+  }).sort((a, b) => a.walkOrder - b.walkOrder);
+
+  renderPickerSteps(sortedItems);
+
+  // Start 120s Countdown Timer
+  if (pickerTimerInterval) clearInterval(pickerTimerInterval);
+  updatePickerTimerUI();
+  pickerTimerInterval = setInterval(() => {
+    pickerSecondsLeft--;
+    updatePickerTimerUI();
+    if (pickerSecondsLeft <= 0) {
+      clearInterval(pickerTimerInterval);
+    }
+  }, 1000);
+
+  document.getElementById('pickerModalOverlay').style.display = 'flex';
+}
+
+function updatePickerTimerUI() {
+  const m = Math.floor(Math.max(0, pickerSecondsLeft) / 60);
+  const s = Math.max(0, pickerSecondsLeft) % 60;
+  const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const displayEl = document.getElementById('pickerTimerDisplay');
+  const badgeEl = document.getElementById('pickerSpeedBadge');
+
+  displayEl.textContent = timeStr;
+
+  if (pickerSecondsLeft > 60) {
+    displayEl.style.color = 'var(--accent-green)';
+    badgeEl.className = 'picker-speed-badge picker-speed-blitz';
+    badgeEl.textContent = '⚡ Blitz Tier (<60s)';
+  } else if (pickerSecondsLeft > 30) {
+    displayEl.style.color = 'var(--accent-gold)';
+    badgeEl.className = 'picker-speed-badge picker-speed-standard';
+    badgeEl.textContent = '⏱️ Good Pace (60-90s)';
+  } else {
+    displayEl.style.color = '#E74C3C';
+    badgeEl.className = 'picker-speed-badge picker-speed-hurry';
+    badgeEl.textContent = '⚠️ Hurry: Rider Waiting!';
+  }
+}
+
+function renderPickerSteps(sortedItems) {
+  const listEl = document.getElementById('pickerItemsList');
+  const total = sortedItems.length;
+
+  listEl.innerHTML = sortedItems.map((item, idx) => {
+    const isPicked = !!pickerPickedItems[idx];
+    return `
+      <div class="picker-step-card ${isPicked ? 'picked' : ''}" id="pickerStepCard_${idx}">
+        <div style="flex:1;">
+          <div class="picker-location-pill">Step ${idx + 1}/${total} • ${item.bin}</div>
+          <div style="font-weight:700; color:white; font-size:1rem; display:flex; align-items:center; gap:8px;">
+            <span>${item.emoji || '📦'}</span>
+            <span>${item.name}</span>
+            <span style="color:var(--accent-gold); font-family:'DM Mono'; font-size:0.9rem;">×${item.qty || 1}</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+            ${item.unit || (item.weight ? item.weight + 'g' : '')} ${item.cutStyle ? '• Cut: ' + item.cutStyle : ''}
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+          <button class="btn-pick-action ${isPicked ? 'picked' : ''}" onclick="togglePickerStep(${idx}, ${total})">
+            ${isPicked ? '✅ Bagged' : '⬜ Tap to Bag'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function togglePickerStep(idx, total) {
+  pickerPickedItems[idx] = !pickerPickedItems[idx];
+  const card = document.getElementById(`pickerStepCard_${idx}`);
+  if (card) {
+    if (pickerPickedItems[idx]) {
+      card.classList.add('picked');
+      const btn = card.querySelector('.btn-pick-action');
+      if (btn) { btn.classList.add('picked'); btn.textContent = '✅ Bagged'; }
+    } else {
+      card.classList.remove('picked');
+      const btn = card.querySelector('.btn-pick-action');
+      if (btn) { btn.classList.remove('picked'); btn.textContent = '⬜ Tap to Bag'; }
+    }
+  }
+
+  const pickedCount = Object.values(pickerPickedItems).filter(Boolean).length;
+  const completeBtn = document.getElementById('btnCompletePick');
+  if (pickedCount === total) {
+    completeBtn.style.background = 'var(--accent-green)';
+    completeBtn.textContent = `🎉 All ${total} Items Bagged! Seal & Handover to Rider`;
+  } else {
+    completeBtn.textContent = `Bag In Progress (${pickedCount}/${total} items picked)`;
+  }
+}
+
+async function finishSmartPick() {
+  if (!activePickerOrderId) return;
+  if (pickerTimerInterval) clearInterval(pickerTimerInterval);
+  
+  // Transition order to packed
+  await updateOrderStatus(activePickerOrderId, 'packed');
+  closeSmartPickerModal();
+}
+
+function closeSmartPickerModal() {
+  if (pickerTimerInterval) clearInterval(pickerTimerInterval);
+  document.getElementById('pickerModalOverlay').style.display = 'none';
+  activePickerOrderId = null;
+}
+
+// ── REAL-TIME INVENTORY STATION (SHOPKEEPER / BUTCHER TOGGLES) ──
+async function loadShopInventory() {
+  try {
+    const res = await fetch(`${INVENTORY_API}?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      liveInventoryMap = data.inventory || {};
+    }
+    renderShopInventory();
+  } catch(e) {
+    console.warn("loadShopInventory error:", e);
+    renderShopInventory();
+  }
+}
+
+function renderShopInventory() {
+  const search = (document.getElementById('shopInvSearch')?.value || '').toLowerCase();
+  const grid = document.getElementById('shopInventoryGrid');
+  if (!grid) return;
+
+  const filtered = STORE_CATALOG.filter(it => it.name.toLowerCase().includes(search) || it.bin.toLowerCase().includes(search));
+
+  grid.innerHTML = filtered.map(item => {
+    const isInStock = liveInventoryMap[item.id] !== false;
+    return `
+      <div class="inv-card">
+        <div class="inv-info">
+          <div class="inv-name"><span>${item.emoji}</span> <span>${item.name}</span></div>
+          <div class="inv-bin">${item.bin}</div>
+          <div class="inv-price">₹${item.price} / ${item.unit}</div>
+        </div>
+        <div>
+          <label class="toggle-switch">
+            <input type="checkbox" ${isInStock ? 'checked' : ''} onchange="toggleShopStock('${item.id}', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function toggleShopStock(productId, isChecked) {
+  liveInventoryMap[productId] = isChecked;
+  try {
+    const res = await fetch(INVENTORY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId, is_in_stock: isChecked })
+    });
+    if (!res.ok) {
+      alert("Failed to update inventory stock");
+      liveInventoryMap[productId] = !isChecked;
+      renderShopInventory();
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    liveInventoryMap[productId] = !isChecked;
+    renderShopInventory();
+  }
 }
 
 async function updateOrderStatus(id, status) {
@@ -660,7 +1077,11 @@ async function updateOrderStatus(id, status) {
 async function manualRefresh() {
   const btn = document.getElementById('btnRefresh');
   btn.innerHTML = '<span>⏳</span> Refreshing...';
-  await fetchShopOrders();
+  if (currentStation === 'inventory') {
+    await loadShopInventory();
+  } else {
+    await fetchShopOrders();
+  }
   setTimeout(() => {
     btn.innerHTML = '<span>🔄</span> Refresh';
   }, 400);
@@ -668,7 +1089,6 @@ async function manualRefresh() {
 
 window.addEventListener('DOMContentLoaded', () => {
   fetchShopOrders();
-  // Auto-poll every 5 seconds for incoming station tasks
   setInterval(fetchShopOrders, 5000);
 });
 </script>

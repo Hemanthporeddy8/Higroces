@@ -463,19 +463,65 @@ input:checked + .toggle-slider:before {
     </div>
   </div>
 
-  <!-- FEATURE FLAGS CONTROL PANEL -->
+  <!-- FEATURE FLAGS & DARK STORE GPS CONTROL PANEL -->
   <div class="features-control-panel">
     <div class="panel-header">
       <div>
-        <h3 style="font-size:1.1rem; color:var(--gold);">⚙️ Growth &amp; Expansion Feature Flags (V2 &amp; V3)</h3>
+        <h3 style="font-size:1.1rem; color:var(--gold);">⚙️ Dark Store Logistics &amp; Feature Flags (V2 &amp; V3)</h3>
         <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
-          Turn features ON/OFF instantly. Default is OFF to keep public app 100% focused on 15-min instant MVP.
+          Configure local Dark Store GPS hub, smart recommendation engines, and expansion modules.
         </p>
       </div>
-      <button class="btn-save-flags" id="btnSaveFlags" onclick="saveFeatureFlags()">Save Feature Flags 💾</button>
+      <button class="btn-save-flags" id="btnSaveFlags" onclick="saveFeatureFlags()">Save All Settings 💾</button>
     </div>
 
     <div class="flags-grid">
+      <!-- Dark Store GPS Hub Configuration -->
+      <div class="flag-card" style="grid-column: 1 / -1; display:block;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div class="flag-title" style="font-size:1.05rem; color:var(--gold);">🏪 Dark Store Hub Coordinates (Live Dispatch Center)</div>
+            <div class="flag-desc">Set the physical GPS location of your dark store or nearby local shop for live rider route mapping &amp; real doorstep tracking.</div>
+          </div>
+          <button type="button" onclick="locateMyShop()" style="background:#1B2E28; color:var(--green); border:1.5px solid var(--green); padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+            🎯 Pin My Current Shop Location
+          </button>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:8px;">
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Hub / Shop Name</label>
+            <input type="text" id="darkStoreName" value="HSR Meat Hub & Dark Store" style="width:100%; margin-top:4px; padding:8px 12px; background:#0E1412; border:1px solid var(--card-border); color:white; border-radius:6px; font-size:0.88rem; outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Latitude (e.g. 12.9121)</label>
+            <input type="text" id="darkStoreLat" value="12.9121" style="width:100%; margin-top:4px; padding:8px 12px; background:#0E1412; border:1px solid var(--card-border); color:white; border-radius:6px; font-size:0.88rem; outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Longitude (e.g. 77.6408)</label>
+            <input type="text" id="darkStoreLng" value="77.6408" style="width:100%; margin-top:4px; padding:8px 12px; background:#0E1412; border:1px solid var(--card-border); color:white; border-radius:6px; font-size:0.88rem; outline:none;" />
+          </div>
+        </div>
+        <div id="darkStoreStatusMsg" style="font-size:0.78rem; color:var(--green); margin-top:8px; display:none;"></div>
+      </div>
+
+      <!-- Smart Recommendations AI Engine -->
+      <div class="flag-card" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="flag-info" style="max-width:650px;">
+          <div class="flag-title">⚡ Zepto-Style Smart AI Recommendations Engine</div>
+          <div class="flag-desc">Dynamically showcase weather-matched and festival-special products to customers (e.g. Monsoon Hot Soup, Sunday Biryani Feast, Weekend BBQ, Diwali/Eid).</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <select id="smartRecMode" onchange="saveFeatureFlags()" style="background:#0E1412; border:1.5px solid var(--card-border); color:var(--gold); font-size:0.88rem; font-weight:700; padding:8px 14px; border-radius:6px; outline:none; cursor:pointer;">
+            <option value="auto">🤖 Dynamic AI Auto (Live Weather &amp; Calendar)</option>
+            <option value="monsoon">🌧️ Monsoon Special (Hot Pepper Soup &amp; Snacks)</option>
+            <option value="biryani_sunday">👑 Sunday Biryani &amp; Meat Feast</option>
+            <option value="weekend_bbq">🔥 Weekend BBQ &amp; Match Night Munchies</option>
+            <option value="festive">🪔 Festive Celebration (Diwali / Eid Feast)</option>
+            <option value="sunny">☀️ Summer Refreshers &amp; Light Cuts</option>
+          </select>
+        </div>
+      </div>
+
       <div class="flag-card">
         <div class="flag-info">
           <div class="flag-title">🌱 Feature 1: "Fresh Tmrw" (Next-Day Mandi Produce)</div>
@@ -503,6 +549,7 @@ input:checked + .toggle-slider:before {
   <!-- ADMIN NAVIGATION TABS -->
   <div class="admin-nav-tabs">
     <button class="nav-tab-btn active" id="tabBtnOrders" onclick="switchAdminTab('orders')">📦 Orders Directory</button>
+    <button class="nav-tab-btn" id="tabBtnInventory" onclick="switchAdminTab('inventory')">📦 Inventory &amp; Stock Control</button>
     <button class="nav-tab-btn" id="tabBtnMandi" onclick="switchAdminTab('mandi')">🌾 5 AM Mandi Procurement Sheet</button>
     <button class="nav-tab-btn" id="tabBtnSubs" onclick="switchAdminTab('subs')">🔄 Active Subscriptions Manager</button>
   </div>
@@ -608,6 +655,44 @@ input:checked + .toggle-slider:before {
     </table>
   </div>
 
+  <!-- VIEW 4: INVENTORY & REAL-TIME STOCK CONTROL -->
+  <div class="table-card" id="viewInventory" style="display:none;">
+    <div class="filter-bar">
+      <div class="filter-group">
+        <input type="text" class="search-input" id="inventorySearch" placeholder="Search catalog items or bin..." oninput="filterInventory()"/>
+        <select class="filter-select" id="inventoryCategoryFilter" onchange="filterInventory()">
+          <option value="all">Category: All Categories</option>
+          <option value="meat">Meat &amp; Seafood (Cold Room)</option>
+          <option value="eggs">Eggs (Fragile Rack)</option>
+          <option value="dairy">Dairy &amp; Milk (Cold Bay)</option>
+          <option value="snacks">Snacks &amp; Beverages</option>
+          <option value="staples">Staples &amp; Bakery</option>
+          <option value="tech">Kitchen Appliances &amp; Tech</option>
+          <option value="fresh_tmrw">Mandi Farm Fresh</option>
+        </select>
+      </div>
+      <div style="font-size:0.82rem; color:var(--text-muted);">
+        ⚡ Changes apply instantly to customer storefront &amp; butcher station
+      </div>
+    </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Product Item</th>
+          <th>Category</th>
+          <th>Dark Store Bin / Rack Location</th>
+          <th>Unit Price</th>
+          <th>Live Stock Status</th>
+          <th>Action Toggle</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTbody">
+        <tr><td colspan="6" style="text-align:center; padding:30px;">Loading stock status from Cloudflare D1...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
 
 <script>
@@ -615,10 +700,44 @@ const API_BASE = '/api/orders';
 const SETTINGS_API = '/api/settings';
 const SUBS_API = '/api/subscriptions';
 const MANDI_API = '/api/mandi-sheet';
+const INVENTORY_API = '/api/inventory';
 
 let masterKey = sessionStorage.getItem('amorelot_admin_key') || '';
 let cachedOrders = [];
 let currentAdminTab = 'orders';
+let liveInventoryMap = {};
+
+// Unified Dark Store Master Catalog
+const STORE_CATALOG = [
+  // Meat & Seafood
+  { id: 'whole_chicken', name: 'Whole Chicken (Butchered)', category: 'meat', emoji: '🐔', price: 280, unit: '~1kg', bin: '❄️ Chiller Bay C1 (Cold Room)' },
+  { id: 'chicken_500', name: 'Chicken (500g Pack)', category: 'meat', emoji: '🍗', price: 145, unit: '500g', bin: '❄️ Chiller Bay C2 (Cold Room)' },
+  { id: 'chicken_1kg', name: 'Chicken (1kg Pack)', category: 'meat', emoji: '🍗', price: 285, unit: '1kg', bin: '❄️ Chiller Bay C2 (Cold Room)' },
+  { id: 'fish_fresh', name: 'Fresh Fish (Whole)', category: 'meat', emoji: '🐟', price: 220, unit: '~500g', bin: '🐟 Ice Bed Bay S1 (Seafood)' },
+  // Eggs
+  { id: 'eggs_6', name: 'Farm Eggs (6 pcs)', category: 'eggs', emoji: '🥚', price: 48, unit: '6 pcs', bin: '🥚 Rack E1 (Fragile Top Tier)' },
+  { id: 'eggs_tray', name: 'Egg Tray (30 pcs)', category: 'eggs', emoji: '🥚', price: 225, unit: '30 pcs', bin: '🥚 Rack E2 (Fragile Stack)' },
+  // Dairy
+  { id: 'amul_butter', name: 'Amul Butter (100g)', category: 'dairy', emoji: '🧈', price: 57, unit: '100g', bin: '🥛 Refrigerator R1 (Dairy Bay)' },
+  { id: 'curd_500', name: 'Fresh Curd (500g)', category: 'dairy', emoji: '🥛', price: 40, unit: '500g', bin: '🥛 Refrigerator R2 (Dairy Bay)' },
+  // Snacks & Beverages
+  { id: 'lays', name: "Lay's Chips (Classic)", category: 'snacks', emoji: '🍟', price: 20, unit: '26g', bin: '🍟 Aisle B1 - Shelf 2 (Snacks)' },
+  { id: 'parle_g', name: 'Parle-G Biscuits', category: 'snacks', emoji: '🍪', price: 30, unit: 'Big Pack', bin: '🍪 Aisle B1 - Shelf 3 (Biscuits)' },
+  { id: 'pepsi', name: 'Pepsi (500ml)', category: 'snacks', emoji: '🥤', price: 35, unit: '500ml', bin: '🥤 Cooler C1 (Chilled Beverages)' },
+  { id: 'maggi', name: 'Maggi Noodles (Pack of 4)', category: 'snacks', emoji: '🍜', price: 60, unit: '4 × 70g', bin: '🍜 Aisle A2 - Shelf 1 (Instant Food)' },
+  // Staples
+  { id: 'bread', name: 'Bread Loaf (400g)', category: 'staples', emoji: '🍞', price: 42, unit: '400g', bin: '🍞 Rack B1 (Bakery Tier)' },
+  { id: 'sunflower_oil', name: 'Sunflower Oil (1L)', category: 'staples', emoji: '🫙', price: 135, unit: '1 Litre', bin: '🫙 Aisle A1 - Shelf 3 (Heavy Staples)' },
+  // Tech & Kitchen
+  { id: 'tech_cable', name: 'USB-C Fast Charging Cable (65W)', category: 'tech', emoji: '🔌', price: 199, unit: '1 pc', bin: '🔌 Tech Locker T1' },
+  { id: 'tech_scale', name: 'Digital Kitchen Weighing Scale', category: 'tech', emoji: '⚖️', price: 349, unit: '1 pc', bin: '⚖️ Tech Locker T2' },
+  { id: 'tech_thermometer', name: 'Digital Meat Thermometer', category: 'tech', emoji: '🌡️', price: 249, unit: '1 pc', bin: '🌡️ Tech Locker T2' },
+  // Mandi Farm Produce
+  { id: 'mandi_spinach', name: 'Farm Fresh Spinach (Palak)', category: 'fresh_tmrw', emoji: '🥬', price: 25, unit: '1 Bunch', bin: '🥬 APMC Mandi Crates F1' },
+  { id: 'mandi_tomato', name: 'Country Tomatoes (APMC)', category: 'fresh_tmrw', emoji: '🍅', price: 32, unit: '1 kg', bin: '🍅 APMC Mandi Crates F2' },
+  { id: 'mandi_coriander', name: 'Fresh Coriander (Dhaniya)', category: 'fresh_tmrw', emoji: '🌿', price: 15, unit: '1 Bunch', bin: '🌿 APMC Mandi Crates F3' },
+  { id: 'mandi_papaya', name: 'Farm Papaya (Semi-Ripe)', category: 'fresh_tmrw', emoji: '🍈', price: 45, unit: '1 pc (~800g)', bin: '🍈 APMC Mandi Crates F4' }
+];
 
 function checkAuth() {
   if (masterKey) {
@@ -657,18 +776,44 @@ function logoutAdmin() {
 function switchAdminTab(tab) {
   currentAdminTab = tab;
   document.getElementById('tabBtnOrders').className = 'nav-tab-btn' + (tab === 'orders' ? ' active' : '');
+  document.getElementById('tabBtnInventory').className = 'nav-tab-btn' + (tab === 'inventory' ? ' active' : '');
   document.getElementById('tabBtnMandi').className  = 'nav-tab-btn' + (tab === 'mandi'  ? ' active' : '');
   document.getElementById('tabBtnSubs').className   = 'nav-tab-btn' + (tab === 'subs'   ? ' active' : '');
 
   document.getElementById('viewOrders').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('viewInventory').style.display = tab === 'inventory' ? 'block' : 'none';
   document.getElementById('viewMandi').style.display  = tab === 'mandi'  ? 'block' : 'none';
   document.getElementById('viewSubs').style.display   = tab === 'subs'   ? 'block' : 'none';
 
+  if (tab === 'inventory') loadInventory();
   if (tab === 'mandi') loadMandiSheet();
   if (tab === 'subs') loadSubscriptions();
 }
 
-// ── FEATURE FLAGS MANAGEMENT ──
+// ── DARK STORE GPS AUTO-PIN ──
+function locateMyShop() {
+  const statusEl = document.getElementById('darkStoreStatusMsg');
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+  statusEl.style.display = 'block';
+  statusEl.textContent = '⏳ Accessing GPS satellite coordinates...';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById('darkStoreLat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('darkStoreLng').value = pos.coords.longitude.toFixed(6);
+      statusEl.textContent = `✅ Locked GPS: [Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}]. Click "Save All Settings" to apply!`;
+      saveFeatureFlags();
+    },
+    (err) => {
+      statusEl.textContent = `❌ GPS Pin failed: ${err.message}. You can manually type your shop coordinates.`;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ── FEATURE FLAGS & SETTINGS MANAGEMENT ──
 async function loadFeatureFlags() {
   try {
     const res = await fetch(`${SETTINGS_API}?t=${Date.now()}`, { cache: 'no-store' });
@@ -676,6 +821,13 @@ async function loadFeatureFlags() {
     const settings = await res.json();
     document.getElementById('flagFreshTmrw').checked = !!settings.feature_fresh_tmrw;
     document.getElementById('flagSubscriptions').checked = !!settings.feature_subscriptions;
+
+    if (settings.dark_store_name) document.getElementById('darkStoreName').value = settings.dark_store_name;
+    if (settings.dark_store_lat)  document.getElementById('darkStoreLat').value  = settings.dark_store_lat;
+    if (settings.dark_store_lng)  document.getElementById('darkStoreLng').value  = settings.dark_store_lng;
+    if (settings.smart_recommendation_mode) {
+      document.getElementById('smartRecMode').value = settings.smart_recommendation_mode;
+    }
   } catch(e) {
     console.warn("loadFeatureFlags error:", e);
   }
@@ -685,6 +837,11 @@ async function saveFeatureFlags() {
   const currentKey = masterKey || sessionStorage.getItem('amorelot_admin_key') || 'amorelot2026';
   const freshTmrw = document.getElementById('flagFreshTmrw').checked;
   const subs = document.getElementById('flagSubscriptions').checked;
+  const storeName = document.getElementById('darkStoreName').value.trim();
+  const storeLat  = document.getElementById('darkStoreLat').value.trim();
+  const storeLng  = document.getElementById('darkStoreLng').value.trim();
+  const recMode   = document.getElementById('smartRecMode').value;
+
   const btn = document.getElementById('btnSaveFlags');
   if (btn) btn.textContent = 'Saving... ⌛';
 
@@ -697,21 +854,121 @@ async function saveFeatureFlags() {
       },
       body: JSON.stringify({
         feature_fresh_tmrw: freshTmrw,
-        feature_subscriptions: subs
+        feature_subscriptions: subs,
+        dark_store_name: storeName,
+        dark_store_lat: storeLat,
+        dark_store_lng: storeLng,
+        smart_recommendation_mode: recMode
       })
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       alert("Failed to save settings: " + (err.error || res.statusText));
-      if (btn) btn.textContent = 'Save Feature Flags 💾';
+      if (btn) btn.textContent = 'Save All Settings 💾';
       return;
     }
     if (btn) btn.textContent = 'Saved to D1! ✅';
-    setTimeout(() => { if (btn) btn.textContent = 'Save Feature Flags 💾'; }, 1800);
+    setTimeout(() => { if (btn) btn.textContent = 'Save All Settings 💾'; }, 1800);
   } catch(e) {
     console.error(e);
     alert("Connection error: " + e.message);
-    if (btn) btn.textContent = 'Save Feature Flags 💾';
+    if (btn) btn.textContent = 'Save All Settings 💾';
+  }
+}
+
+// ── REAL-TIME INVENTORY MANAGEMENT ──
+async function loadInventory() {
+  try {
+    const res = await fetch(`${INVENTORY_API}?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      liveInventoryMap = data.inventory || {};
+    }
+    renderInventoryTable();
+  } catch(e) {
+    console.warn("loadInventory error:", e);
+    renderInventoryTable();
+  }
+}
+
+function renderInventoryTable() {
+  const search = (document.getElementById('inventorySearch')?.value || '').toLowerCase();
+  const cat = document.getElementById('inventoryCategoryFilter')?.value || 'all';
+
+  const filtered = STORE_CATALOG.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(search) || item.bin.toLowerCase().includes(search);
+    const matchesCat = (cat === 'all' || item.category === cat);
+    return matchesSearch && matchesCat;
+  });
+
+  const tbody = document.getElementById('inventoryTbody');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No products match filter criteria.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => {
+    // Default to true if not explicitly set to false
+    const isInStock = liveInventoryMap[item.id] !== false;
+    const statusBadge = isInStock 
+      ? `<span class="status-badge" style="background:rgba(46,204,113,0.15); color:var(--green); border:1px solid rgba(46,204,113,0.3);">🟢 IN STOCK</span>`
+      : `<span class="status-badge" style="background:rgba(231,76,60,0.15); color:var(--red); border:1px solid rgba(231,76,60,0.3);">🔴 SOLD OUT</span>`;
+
+    return `
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.4rem;">${item.emoji}</span>
+            <div>
+              <div style="font-weight:700; color:white;">${item.name}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-family:'DM Mono';">ID: ${item.id}</div>
+            </div>
+          </div>
+        </td>
+        <td style="text-transform:capitalize; color:var(--text-muted);">${item.category.replace('_', ' ')}</td>
+        <td>
+          <span style="background:rgba(255,183,77,0.1); border:1px solid rgba(255,183,77,0.25); color:var(--gold); font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:4px;">
+            ${item.bin}
+          </span>
+        </td>
+        <td style="font-family:'DM Mono'; font-weight:700; color:white;">₹${item.price} <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">/${item.unit}</span></td>
+        <td>${statusBadge}</td>
+        <td>
+          <label class="toggle-switch">
+            <input type="checkbox" ${isInStock ? 'checked' : ''} onchange="toggleProductStock('${item.id}', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterInventory() {
+  renderInventoryTable();
+}
+
+async function toggleProductStock(productId, isChecked) {
+  liveInventoryMap[productId] = isChecked;
+  renderInventoryTable();
+
+  try {
+    const res = await fetch(INVENTORY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId, is_in_stock: isChecked })
+    });
+    if (!res.ok) {
+      alert("Failed to update stock in D1");
+      liveInventoryMap[productId] = !isChecked;
+      renderInventoryTable();
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    liveInventoryMap[productId] = !isChecked;
+    renderInventoryTable();
   }
 }
 

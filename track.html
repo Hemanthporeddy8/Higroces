@@ -503,7 +503,7 @@
     // Live Supermaps Edge Proxy on Cloudflare (with CORS & byte-range streaming)
     const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
 
-    // Protomaps Vector Style (Daylight Quick-Commerce Mode)
+    // Protomaps Vector Style (Daylight Quick-Commerce Mode with English Text Labels)
     const supermapsStyle = {
       version: 8,
       glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
@@ -514,14 +514,15 @@
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: basemaps.layers('protomaps', basemaps.LIGHT)
+      layers: basemaps.layers('protomaps', 'light', { lang: 'en' })
     };
 
     // ═══════════════════════════════════════════════════════════════
     // 2. COORDINATES FOR MEAT HUBS & DELIVERY ZONES
     // ═══════════════════════════════════════════════════════════════
-    // Dark Store (HSR Layout Central Meat Hub)
-    const STORE_COORDS = [77.6408, 12.9121]; // [Lng, Lat]
+    // Dynamic Dark Store (Configurable via Admin Console)
+    let STORE_COORDS = [77.6408, 12.9121]; // [Lng, Lat]
+    let STORE_NAME = 'Meat Hub & Dark Store';
 
     const ZONE_DESTINATIONS = {
       'HSR Layout':     [77.6492, 12.9165],
@@ -532,7 +533,7 @@
       'Electronic City':[77.6780, 12.8399]
     };
 
-    // Initialize Map with Bangalore / HSR view
+    // Initialize Map
     const map = new maplibregl.Map({
       container: 'map',
       center: STORE_COORDS,
@@ -576,6 +577,19 @@
       } catch(e) {
         console.warn("fetchOrderData error:", e);
       }
+
+      // Fetch dynamic Dark Store Hub settings from Cloudflare D1
+      try {
+        const setRes = await fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' });
+        if (setRes.ok) {
+          const settings = await setRes.json();
+          if (settings.dark_store_lat && settings.dark_store_lng) {
+            STORE_COORDS = [Number(settings.dark_store_lng), Number(settings.dark_store_lat)];
+            if (settings.dark_store_name) STORE_NAME = settings.dark_store_name;
+            if (!routeDrawn) map.setCenter(STORE_COORDS);
+          }
+        }
+      } catch(e) {}
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -684,7 +698,9 @@
     async function drawOrderMapRoute(order) {
       if (routeDrawn && routeCoordinates.length > 0) return;
 
-      const dest = ZONE_DESTINATIONS[order.delivery_zone] || ZONE_DESTINATIONS['HSR Layout'];
+      const dest = (order.cust_lat && order.cust_lng)
+        ? [Number(order.cust_lng), Number(order.cust_lat)]
+        : (ZONE_DESTINATIONS[order.delivery_zone] || ZONE_DESTINATIONS['HSR Layout']);
       const [storeLng, storeLat] = STORE_COORDS;
       const [custLng, custLat] = dest;
 
@@ -692,12 +708,14 @@
       const storeEl = document.createElement('div');
       storeEl.className = 'map-marker marker-store';
       storeEl.innerHTML = '🏪';
+      storeEl.title = STORE_NAME || 'Dark Store Hub';
       new maplibregl.Marker({ element: storeEl }).setLngLat(STORE_COORDS).addTo(map);
 
       // Add Customer Doorstep Marker
       const custEl = document.createElement('div');
       custEl.className = 'map-marker marker-customer';
       custEl.innerHTML = '📍';
+      custEl.title = order.customer_name || 'Customer Delivery Point';
       new maplibregl.Marker({ element: custEl }).setLngLat(dest).addTo(map);
 
       // Add Delivery Rider Marker
@@ -759,7 +777,9 @@
         }
       } catch(e) {
         console.warn("Routing proxy error, using straight line fallback:", e);
-        document.getElementById('etaText').textContent = '12 mins (HSR Hub)';
+        document.getElementById('etaText').textContent = '12 mins (Hub)';
+        const fallbackBounds = new maplibregl.LngLatBounds().extend(STORE_COORDS).extend(dest);
+        map.fitBounds(fallbackBounds, { padding: { top: 90, bottom: 260, left: 60, right: 60 } });
       }
     }
 

@@ -42,11 +42,28 @@ async function ensureAllSchemas(db) {
   try { await db.prepare("ALTER TABLE orders ADD COLUMN delivery_otp TEXT").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE orders ADD COLUMN order_type TEXT DEFAULT 'instant'").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE orders ADD COLUMN delivery_slot TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE orders ADD COLUMN cust_lat REAL").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE orders ADD COLUMN cust_lng REAL").run(); } catch(e) {}
 
-  // Initialize feature flags (OFF by default)
+  // Product Inventory Table (In-Stock / Out-of-Stock toggles)
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS product_inventory (
+        product_id TEXT PRIMARY KEY,
+        is_in_stock INTEGER DEFAULT 1,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch(e) {}
+
+  // Initialize feature flags & Dark Store defaults
   try {
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', '0')").run();
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('feature_subscriptions', '0')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_name', 'HSR Meat Hub & Dark Store')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lat', '12.9121')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lng', '77.6408')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smart_recommendation_mode', 'auto')").run();
   } catch(e) {}
 }
 
@@ -70,20 +87,28 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // API: /api/settings (Admin Feature Flags for V2 & V3)
+    // API: /api/settings (Feature Flags & Dark Store Hub Coordinates)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/settings") {
-      // GET: Public settings (Customer app reads these to show/hide tabs)
+      // GET: Public settings (Customer & Rider apps read these)
       if (request.method === "GET") {
         try {
           const rows = await env.DB.prepare("SELECT * FROM system_settings").all();
           const settings = {
             feature_fresh_tmrw: false,
-            feature_subscriptions: false
+            feature_subscriptions: false,
+            dark_store_name: "HSR Meat Hub & Dark Store",
+            dark_store_lat: "12.9121",
+            dark_store_lng: "77.6408",
+            smart_recommendation_mode: "auto"
           };
           (rows.results || []).forEach(r => {
             if (r.key === 'feature_fresh_tmrw') settings.feature_fresh_tmrw = r.value === '1';
             if (r.key === 'feature_subscriptions') settings.feature_subscriptions = r.value === '1';
+            if (r.key === 'dark_store_name' && r.value) settings.dark_store_name = r.value;
+            if (r.key === 'dark_store_lat' && r.value) settings.dark_store_lat = r.value;
+            if (r.key === 'dark_store_lng' && r.value) settings.dark_store_lng = r.value;
+            if (r.key === 'smart_recommendation_mode' && r.value) settings.smart_recommendation_mode = r.value;
           });
           return new Response(JSON.stringify(settings), { headers: corsHeaders() });
         } catch(err) {
@@ -91,7 +116,7 @@ export default {
         }
       }
 
-      // POST: Admin updates feature flags (Requires X-Admin-Key)
+      // POST: Admin updates settings (Feature flags & Dark Store GPS)
       if (request.method === "POST") {
         try {
           const adminKey = request.headers.get('X-Admin-Key') || url.searchParams.get('key');
@@ -100,14 +125,70 @@ export default {
           }
           const body = await request.json();
           if (body.feature_fresh_tmrw !== undefined) {
-            await env.DB.prepare("UPDATE system_settings SET value = ? WHERE key = 'feature_fresh_tmrw'")
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
               .bind(body.feature_fresh_tmrw ? '1' : '0').run();
           }
           if (body.feature_subscriptions !== undefined) {
-            await env.DB.prepare("UPDATE system_settings SET value = ? WHERE key = 'feature_subscriptions'")
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('feature_subscriptions', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
               .bind(body.feature_subscriptions ? '1' : '0').run();
           }
+          if (body.dark_store_name !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('dark_store_name', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(String(body.dark_store_name)).run();
+          }
+          if (body.dark_store_lat !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('dark_store_lat', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(String(body.dark_store_lat)).run();
+          }
+          if (body.dark_store_lng !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('dark_store_lng', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(String(body.dark_store_lng)).run();
+          }
+          if (body.smart_recommendation_mode !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('smart_recommendation_mode', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(String(body.smart_recommendation_mode)).run();
+          }
           return new Response(JSON.stringify({ success: true, settings: body }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/inventory (Real-time Stock Toggling for Butcher & Shop)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/inventory") {
+      // GET: Returns map of { [productId]: boolean }
+      if (request.method === "GET") {
+        try {
+          const rows = await env.DB.prepare("SELECT product_id, is_in_stock FROM product_inventory").all();
+          const inventory = {};
+          (rows.results || []).forEach(r => {
+            inventory[r.product_id] = r.is_in_stock === 1;
+          });
+          return new Response(JSON.stringify({ inventory }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+
+      // POST: Shopkeeper or Admin updates item stock status
+      if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          const { product_id, is_in_stock } = body;
+          if (!product_id) {
+            return new Response(JSON.stringify({ error: "product_id is required" }), { status: 400, headers: corsHeaders() });
+          }
+          const stockVal = (is_in_stock === false || is_in_stock === 0 || is_in_stock === '0') ? 0 : 1;
+          await env.DB.prepare(`
+            INSERT INTO product_inventory (product_id, is_in_stock, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(product_id) DO UPDATE SET is_in_stock = excluded.is_in_stock, updated_at = datetime('now')
+          `).bind(product_id, stockVal).run();
+
+          return new Response(JSON.stringify({ success: true, product_id, is_in_stock: stockVal === 1 }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
@@ -247,12 +328,16 @@ export default {
           // Generate 4-digit dynamic delivery OTP
           const delivery_otp = Math.floor(1000 + Math.random() * 9000).toString();
 
+          const cust_lat = (body.cust_lat !== undefined && body.cust_lat !== null && body.cust_lat !== '') ? Number(body.cust_lat) : null;
+          const cust_lng = (body.cust_lng !== undefined && body.cust_lng !== null && body.cust_lng !== '') ? Number(body.cust_lng) : null;
+
           await env.DB.prepare(`
             INSERT INTO orders (
               id, customer_name, customer_phone, delivery_address, 
               special_notes, items, subtotal, delivery_fee, total_price, 
-              status, delivery_zone, delivery_otp, order_type, delivery_slot, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              status, delivery_zone, delivery_otp, order_type, delivery_slot,
+              cust_lat, cust_lng, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
           `).bind(
             id,
             body.customer_name || 'Customer',
@@ -267,10 +352,12 @@ export default {
             body.delivery_zone || 'HSR Layout',
             delivery_otp,
             order_type,
-            delivery_slot
+            delivery_slot,
+            cust_lat,
+            cust_lng
           ).run();
 
-          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, ...body };
+          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, ...body };
           return new Response(JSON.stringify({ success: true, order: created }), {
             status: 201,
             headers: corsHeaders()

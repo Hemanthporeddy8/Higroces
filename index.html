@@ -507,6 +507,131 @@ header {
 }
 .btn-butcher:hover { background: var(--brand-accent-hover); }
 
+/* ── SMART AI RECOMMENDATIONS ENGINE ── */
+.smart-rec-container {
+  background: linear-gradient(135deg, #091D17 0%, #163B2F 100%);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  color: white;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 30px rgba(12,81,63,0.15);
+}
+.smart-rec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.smart-rec-badge {
+  display: inline-block;
+  background: var(--brand-accent);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.smart-rec-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #FFE699;
+}
+.smart-rec-sub {
+  font-size: 0.85rem;
+  color: #D1DAD5;
+  margin-top: 4px;
+  max-width: 600px;
+}
+.smart-rec-pill {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.smart-rec-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.smart-rec-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s, background 0.2s;
+}
+.smart-rec-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.09);
+}
+.smart-rec-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.smart-rec-emoji {
+  font-size: 1.8rem;
+}
+.smart-rec-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: white;
+  line-height: 1.25;
+}
+.smart-rec-tag {
+  font-size: 0.7rem;
+  color: #FFD54F;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.smart-rec-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.smart-rec-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+}
+.btn-smart-add {
+  background: var(--brand-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-smart-add:hover {
+  filter: brightness(1.15);
+}
+
 /* ── CART DRAWER ── */
 .cart-drawer {
   position: fixed;
@@ -1133,8 +1258,16 @@ header {
       <input type="tel" id="custPhone" placeholder="e.g. 9876543210" maxlength="10" required/>
     </div>
     <div class="form-group">
-      <label>Delivery Address *</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <label style="margin-bottom:0;">Delivery Address *</label>
+        <button type="button" id="btnUseLiveLoc" onclick="fetchCustomerLiveLocation()" style="background:#E8F8F5; color:#0C513F; border:1px solid #A2D9CE; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">
+          📍 Use My Live Location
+        </button>
+      </div>
       <textarea id="custAddress" placeholder="House no., Street, Landmark, Area..."></textarea>
+      <div id="liveLocBadge" style="display:none; font-size:0.75rem; color:#0C513F; background:#E8F8F5; padding:4px 8px; border-radius:4px; margin-top:4px;">
+        ✅ GPS coordinates pinned for road navigation
+      </div>
     </div>
     <div class="form-group">
       <label>Payment Method *</label>
@@ -1232,6 +1365,21 @@ header {
     <h2>Zero Cold-Storage. Harvested at 5 AM Tomorrow from Mandi.</h2>
     <p>Pre-order before 10 PM tonight. Picked fresh from wholesale APMC Mandi and dropped at your door by 7:30 AM.</p>
     <div class="tmrw-timer">⏰ Order in the next <strong id="mandiCountdown">4h 20m</strong> for tomorrow morning delivery</div>
+  </div>
+
+  <!-- SMART AI RECOMMENDATIONS BANNER & CAROUSEL -->
+  <div class="smart-rec-container" id="smartRecContainer">
+    <div class="smart-rec-header">
+      <div>
+        <div class="smart-rec-badge" id="smartRecBadge">⚡ Cravings Detected</div>
+        <h3 class="smart-rec-title" id="smartRecTitle">🌧️ Monsoon Special — Hot Broth &amp; Crispy Cravings</h3>
+        <p class="smart-rec-sub" id="smartRecSubtitle">Rainy weather calls for hot pepper chicken soup and crispy evening snacks!</p>
+      </div>
+      <div class="smart-rec-pill">⚡ 15-Min Instant Drop</div>
+    </div>
+    <div class="smart-rec-cards" id="smartRecCards">
+      <!-- Injected dynamically by renderSmartRecommendations() -->
+    </div>
   </div>
 
   <!-- CATEGORY TABS -->
@@ -1669,6 +1817,7 @@ function calcSubtotal() {
 // ═══════════════════════════════════════════════
 let currentCategory = 'all';
 let currentSearch   = '';
+let liveInventoryMap = {};
 
 function renderProductGrid(category = 'all', search = '') {
   currentCategory = category;
@@ -1692,31 +1841,45 @@ function renderProductGrid(category = 'all', search = '') {
     return;
   }
   grid.innerHTML = list.map(p => {
+    const isInStock = liveInventoryMap[p.id] !== false;
     const cartItem = getCartItem(p.id);
     const qty = cartItem ? cartItem.qty : 0;
     const mrpHTML = p.mrp ? `<span class="mrp">₹${p.mrp}</span>` : '';
-    const badgeHTML = p.badge ? `<span class="card-badge ${p.badgeClass||''}">${p.badge}</span>` : '';
-    const addBtn = p.isButcher
-      ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
-           <button class="btn-butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
-           ${qty > 0
-             ? `<div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
-                  <button class="di-qty-btn" onclick="removeFromCart('${p.id}')">−</button>
-                  <span class="di-qty-num">${qty}</span>
-                  <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
-                </div>`
-             : `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`
-           }
-         </div>`
-      : qty > 0
-        ? `<div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
-             <button class="di-qty-btn" onclick="removeFromCart('${p.id}');renderCartItems()">−</button>
-             <span class="di-qty-num">${qty}</span>
-             <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
-           </div>`
-        : `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`;
+    
+    let badgeHTML = p.badge ? `<span class="card-badge ${p.badgeClass||''}">${p.badge}</span>` : '';
+    if (!isInStock) {
+      badgeHTML = `<span class="card-badge" style="background:#E74C3C; color:white;">⛔ Sold Out</span>`;
+    }
+
+    let addBtn = '';
+    if (!isInStock) {
+      addBtn = `<button class="btn-add" style="background:#95A5A6; color:white; border-color:#95A5A6; cursor:not-allowed;" disabled>Sold Out ⛔</button>`;
+    } else if (p.isButcher) {
+      addBtn = `
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
+          ${qty > 0
+            ? `<div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
+                 <button class="di-qty-btn" onclick="removeFromCart('${p.id}')">−</button>
+                 <span class="di-qty-num">${qty}</span>
+                 <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
+               </div>`
+            : `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`
+          }
+        </div>`;
+    } else if (qty > 0) {
+      addBtn = `
+        <div style="display:flex;align-items:center;gap:6px;background:#F4F6F5;border-radius:6px;padding:5px 8px;">
+          <button class="di-qty-btn" onclick="removeFromCart('${p.id}');renderCartItems()">−</button>
+          <span class="di-qty-num">${qty}</span>
+          <button class="di-qty-btn" onclick="addToCart('${p.id}')">+</button>
+        </div>`;
+    } else {
+      addBtn = `<button class="btn-add" onclick="addToCart('${p.id}')">+ Add</button>`;
+    }
+
     return `
-      <div class="product-card" data-category="${p.category}">
+      <div class="product-card" data-category="${p.category}" style="${!isInStock ? 'opacity:0.68;' : ''}">
         <div>
           <div class="product-image">${p.emoji}${badgeHTML}</div>
           <div class="product-info">
@@ -1734,18 +1897,161 @@ function renderProductGrid(category = 'all', search = '') {
   }).join('');
 }
 
-let appSettings = { feature_fresh_tmrw: false, feature_subscriptions: false };
+let appSettings = { feature_fresh_tmrw: false, feature_subscriptions: false, smart_recommendation_mode: 'auto' };
 
 async function loadAppSettings() {
   try {
-    const res = await fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) return;
-    appSettings = await res.json();
+    const [setRes, invRes] = await Promise.all([
+      fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' }),
+      fetch('/api/inventory?t=' + Date.now(), { cache: 'no-store' })
+    ]);
+    if (setRes.ok) appSettings = await setRes.json();
+    if (invRes.ok) {
+      const invData = await invRes.json();
+      liveInventoryMap = invData.inventory || {};
+    }
     applyFeatureVisibility();
+    renderSmartRecommendations();
     renderProductGrid(currentCategory, currentSearch);
   } catch(e) {
     console.warn("loadAppSettings error:", e);
   }
+}
+
+// ── CONTEXTUAL FESTIVAL & WEATHER RECOMMENDATIONS ENGINE ──
+const SMART_THEMES = {
+  monsoon: {
+    badge: '🌧️ Monsoon Special',
+    title: 'Hot Pepper Soup & Crispy Evening Cravings',
+    sub: 'Pouring outside? Warm up with rich bone broth chicken cuts and quick crispy evening snacks delivered in 15 mins.',
+    items: [
+      { id: 'chicken_500', tag: '🔥 Perfect for Hot Pepper Broth' },
+      { id: 'whole_chicken', tag: '🍲 Rich Bone Broth Favorite' },
+      { id: 'maggi', tag: '🍜 2-Min Hot Monsoon Snack' },
+      { id: 'lays', tag: '🍟 Crispy Tea-Time Munch' }
+    ]
+  },
+  biryani_sunday: {
+    badge: '👑 Sunday Royal Feast',
+    title: 'Sunday Biryani & Family Meat Bonanza',
+    sub: 'Sunday means Biryani! Tender freshly slaughtered chicken cuts, thick curd for raita, and farm eggs ready in 15 mins.',
+    items: [
+      { id: 'chicken_1kg', tag: '🍗 Authentic Biryani Cut' },
+      { id: 'whole_chicken', tag: '👨‍👩‍👧‍👦 Family Feast Size' },
+      { id: 'curd_500', tag: '🥛 Thick & Creamy Raita' },
+      { id: 'eggs_tray', tag: '🥚 Essential Biryani Garnish' }
+    ]
+  },
+  weekend_bbq: {
+    badge: '🔥 Weekend BBQ & Match Night',
+    title: 'Terrace Barbecue & Game Night Munchies',
+    sub: 'Juicy cuts for tandoori tikka, ice-cold Pepsi, and crispy snacks ready for the big cricket match!',
+    items: [
+      { id: 'chicken_500', tag: '🍢 Perfect for Tikka & Fry' },
+      { id: 'pepsi', tag: '🥤 Ice-Cold Match Companion' },
+      { id: 'lays', tag: '🍟 Non-stop Match Munchies' },
+      { id: 'tech_scale', tag: '⚖️ Chef Marinade Precision' }
+    ]
+  },
+  festive: {
+    badge: '🪔 Festive Celebration',
+    title: 'Diwali & Eid Royal Celebration Specials',
+    sub: 'Celebrate togetherness with royal meat curries, pure farm dairy, and fresh kitchen staples delivered to your doorstep.',
+    items: [
+      { id: 'whole_chicken', tag: '👑 Royal Feast Preparation' },
+      { id: 'chicken_1kg', tag: '🍛 Festive Curry Cut' },
+      { id: 'amul_butter', tag: '🧈 Rich Festive Gravy' },
+      { id: 'eggs_tray', tag: '🥚 Celebration Tray' }
+    ]
+  },
+  sunny: {
+    badge: '☀️ Summer Refreshers',
+    title: 'Chilled Refreshers & Light Protein Cuts',
+    sub: 'Beat the heat with cooling set curd, ice-cold beverages, and lean protein cuts for wholesome fresh salads.',
+    items: [
+      { id: 'curd_500', tag: '🥛 Cooling Buttermilk & Lassi' },
+      { id: 'pepsi', tag: '🧊 Refreshing Chilled Cola' },
+      { id: 'chicken_500', tag: '🥗 Clean Protein Salad Cut' },
+      { id: 'bread', tag: '🥪 Light Quick Sandwich' }
+    ]
+  },
+  high_protein: {
+    badge: '💪 Gym Rat Fuel',
+    title: 'High-Protein Breakfast & Farm Desi Eggs',
+    sub: 'Power up your muscle recovery with fresh farm eggs, lean chicken, and whole wheat bread delivered in 15 mins.',
+    items: [
+      { id: 'eggs_tray', tag: '🥚 30-Day Protein Fuel' },
+      { id: 'chicken_500', tag: '💪 Lean Muscle Protein' },
+      { id: 'eggs_6', tag: '🍳 Farm Fresh Breakfast' },
+      { id: 'bread', tag: '🍞 Morning Toast Essential' }
+    ]
+  }
+};
+
+function renderSmartRecommendations() {
+  const container = document.getElementById('smartRecContainer');
+  if (!container) return;
+
+  const mode = appSettings.smart_recommendation_mode || 'auto';
+  let activeThemeKey = mode;
+
+  if (mode === 'auto') {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 5 = Fri, 6 = Sat
+    const hour = now.getHours();
+
+    if (day === 0 && hour >= 7 && hour <= 15) {
+      activeThemeKey = 'biryani_sunday';
+    } else if ((day === 5 || day === 6) && hour >= 16) {
+      activeThemeKey = 'weekend_bbq';
+    } else if (hour >= 6 && hour <= 10) {
+      activeThemeKey = 'high_protein';
+    } else {
+      activeThemeKey = 'monsoon';
+    }
+  }
+
+  const theme = SMART_THEMES[activeThemeKey] || SMART_THEMES.monsoon;
+
+  document.getElementById('smartRecBadge').textContent = theme.badge;
+  document.getElementById('smartRecTitle').textContent = theme.title;
+  document.getElementById('smartRecSubtitle').textContent = theme.sub;
+
+  const cardsContainer = document.getElementById('smartRecCards');
+  if (!cardsContainer) return;
+
+  cardsContainer.innerHTML = theme.items.map(rec => {
+    const p = PRODUCTS.find(prod => prod.id === rec.id);
+    if (!p) return '';
+    const isInStock = liveInventoryMap[p.id] !== false;
+
+    return `
+      <div class="smart-rec-card" style="${!isInStock ? 'opacity:0.65;' : ''}">
+        <div>
+          <div class="smart-rec-top">
+            <span class="smart-rec-emoji">${p.emoji}</span>
+            <div>
+              <div class="smart-rec-name">${p.name}</div>
+              <div style="font-size:0.75rem; color:#A2D9CE;">${p.unit}</div>
+            </div>
+          </div>
+          <div class="smart-rec-tag">${rec.tag}</div>
+        </div>
+        <div class="smart-rec-bottom">
+          <span class="smart-rec-price">₹${p.price}</span>
+          ${isInStock 
+            ? `<button class="btn-smart-add" onclick="quickAddSmartProduct('${p.id}')">+ Add</button>`
+            : `<button class="btn-smart-add" style="background:#7F8C8D; cursor:not-allowed;" disabled>Sold Out</button>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function quickAddSmartProduct(productId) {
+  addToCart(productId);
+  showToast(`⚡ Added to your order!`);
 }
 
 // Auto-sync feature flags on tab focus
@@ -1947,6 +2253,41 @@ function closeCartDrawer() {
 // ═══════════════════════════════════════════════
 // ORDER MODAL & DIRECT DATABASE CHECKOUT
 // ═══════════════════════════════════════════════
+let customerLiveLat = null;
+let customerLiveLng = null;
+
+function fetchCustomerLiveLocation() {
+  const btn = document.getElementById('btnUseLiveLoc');
+  const badge = document.getElementById('liveLocBadge');
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+  btn.textContent = '⏳ Locating GPS...';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      customerLiveLat = pos.coords.latitude;
+      customerLiveLng = pos.coords.longitude;
+      btn.textContent = '✅ Location Pinned';
+      btn.style.background = '#0C513F';
+      btn.style.color = '#fff';
+      if (badge) {
+        badge.style.display = 'block';
+        badge.textContent = `📍 GPS Pinned: ${customerLiveLat.toFixed(5)}, ${customerLiveLng.toFixed(5)}`;
+      }
+      const addrEl = document.getElementById('custAddress');
+      if (addrEl && !addrEl.value.trim()) {
+        addrEl.value = `Live GPS: [${customerLiveLat.toFixed(4)}, ${customerLiveLng.toFixed(4)}]`;
+      }
+    },
+    (err) => {
+      btn.textContent = '📍 Use My Live Location';
+      alert("Could not access location: " + err.message + ". Please type address manually.");
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
 function openOrderModal() {
   if (cart.length === 0) {
     alert('Your cart is empty! Add some items first.');
@@ -2009,7 +2350,9 @@ async function submitDirectOrder() {
     total_price: total,
     delivery_zone: activeZone,
     order_type: order_type,
-    delivery_slot: delivery_slot
+    delivery_slot: delivery_slot,
+    cust_lat: customerLiveLat,
+    cust_lng: customerLiveLng
   };
 
   try {
