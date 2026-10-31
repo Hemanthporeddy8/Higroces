@@ -399,9 +399,144 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   outline: none;
 }
+
+/* ── STRICT DESKTOP PC LOCK ENFORCEMENT ── */
+.desktop-lock-screen {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, #172B23 0%, #080D0B 80%);
+  z-index: 999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.desktop-lock-card {
+  background: #111A16;
+  border: 1.5px solid #233B31;
+  border-radius: 20px;
+  padding: 36px 28px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 40px rgba(231,76,60,0.12);
+}
+.desktop-lock-icon {
+  font-size: 3.2rem;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(231,76,60,0.4));
+}
+.desktop-lock-tag {
+  display: inline-block;
+  background: rgba(231,76,60,0.18);
+  border: 1px solid rgba(231,76,60,0.45);
+  color: #FF7B6E;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+.desktop-lock-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 10px;
+}
+.desktop-lock-card p {
+  font-size: 0.85rem;
+  color: #A0B2AA;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+.lock-device-info {
+  background: #090E0C;
+  border: 1px solid #1A2822;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: #8E9F98;
+  margin-bottom: 22px;
+  text-align: left;
+  line-height: 1.6;
+}
+.lock-device-info span {
+  color: #FFB74D;
+  font-weight: 700;
+}
+.desktop-lock-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-lock-action {
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.btn-lock-action.primary {
+  background: var(--primary);
+  color: white;
+  border: 1px solid var(--primary-light);
+}
+.btn-lock-action.primary:hover {
+  background: var(--primary-light);
+}
+.btn-lock-action.secondary {
+  background: #1A2822;
+  color: #D1DAD5;
+  border: 1px solid #2B3E36;
+}
+.btn-lock-action.secondary:hover {
+  background: #23352E;
+  color: white;
+}
+
+/* Hard CSS lock: on any screen narrower than 1024px, lock screen forced */
+@media screen and (max-width: 1023px) {
+  .desktop-lock-screen {
+    display: flex !important;
+  }
+  .admin-content, header, .auth-overlay, .tabs-bar {
+    display: none !important;
+  }
+}
 </style>
 </head>
 <body>
+
+<!-- STRICT DESKTOP WORKSTATION SECURITY LOCK -->
+<div class="desktop-lock-screen" id="desktopOnlyLock">
+  <div class="desktop-lock-card">
+    <div class="desktop-lock-icon">🛡️</div>
+    <div class="desktop-lock-tag">Restricted Executive Portal</div>
+    <h2>Desktop PC Workstation Required</h2>
+    <p>For executive governance, multi-store dispatch safety, and financial ledger integrity, the <strong>Amorelot Admin Console</strong> is strictly restricted to authorized Desktop and Laptop PC workstations.</p>
+    
+    <div class="lock-device-info">
+      <div>🖥️ Detected Viewport: <span id="detectedRes">--</span></div>
+      <div>📱 Device Type: <span id="detectedDevice">Mobile / Handheld Device</span></div>
+      <div>🔒 Security Status: <span style="color:#FF7B6E">Access Restricted (Min 1024px PC)</span></div>
+    </div>
+
+    <div class="desktop-lock-actions">
+      <a href="/index.html" class="btn-lock-action primary">🛒 Return to Customer Storefront</a>
+      <a href="/shop.html" class="btn-lock-action secondary">🔪 Open Butcher &amp; Dark Store Hub</a>
+    </div>
+  </div>
+</div>
 
 <!-- SECURE AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
@@ -1200,10 +1335,53 @@ async function toggleSubStatus(id, newStatus) {
   }
 }
 
+// ── STRICT DESKTOP WORKSTATION SECURITY ENFORCEMENT ──
+function isMobileOrTabletDevice() {
+  const isSmallScreen = window.innerWidth < 1024;
+  const isTouchHandheld = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (window.innerWidth < 1024);
+  const userAgentCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return isSmallScreen || (userAgentCheck && isTouchHandheld);
+}
+
+let desktopPolicyActive = false;
+
+function enforceDesktopPolicy() {
+  const lock = document.getElementById('desktopOnlyLock');
+  const detectedRes = document.getElementById('detectedRes');
+  const detectedDevice = document.getElementById('detectedDevice');
+
+  if (isMobileOrTabletDevice()) {
+    if (lock) lock.style.display = 'flex';
+    if (detectedRes) detectedRes.textContent = `${window.innerWidth} × ${window.innerHeight} px`;
+    if (detectedDevice) {
+      detectedDevice.textContent = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'Apple iOS Handheld' :
+                                   /Android/.test(navigator.userAgent) ? 'Android Mobile Device' :
+                                   'Handheld Device (< 1024px)';
+    }
+    desktopPolicyActive = false;
+    return false;
+  } else {
+    if (lock) lock.style.display = 'none';
+    if (!desktopPolicyActive) {
+      desktopPolicyActive = true;
+      checkAuth();
+    }
+    return true;
+  }
+}
+
+window.addEventListener('resize', enforceDesktopPolicy);
+window.addEventListener('orientationchange', enforceDesktopPolicy);
+
 window.addEventListener('DOMContentLoaded', () => {
-  checkAuth();
+  if (!enforceDesktopPolicy()) {
+    console.warn("Amorelot Admin: Desktop PC workstation required. Mobile view blocked.");
+    return;
+  }
   setInterval(() => {
-    if (currentAdminTab === 'orders' && masterKey) fetchAdminData();
+    if (desktopPolicyActive && currentAdminTab === 'orders' && masterKey) {
+      fetchAdminData();
+    }
   }, 8000);
 });
 </script>

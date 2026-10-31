@@ -1138,6 +1138,351 @@ header {
   gap: 8px;
 }
 .btn-enter-butcher:hover { background: var(--brand-accent-hover); }
+
+/* ── OPTION B: SLIDE-OUT NAVIGATION DRAWER & MOBILE INSTALL BUTTON ── */
+.btn-hamburger {
+  background: #F0F4F2;
+  border: 1px solid var(--border-light);
+  color: var(--brand-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-hamburger:hover {
+  background: #E2ECE7;
+  border-color: var(--brand-primary-light);
+}
+.btn-hamburger:active {
+  transform: scale(0.92);
+}
+.btn-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--brand-primary);
+  border-radius: 2px;
+}
+
+.header-left-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 📲 Install App Button (PWA Add-to-Home-Screen) */
+.btn-install-app {
+  background: linear-gradient(135deg, #FFF9ED 0%, #FFF0D6 100%);
+  border: 1.5px solid #FFB74D;
+  color: #B25E00;
+  padding: 8px 14px;
+  border-radius: 24px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 183, 77, 0.25);
+  white-space: nowrap;
+}
+.btn-install-app:hover {
+  background: #FFE082;
+  box-shadow: 0 4px 12px rgba(255, 183, 77, 0.4);
+  transform: translateY(-1px);
+}
+.btn-install-app:active {
+  transform: scale(0.94);
+}
+
+/* ⚡ CRITICAL RULE: Automatically hide Install button once opened in installed standalone app mode */
+@media all and (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  #btnInstallApp, .btn-install-app {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 480px) {
+  .btn-install-app .install-text {
+    display: none;
+  }
+  .btn-install-app {
+    padding: 8px 10px;
+  }
+}
+
+/* ── OPTION B: SIDE-DRAWER BACKDROP & DRAWER ── */
+.nav-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.nav-drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-drawer {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 300px;
+  max-width: 85vw;
+  height: 100vh;
+  height: 100dvh;
+  background: #0E1614;
+  border-right: 1.5px solid #20312B;
+  z-index: 2501;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.7);
+  transition: left 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 24px 18px;
+  color: white;
+  overflow-y: auto;
+}
+.nav-drawer.open {
+  left: 0;
+}
+.nav-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #1E2D27;
+  margin-bottom: 20px;
+}
+.nav-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-drawer-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #0C513F;
+  border: 2px solid #FFB74D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+}
+.nav-drawer-info h4 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+}
+.nav-drawer-info p {
+  font-size: 0.74rem;
+  color: #FFB74D;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.nav-drawer-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #A0B2AA;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-drawer-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+.nav-drawer-section-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #8E9F98;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.nav-drawer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.nav-drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #14201C;
+  border: 1px solid #20312B;
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.nav-drawer-link:hover, .nav-drawer-link:active {
+  background: #1B2B26;
+  border-color: #2D483D;
+  transform: translateX(2px);
+}
+.nav-drawer-link.active {
+  background: #0C513F;
+  border-color: #178366;
+  box-shadow: 0 4px 14px rgba(12, 81, 63, 0.4);
+}
+.nav-drawer-link-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-drawer-link-left .drawer-emoji {
+  font-size: 1.3rem;
+}
+.nav-drawer-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ECC71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+.nav-drawer-link.active .nav-drawer-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.nav-drawer-note {
+  margin-top: auto;
+  padding: 14px;
+  background: #090F0D;
+  border: 1px solid #1C2B25;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  color: #8E9F98;
+  line-height: 1.45;
+}
+.nav-drawer-note strong {
+  color: #FFB74D;
+}
+
+/* ── CONTEXTUAL ACTIVE ORDER TRACKER STRIP ── */
+.contextual-tracker-strip {
+  background: linear-gradient(135deg, #0A241B 0%, #113629 100%);
+  border: 1.5px solid #2ECC71;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin: 12px auto 18px;
+  max-width: 1200px;
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.22);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  animation: pulseGlow 2.5s infinite;
+}
+@keyframes pulseGlow {
+  0%   { box-shadow: 0 4px 14px rgba(46, 204, 113, 0.2); }
+  50%  { box-shadow: 0 6px 24px rgba(46, 204, 113, 0.45); }
+  100% { box-shadow: 0 4px 14px rgba(46, 204, 113, 0.2); }
+}
+.contextual-tracker-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.contextual-tracker-icon {
+  font-size: 1.6rem;
+  animation: floatRider 1.5s ease-in-out infinite alternate;
+}
+@keyframes floatRider {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+.contextual-tracker-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: white;
+}
+.contextual-tracker-sub {
+  font-size: 0.74rem;
+  color: #A2D9CE;
+  margin-top: 2px;
+}
+.contextual-tracker-btn {
+  background: #2ECC71;
+  color: #0A1C14;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── IOS PWA INSTALL GUIDANCE MODAL ── */
+.ios-install-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(6px);
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ios-install-modal-bg.open { display: flex; }
+.ios-install-card {
+  background: #14201C;
+  border: 1.5px solid #233A31;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 380px;
+  width: 100%;
+  color: white;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+}
+.ios-install-card h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 8px; color: #FFB74D; }
+.ios-install-steps { text-align: left; margin: 16px 0; background: #0A100E; padding: 14px; border-radius: 10px; font-size: 0.82rem; line-height: 1.6; color: #D1DAD5; }
+.ios-install-steps strong { color: white; }
+.btn-close-ios-modal {
+  width: 100%;
+  padding: 10px;
+  background: #0C513F;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Outfit';
+}
 </style>
 </head>
 <body>
@@ -1295,16 +1640,84 @@ header {
   </div>
 </div>
 
+<!-- OPTION B: SLIDE-OUT NAVIGATION DRAWER (3 FIELD PORTALS ONLY) -->
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop" onclick="closeNavDrawer()"></div>
+
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Amorelot Navigation">
+  <div class="nav-drawer-header">
+    <div class="nav-drawer-profile">
+      <div class="nav-drawer-avatar">🥬</div>
+      <div class="nav-drawer-info">
+        <h4>Amorelot Operations</h4>
+        <p>● Live Field System</p>
+      </div>
+    </div>
+    <button class="nav-drawer-close" onclick="closeNavDrawer()" aria-label="Close navigation">&times;</button>
+  </div>
+
+  <div class="nav-drawer-section-title">Field Portals (Mobile Optimized)</div>
+  <div class="nav-drawer-links">
+    <a href="/index.html" class="nav-drawer-link active">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🛒</span>
+        <span>Customer Storefront</span>
+      </div>
+      <span class="nav-drawer-badge">Active</span>
+    </a>
+
+    <a href="/shop.html" class="nav-drawer-link">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🔪</span>
+        <span>Butcher &amp; Dark Store Hub</span>
+      </div>
+      <span class="nav-drawer-badge">KDS 120s</span>
+    </a>
+
+    <a href="/rider.html" class="nav-drawer-link">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🛵</span>
+        <span>Rider Delivery App</span>
+      </div>
+      <span class="nav-drawer-badge">OTP Ready</span>
+    </a>
+  </div>
+
+  <div class="nav-drawer-note">
+    🔒 <strong>Security Policy:</strong><br>
+    The Executive Admin Console (<code>admin.html</code>) is restricted to authorized Desktop PC workstations only.
+  </div>
+</div>
+
+<!-- IOS PWA INSTALL GUIDANCE MODAL -->
+<div class="ios-install-modal-bg" id="iosInstallModal" onclick="if(event.target===this) closeIosModal()">
+  <div class="ios-install-card">
+    <div style="font-size:2.8rem; margin-bottom:10px;">📲</div>
+    <h3>Install HiGroces on iPhone</h3>
+    <p style="font-size:0.82rem; color:#A0B2AA;">Add HiGroces to your home screen for instant 15-minute ordering without browser bars:</p>
+    <div class="ios-install-steps">
+      <div>1. Tap the <strong>Share button (⎋)</strong> at the bottom of Safari.</div>
+      <div style="margin-top:8px;">2. Scroll down and tap <strong>"Add to Home Screen" (➕)</strong>.</div>
+      <div style="margin-top:8px;">3. Tap <strong>"Add"</strong> in the top-right corner.</div>
+    </div>
+    <button class="btn-close-ios-modal" onclick="closeIosModal()">Got It 👍</button>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header>
   <div class="header-container">
-    <a href="#" class="logo">
-      <span class="logo-icon">🥬</span>
-      <div>
-        <span class="logo-title">HiGroces</span>
-        <span class="logo-badge">Fresh & Fast</span>
-      </div>
-    </a>
+    <div class="header-left-cluster">
+      <button class="btn-hamburger" id="hamburgerBtn" onclick="openNavDrawer()" title="Open Navigation Menu" aria-label="Open Navigation Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="/index.html" class="logo">
+        <span class="logo-icon">🥬</span>
+        <div>
+          <span class="logo-title">HiGroces</span>
+          <span class="logo-badge">Fresh &amp; Fast</span>
+        </div>
+      </a>
+    </div>
 
     <!-- Location Dropdown Selector -->
     <div class="delivery-badge">
@@ -1323,6 +1736,11 @@ header {
     </div>
 
     <div class="header-actions">
+      <!-- 📲 Native PWA Install button (Auto-hides in standalone installed app) -->
+      <button class="btn-install-app" id="btnInstallApp" onclick="triggerPwaInstall()" style="display:none;" title="Install HiGroces directly to your phone">
+        <span>📲</span> <span class="install-text">Install App</span>
+      </button>
+
       <button class="cart-widget" onclick="openCartDrawer()">
         🛒 Cart
         <span class="cart-badge" id="cartCount">0</span>
@@ -1333,6 +1751,20 @@ header {
 
 <!-- STOREFRONT -->
 <div class="storefront">
+
+  <!-- CONTEXTUAL ACTIVE ORDER LIVE ROAD TRACKER BAR (HIDDEN UNTIL AN ORDER IS ACTIVE) -->
+  <div class="contextual-tracker-strip" id="contextualTrackerStrip" style="display:none;">
+    <div class="contextual-tracker-left">
+      <span class="contextual-tracker-icon">🛵</span>
+      <div>
+        <div class="contextual-tracker-title">Active Order <span id="contextualOrderNum">#...</span> • Tap for Live Road Tracking</div>
+        <div class="contextual-tracker-sub" id="contextualOrderEta">⚡ Rider dispatching on live map with 15-min ETA</div>
+      </div>
+    </div>
+    <button class="contextual-tracker-btn" type="button">
+      Track Live ➔
+    </button>
+  </div>
 
   <!-- HERO BANNER -->
   <div class="hero-banner">
@@ -2680,6 +3112,145 @@ function showToast(msg) {
 }
 
 // ═══════════════════════════════════════════════
+// OPTION B: SLIDE-OUT NAVIGATION DRAWER
+// ═══════════════════════════════════════════════
+function openNavDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const backdrop = document.getElementById('navDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeNavDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const backdrop = document.getElementById('navDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+// Close drawer on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeNavDrawer();
+    closeIosModal();
+  }
+});
+
+// ═══════════════════════════════════════════════
+// PWA INSTALL / ADD-TO-HOME-SCREEN
+// ═══════════════════════════════════════════════
+let deferredInstallPrompt = null;
+
+function isRunningStandalone() {
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+         (window.navigator.standalone === true) ||
+         document.referrer.includes('android-app://');
+}
+
+function checkAndDisplayInstallButton() {
+  const btn = document.getElementById('btnInstallApp');
+  if (!btn) return;
+
+  // Rule: If already installed and opened from phone home screen, NEVER show the install button
+  if (isRunningStandalone()) {
+    btn.style.display = 'none';
+    return;
+  }
+
+  // If in standard browser, show button so mobile users can 1-tap download
+  btn.style.display = 'inline-flex';
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent mini-infobar from appearing on mobile
+  e.preventDefault();
+  // Stash the event so it can be triggered on user button tap
+  deferredInstallPrompt = e;
+  checkAndDisplayInstallButton();
+});
+
+window.addEventListener('appinstalled', () => {
+  console.log('HiGroces PWA installed to device successfully');
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('btnInstallApp');
+  if (btn) btn.style.display = 'none';
+});
+
+async function triggerPwaInstall() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choiceResult = await deferredInstallPrompt.userChoice;
+    if (choiceResult.outcome === 'accepted') {
+      const btn = document.getElementById('btnInstallApp');
+      if (btn) btn.style.display = 'none';
+    }
+    deferredInstallPrompt = null;
+    return;
+  }
+
+  // iOS Safari detection
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    const modal = document.getElementById('iosInstallModal');
+    if (modal) modal.classList.add('open');
+    return;
+  }
+
+  // Fallback for browsers that already consumed or don't support beforeinstallprompt
+  alert("📲 Install HiGroces App:\n\n1. Tap your browser menu (⋮ in Chrome/Firefox or ⎋ in Safari)\n2. Tap 'Add to Home screen' or 'Install App'\n3. Open HiGroces directly from your phone app drawer without browser address bars!");
+}
+
+function closeIosModal() {
+  const modal = document.getElementById('iosInstallModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+// CONTEXTUAL ACTIVE ORDER TRACKER
+// ═══════════════════════════════════════════════
+function checkActiveOrderBanner() {
+  try {
+    const raw = localStorage.getItem('amorelot_last_order');
+    if (!raw) return;
+    const order = JSON.parse(raw);
+    if (!order || !order.id) return;
+
+    // Check age (less than 4 hours)
+    const orderTime = new Date(order.created_at || Date.now()).getTime();
+    const fourHours = 4 * 60 * 60 * 1000;
+    if (Date.now() - orderTime > fourHours) return;
+
+    // Hide if delivered or cancelled
+    if (order.status === 'delivered' || order.status === 'cancelled') return;
+
+    const banner = document.getElementById('contextualTrackerStrip');
+    const orderNum = document.getElementById('contextualOrderNum');
+    const orderEta = document.getElementById('contextualOrderEta');
+
+    if (banner && orderNum) {
+      orderNum.textContent = '#' + order.id.substring(0, 8);
+      if (orderEta) {
+        orderEta.textContent = (order.order_type === 'fresh_tmrw')
+          ? '🌱 Scheduled Fresh Delivery for Tomorrow Morning'
+          : '⚡ Order live in transit • Tap for turn-by-turn road tracking';
+      }
+      banner.style.display = 'flex';
+      banner.onclick = () => {
+        window.location.href = `/track.html?orderId=${encodeURIComponent(order.id)}`;
+      };
+    }
+  } catch(e) {
+    console.warn('checkActiveOrderBanner error:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
@@ -2689,6 +3260,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set initial selector value
   document.getElementById('zoneSelector').value = activeZone;
   renderProductGrid('all');
+
+  // Check PWA install button state and contextual active orders
+  checkAndDisplayInstallButton();
+  checkActiveOrderBanner();
 
   // Pick up custom cuts from Butcher Mode (custom.html)
   try {

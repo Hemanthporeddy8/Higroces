@@ -408,9 +408,159 @@ header {
   margin-top: 10px;
 }
 .btn-login:hover { background: var(--brand-primary-light); }
+
+/* ── OPTION B: SLIDE-OUT NAVIGATION DRAWER ── */
+.btn-hamburger {
+  background: #F0F4F2;
+  border: 1px solid var(--border-light);
+  color: var(--brand-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+.btn-hamburger:hover { background: #E2ECE7; }
+.btn-hamburger:active { transform: scale(0.92); }
+.btn-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--brand-primary);
+  border-radius: 2px;
+}
+
+.nav-drawer-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2500; opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.nav-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+.nav-drawer {
+  position: fixed; top: 0; left: -320px;
+  width: 300px; max-width: 85vw; height: 100vh; height: 100dvh;
+  background: #0E1614; border-right: 1.5px solid #20312B;
+  z-index: 2501; display: flex; flex-direction: column;
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.7);
+  transition: left 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 24px 18px; color: white; overflow-y: auto;
+}
+.nav-drawer.open { left: 0; }
+.nav-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 18px; border-bottom: 1px solid #1E2D27; margin-bottom: 20px;
+}
+.nav-drawer-profile { display: flex; align-items: center; gap: 12px; }
+.nav-drawer-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--brand-primary); border: 2px solid #FFB74D;
+  display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+}
+.nav-drawer-info h4 { font-size: 0.95rem; font-weight: 800; color: white; margin: 0; }
+.nav-drawer-info p { font-size: 0.74rem; color: #FFB74D; font-weight: 700; margin-top: 2px; }
+.nav-drawer-close {
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #A0B2AA; width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-drawer-close:hover { background: rgba(255, 255, 255, 0.2); color: white; }
+.nav-drawer-section-title {
+  font-size: 0.68rem; font-weight: 800; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+}
+.nav-drawer-links { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.nav-drawer-link {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: #14201C; border: 1px solid #20312B;
+  border-radius: 12px; color: white; text-decoration: none;
+  font-weight: 700; font-size: 0.88rem; transition: all 0.2s ease; cursor: pointer;
+}
+.nav-drawer-link:hover, .nav-drawer-link:active {
+  background: #1B2B26; border-color: #2D483D; transform: translateX(2px);
+}
+.nav-drawer-link.active {
+  background: var(--brand-primary); border-color: var(--brand-primary-light);
+  box-shadow: 0 4px 14px rgba(12, 81, 63, 0.4);
+}
+.nav-drawer-link-left { display: flex; align-items: center; gap: 12px; }
+.nav-drawer-link-left .drawer-emoji { font-size: 1.3rem; }
+.nav-drawer-badge {
+  font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;
+  background: rgba(46, 204, 113, 0.15); color: #2ECC71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+.nav-drawer-link.active .nav-drawer-badge {
+  background: rgba(255, 255, 255, 0.2); color: white; border-color: rgba(255, 255, 255, 0.3);
+}
+.nav-drawer-note {
+  margin-top: auto; padding: 14px; background: #090F0D;
+  border: 1px solid #1C2B25; border-radius: 10px;
+  font-size: 0.74rem; color: var(--text-muted); line-height: 1.45;
+}
+.nav-drawer-note strong { color: #FFB74D; }
 </style>
 </head>
 <body>
+
+<!-- OPTION B: SLIDE-OUT NAVIGATION DRAWER (3 FIELD PORTALS ONLY) -->
+<div class="nav-drawer-backdrop" id="navDrawerBackdrop" onclick="closeNavDrawer()"></div>
+
+<div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Amorelot Navigation">
+  <div class="nav-drawer-header">
+    <div class="nav-drawer-profile">
+      <div class="nav-drawer-avatar">🛵</div>
+      <div class="nav-drawer-info">
+        <h4>Amorelot Operations</h4>
+        <p>● Live Field System</p>
+      </div>
+    </div>
+    <button class="nav-drawer-close" onclick="closeNavDrawer()" aria-label="Close navigation">&times;</button>
+  </div>
+
+  <div class="nav-drawer-section-title">Field Portals (Mobile Optimized)</div>
+  <div class="nav-drawer-links">
+    <a href="/index.html" class="nav-drawer-link">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🛒</span>
+        <span>Customer Storefront</span>
+      </div>
+      <span class="nav-drawer-badge">Store</span>
+    </a>
+
+    <a href="/shop.html" class="nav-drawer-link">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🔪</span>
+        <span>Butcher &amp; Dark Store Hub</span>
+      </div>
+      <span class="nav-drawer-badge">KDS 120s</span>
+    </a>
+
+    <a href="/rider.html" class="nav-drawer-link active">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🛵</span>
+        <span>Rider Delivery App</span>
+      </div>
+      <span class="nav-drawer-badge">Active (Fleet)</span>
+    </a>
+  </div>
+
+  <div class="nav-drawer-note">
+    🔒 <strong>Security Policy:</strong><br>
+    The Executive Admin Console (<code>admin.html</code>) is restricted to authorized Desktop PC workstations only.
+  </div>
+</div>
 
 <!-- RIDER LOGIN OVERLAY -->
 <div class="login-overlay" id="loginOverlay">
@@ -439,13 +589,18 @@ header {
 
 <header>
   <div class="header-container">
-    <a href="#" class="logo">
-      <span class="logo-icon">🛵</span>
-      <div>
-        <span class="logo-title">Amorelot</span>
-        <span class="logo-badge">Rider Dashboard</span>
-      </div>
-    </a>
+    <div style="display:flex; align-items:center;">
+      <button class="btn-hamburger" id="hamburgerBtn" onclick="openNavDrawer()" title="Open Navigation Menu" aria-label="Open Navigation Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="#" class="logo">
+        <span class="logo-icon">🛵</span>
+        <div>
+          <span class="logo-title">Amorelot</span>
+          <span class="logo-badge">Rider Dashboard</span>
+        </div>
+      </a>
+    </div>
     
     <div class="rider-status-bar" id="riderStatusBar" style="display:none">
       <span>Rider: <strong id="riderNameDisplay" style="color:var(--brand-accent)"></strong></span>
@@ -760,6 +915,31 @@ async function refreshOrdersManual() {
     btn.textContent = 'Refresh 🔄';
   }, 600);
 }
+
+// ── OPTION B: SLIDE-OUT NAVIGATION DRAWER ──
+function openNavDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const backdrop = document.getElementById('navDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeNavDrawer() {
+  const drawer = document.getElementById('navDrawer');
+  const backdrop = document.getElementById('navDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeNavDrawer();
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   checkRiderLogin();
