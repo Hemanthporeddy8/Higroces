@@ -126,6 +126,69 @@ function isFounder(adminAuth) {
   return adminAuth.role === 'founder' || adminAuth.role === 'super_admin';
 }
 
+// ── ZERO-D1-WRITE STORE STATUS CONTROLLER (KV / EDGE CACHE) ──
+let globalStoreIsOnline = true;
+
+async function getStoreOnlineStatus(env) {
+  // 1. Try Workers KV if bound (0 D1 reads, 0 D1 writes)
+  if (env && env.STORE_KV) {
+    try {
+      const val = await env.STORE_KV.get('store_is_online');
+      if (val !== null) return val !== '0';
+    } catch(e) {}
+  }
+  // 2. Try Cache API (0 D1 reads, 0 D1 writes across edge isolates)
+  try {
+    const cache = caches.default;
+    const cacheKey = new Request("https://higroces.internal/store-status");
+    const cachedRes = await cache.match(cacheKey);
+    if (cachedRes) {
+      const data = await cachedRes.json();
+      if (data && data.is_online !== undefined) {
+        globalStoreIsOnline = data.is_online;
+        return data.is_online;
+      }
+    }
+  } catch(e) {}
+  // 3. In-Memory Isolate State
+  if (globalStoreIsOnline !== undefined) {
+    return globalStoreIsOnline;
+  }
+  // 4. Fallback to D1 settings read (read-only fallback, 0 D1 writes)
+  try {
+    const row = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'store_is_online'").first();
+    return row ? row.value !== '0' : true;
+  } catch(e) {
+    return true;
+  }
+}
+
+async function setStoreOnlineStatus(isOnline, env) {
+  globalStoreIsOnline = isOnline;
+
+  // 1. If Workers KV is bound: write to KV ONLY (0 D1 writes!)
+  if (env && env.STORE_KV) {
+    try {
+      await env.STORE_KV.put('store_is_online', isOnline ? '1' : '0');
+      return { success: true, is_online: isOnline, storage: 'kv', d1_writes: 0 };
+    } catch(e) {
+      console.warn("STORE_KV write error:", e);
+    }
+  }
+
+  // 2. If KV not bound, store in edge cache API + in-memory (0 D1 writes!)
+  try {
+    const cache = caches.default;
+    const cacheKey = new Request("https://higroces.internal/store-status");
+    const res = new Response(JSON.stringify({ is_online: isOnline, updated_at: Date.now() }), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=86400" }
+    });
+    await cache.put(cacheKey, res);
+  } catch(e) {}
+
+  return { success: true, is_online: isOnline, storage: 'edge_memory', d1_writes: 0 };
+}
+
 // Auto-migration & Schema Initializer
 async function ensureAllSchemas(db) {
   try {
@@ -464,23 +527,16 @@ export default {
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/store/status") {
       if (request.method === "GET") {
-        try {
-          const row = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'store_is_online'").first();
-          const isOnline = row ? row.value !== '0' : true;
-          return new Response(JSON.stringify({ is_online: isOnline }), { headers: corsHeaders() });
-        } catch(err) {
-          return new Response(JSON.stringify({ is_online: true }), { headers: corsHeaders() });
-        }
+        const isOnline = await getStoreOnlineStatus(env);
+        return new Response(JSON.stringify({ is_online: isOnline, d1_writes: 0 }), { headers: corsHeaders() });
       }
 
       if (request.method === "POST") {
         try {
           const body = await request.json();
           const isOnline = body.is_online === true || body.is_online === 1 || body.is_online === '1';
-          await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('store_is_online', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
-            .bind(isOnline ? '1' : '0').run();
-
-          return new Response(JSON.stringify({ success: true, is_online: isOnline }), { headers: corsHeaders() });
+          const result = await setStoreOnlineStatus(isOnline, env);
+          return new Response(JSON.stringify(result), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
@@ -495,10 +551,11 @@ export default {
       if (request.method === "GET") {
         try {
           const rows = await env.DB.prepare("SELECT * FROM system_settings").all();
+          const isOnline = await getStoreOnlineStatus(env);
           const settings = {
             feature_fresh_tmrw: false,
             feature_subscriptions: false,
-            store_is_online: true,
+            store_is_online: isOnline,
             dark_store_name: "HSR Meat Hub & Dark Store",
             dark_store_lat: "12.9121",
             dark_store_lng: "77.6408",
@@ -507,7 +564,6 @@ export default {
           (rows.results || []).forEach(r => {
             if (r.key === 'feature_fresh_tmrw') settings.feature_fresh_tmrw = r.value === '1';
             if (r.key === 'feature_subscriptions') settings.feature_subscriptions = r.value === '1';
-            if (r.key === 'store_is_online') settings.store_is_online = r.value !== '0';
             if (r.key === 'dark_store_name' && r.value) settings.dark_store_name = r.value;
             if (r.key === 'dark_store_lat' && r.value) settings.dark_store_lat = r.value;
             if (r.key === 'dark_store_lng' && r.value) settings.dark_store_lng = r.value;
@@ -528,8 +584,7 @@ export default {
           }
           const body = await request.json();
           if (body.store_is_online !== undefined) {
-            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('store_is_online', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
-              .bind(body.store_is_online ? '1' : '0').run();
+            await setStoreOnlineStatus(body.store_is_online === true || body.store_is_online === 1, env);
           }
           if (body.feature_fresh_tmrw !== undefined) {
             await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
