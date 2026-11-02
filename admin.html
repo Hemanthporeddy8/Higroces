@@ -620,11 +620,11 @@ input:checked + .toggle-slider:before {
 <!-- SECURE MULTI-STEP AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   
-  <!-- 1. INITIAL SUPER ADMIN SETUP CARD (Only shown if 0 admins exist) -->
+  <!-- 1. INITIAL FOUNDER ADMIN SETUP CARD (Only shown if 0 admins exist) -->
   <div class="auth-card auth-step" id="authCardSetup">
     <div style="font-size:2.8rem; margin-bottom:10px;">👑</div>
-    <h2>Executive Setup</h2>
-    <p>Create your primary Super Admin account to secure this command center.</p>
+    <h2>Founder Admin Setup</h2>
+    <p>Create your primary Founder Admin (Founding Titan) account to secure this command center.</p>
 
     <div id="setupAlert" class="auth-alert" style="display:none;"></div>
 
@@ -647,9 +647,9 @@ input:checked + .toggle-slider:before {
       </div>
       <div class="auth-field">
         <label>Master Setup Key</label>
-        <input type="password" id="setupKeyInput" placeholder="Enter setup key (amorelot2026)" required />
+        <input type="password" id="setupKeyInput" placeholder="Enter master setup key" required autocomplete="off" />
       </div>
-      <button type="submit" class="btn-auth" id="btnSubmitSetup">Create Super Admin Account 🚀</button>
+      <button type="submit" class="btn-auth" id="btnSubmitSetup">Create Founder Admin Account 👑</button>
     </form>
   </div>
 
@@ -784,7 +784,7 @@ input:checked + .toggle-slider:before {
   </div>
 
   <!-- FEATURE FLAGS & DARK STORE GPS CONTROL PANEL -->
-  <div class="features-control-panel">
+  <div class="features-control-panel" id="panelGlobalSettings">
     <div class="panel-header">
       <div>
         <h3 style="font-size:1.1rem; color:var(--gold);">⚙️ Dark Store Logistics &amp; Feature Flags (V2 &amp; V3)</h3>
@@ -1065,8 +1065,8 @@ input:checked + .toggle-slider:before {
       <div class="auth-field">
         <label>Assigned Security Role</label>
         <select id="newAdminRole">
-          <option value="super_admin">Super Admin (Full Financial &amp; System Access)</option>
-          <option value="store_manager">Store Operations Manager (Orders &amp; Stock Only)</option>
+          <option value="ops_admin">⚡ Operational Admin (Colossal Titan — Orders &amp; Stock Ops)</option>
+          <option value="founder">👑 Founder Admin (Founding Titan — Full Command &amp; Settings)</option>
         </select>
       </div>
       <div class="auth-field">
@@ -1204,8 +1204,14 @@ async function checkAuth() {
   }
 }
 
+function isFounderAdmin() {
+  return adminUser && (adminUser.role === 'founder' || adminUser.role === 'super_admin');
+}
+
 function onAuthSuccess() {
   document.getElementById('authOverlay').style.display = 'none';
+
+  const isFounder = isFounderAdmin();
 
   // Display admin pill in header
   if (adminUser) {
@@ -1213,14 +1219,40 @@ function onAuthSuccess() {
     const roleBadge = document.getElementById('adminRoleBadge');
     if (emailEl) emailEl.textContent = adminUser.full_name || adminUser.email;
     if (roleBadge) {
-      roleBadge.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Store Manager';
+      if (isFounder) {
+        roleBadge.textContent = '👑 Founder Admin';
+        roleBadge.style.background = 'rgba(255,183,77,0.22)';
+        roleBadge.style.color = 'var(--gold)';
+        roleBadge.style.border = '1px solid rgba(255,183,77,0.4)';
+      } else {
+        roleBadge.textContent = '⚡ Operational Admin';
+        roleBadge.style.background = 'rgba(52,152,219,0.22)';
+        roleBadge.style.color = 'var(--blue)';
+        roleBadge.style.border = '1px solid rgba(52,152,219,0.4)';
+      }
     }
     const userPill = document.getElementById('adminUserPill');
     if (userPill) userPill.style.display = 'inline-flex';
   }
 
+  // Role Permissions Gate:
+  const teamTabBtn = document.getElementById('tabBtnTeam');
+  const globalSettingsPanel = document.getElementById('panelGlobalSettings');
+
+  if (!isFounder) {
+    // Hide Admins & Security tab from Operational Admins
+    if (teamTabBtn) teamTabBtn.style.display = 'none';
+    // Hide Global Settings / Dark Store GPS controls from Operational Admins
+    if (globalSettingsPanel) globalSettingsPanel.style.display = 'none';
+  } else {
+    if (teamTabBtn) teamTabBtn.style.display = 'inline-flex';
+    if (globalSettingsPanel) globalSettingsPanel.style.display = 'block';
+  }
+
   fetchAdminData();
-  loadFeatureFlags();
+  if (isFounder) {
+    loadFeatureFlags();
+  }
 }
 
 // ── SETUP: CREATE FIRST SUPER ADMIN ──
@@ -1241,7 +1273,7 @@ async function submitAdminSetup() {
   }
 
   btn.disabled = true;
-  btn.textContent = "Creating Super Admin... ⌛";
+  btn.textContent = "Creating Founder Admin... ⌛";
   alertEl.style.display = 'none';
 
   try {
@@ -1256,7 +1288,7 @@ async function submitAdminSetup() {
       alertEl.className = 'auth-alert';
       alertEl.textContent = data.error || "Setup failed.";
       btn.disabled = false;
-      btn.textContent = "Create Super Admin Account 🚀";
+      btn.textContent = "Create Founder Admin Account 👑";
       return;
     }
 
@@ -1265,7 +1297,7 @@ async function submitAdminSetup() {
     const loginAlert = document.getElementById('loginAlert');
     loginAlert.style.display = 'block';
     loginAlert.className = 'auth-alert dev';
-    loginAlert.textContent = "✅ Super Admin created! Please enter your password to receive your 2FA OTP.";
+    loginAlert.textContent = "✅ Founder Admin (Founding Titan) created! Please enter your password to receive your 2FA OTP.";
   } catch(e) {
     alertEl.style.display = 'block';
     alertEl.className = 'auth-alert';
@@ -1424,7 +1456,7 @@ async function submitEmergencyLogin() {
     masterKey = key;
     sessionStorage.setItem('amorelot_admin_key', key);
     sessionStorage.setItem('amorelot_admin_token', key);
-    adminUser = { email: 'master@amorelot.com', role: 'super_admin', full_name: 'Master Super Admin' };
+    adminUser = { email: 'master@amorelot.com', role: 'founder', full_name: 'Founder Master Admin' };
     onAuthSuccess();
   } catch(e) {
     alertEl.style.display = 'block';
@@ -1489,10 +1521,10 @@ async function loadTeamMembers() {
     }
 
     tbody.innerHTML = list.map(a => {
-      const isSuper = a.role === 'super_admin';
-      const roleBadge = isSuper
-        ? `<span class="status-badge" style="background:rgba(255,183,77,0.18); color:var(--gold); border:1px solid rgba(255,183,77,0.35);">👑 Super Admin</span>`
-        : `<span class="status-badge" style="background:rgba(52,152,219,0.18); color:var(--blue); border:1px solid rgba(52,152,219,0.35);">🏪 Store Manager</span>`;
+      const isFounder = a.role === 'founder' || a.role === 'super_admin';
+      const roleBadge = isFounder
+        ? `<span class="status-badge" style="background:rgba(255,183,77,0.18); color:var(--gold); border:1px solid rgba(255,183,77,0.35);">👑 Founder Admin</span>`
+        : `<span class="status-badge" style="background:rgba(52,152,219,0.18); color:var(--blue); border:1px solid rgba(52,152,219,0.35);">⚡ Operational Admin</span>`;
 
       const timeStr = a.created_at ? new Date(a.created_at).toLocaleDateString([], { dateStyle: 'medium' }) : '--';
 
@@ -1820,6 +1852,8 @@ function renderTable(list) {
     return;
   }
 
+  const canDelete = isFounderAdmin();
+
   tbody.innerHTML = list.map(o => {
     const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
     const timeStr = new Date(o.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
@@ -1859,7 +1893,7 @@ function renderTable(list) {
             <option value="delivered">✅ Delivered</option>
             <option value="cancelled">❌ Cancel Order</option>
             <option value="expired">⌛ Mark Expired</option>
-            <option value="delete" style="color:var(--danger)">🗑️ Delete Order</option>
+            ${canDelete ? '<option value="delete" style="color:var(--danger)">🗑️ Delete Order</option>' : ''}
           </select>
         </td>
       </tr>
@@ -1871,6 +1905,10 @@ async function overrideStatus(id, newStatus) {
   if (!newStatus) return;
 
   if (newStatus === 'delete') {
+    if (!isFounderAdmin()) {
+      alert("Access Denied: Only Founder Admins (Founding Titans) can permanently delete orders.");
+      return;
+    }
     if (!confirm(`Are you sure you want to PERMANENTLY DELETE Order #${id.substring(0,8)}?`)) return;
     try {
       const res = await fetch(`${API_BASE}?id=${encodeURIComponent(id)}`, {

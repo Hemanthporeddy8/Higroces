@@ -95,7 +95,7 @@ async function verifyAdminAuth(request, env) {
 
   // Master key fallback (emergency access)
   if (token === ADMIN_SECRET_KEY) {
-    return { id: 'master', email: 'master@amorelot.com', full_name: 'Master Super Admin', role: 'super_admin' };
+    return { id: 'master', email: 'master@amorelot.com', full_name: 'Founder Master Admin', role: 'founder' };
   }
 
   // Check in admin_sessions
@@ -119,6 +119,11 @@ async function verifyAdminAuth(request, env) {
     console.error("verifyAdminAuth error:", e);
   }
   return null;
+}
+
+function isFounder(adminAuth) {
+  if (!adminAuth) return false;
+  return adminAuth.role === 'founder' || adminAuth.role === 'super_admin';
 }
 
 // Auto-migration & Schema Initializer
@@ -255,17 +260,17 @@ export default {
           return new Response(JSON.stringify({ error: "Full Name, email, and password are required." }), { status: 400, headers: corsHeaders() });
         }
         if (setup_key !== ADMIN_SECRET_KEY) {
-          return new Response(JSON.stringify({ error: "Invalid master setup key. Emergency master key required to register a super admin." }), { status: 403, headers: corsHeaders() });
+          return new Response(JSON.stringify({ error: "Invalid master setup key. Emergency master key required to register a Founder Admin." }), { status: 403, headers: corsHeaders() });
         }
         const salt = generateSalt();
         const hash = await hashPassword(password, salt);
         const newId = crypto.randomUUID();
         await env.DB.prepare(`
           INSERT INTO admin_users (id, email, full_name, password_hash, salt, role)
-          VALUES (?, ?, ?, ?, ?, 'super_admin')
+          VALUES (?, ?, ?, ?, ?, 'founder')
         `).bind(newId, email.toLowerCase().trim(), full_name.trim(), hash, salt).run();
 
-        return new Response(JSON.stringify({ success: true, message: "Super Admin account created successfully!" }), { headers: corsHeaders() });
+        return new Response(JSON.stringify({ success: true, message: "Founder Admin (Founding Titan) account created successfully!" }), { headers: corsHeaders() });
       } catch(err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
       }
@@ -404,6 +409,10 @@ export default {
         return new Response(JSON.stringify({ error: "Unauthorized: Admin session required." }), { status: 401, headers: corsHeaders() });
       }
 
+      if (!isFounder(adminAuth)) {
+        return new Response(JSON.stringify({ error: "Access denied: Only Founder Admins can view or manage executive team members." }), { status: 403, headers: corsHeaders() });
+      }
+
       if (request.method === "GET") {
         try {
           const rows = await env.DB.prepare("SELECT id, email, full_name, role, created_at FROM admin_users ORDER BY created_at DESC").all();
@@ -414,9 +423,6 @@ export default {
       }
 
       if (request.method === "POST") {
-        if (adminAuth.role !== 'super_admin') {
-          return new Response(JSON.stringify({ error: "Only Super Admins can add team members." }), { status: 403, headers: corsHeaders() });
-        }
         try {
           const body = await request.json();
           const { email, password, full_name, role } = body;
@@ -430,7 +436,7 @@ export default {
           await env.DB.prepare(`
             INSERT INTO admin_users (id, email, full_name, password_hash, salt, role)
             VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(newId, cleanEmail, full_name.trim(), hash, salt, role || 'store_manager').run();
+          `).bind(newId, cleanEmail, full_name.trim(), hash, salt, role || 'ops_admin').run();
 
           return new Response(JSON.stringify({ success: true, id: newId }), { headers: corsHeaders() });
         } catch(err) {
@@ -439,9 +445,6 @@ export default {
       }
 
       if (request.method === "DELETE") {
-        if (adminAuth.role !== 'super_admin') {
-          return new Response(JSON.stringify({ error: "Only Super Admins can remove team members." }), { status: 403, headers: corsHeaders() });
-        }
         try {
           const targetId = url.searchParams.get('id');
           if (targetId === adminAuth.id) {
@@ -490,8 +493,8 @@ export default {
       if (request.method === "POST") {
         try {
           const adminAuth = await verifyAdminAuth(request, env);
-          if (!adminAuth) {
-            return new Response(JSON.stringify({ error: "Unauthorized: Admin session required." }), { status: 401, headers: corsHeaders() });
+          if (!adminAuth || !isFounder(adminAuth)) {
+            return new Response(JSON.stringify({ error: "Access denied: Only Founder Admins can modify global settings and dark store GPS coordinates." }), { status: 403, headers: corsHeaders() });
           }
           const body = await request.json();
           if (body.feature_fresh_tmrw !== undefined) {
@@ -933,8 +936,8 @@ export default {
       if (request.method === "DELETE") {
         try {
           const adminAuth = await verifyAdminAuth(request, env);
-          if (!adminAuth || adminAuth.role !== 'super_admin') {
-            return new Response(JSON.stringify({ error: "Unauthorized: Super Admin session required." }), { status: 401, headers: corsHeaders() });
+          if (!adminAuth || !isFounder(adminAuth)) {
+            return new Response(JSON.stringify({ error: "Access denied: Only Founder Admins can delete order records." }), { status: 403, headers: corsHeaders() });
           }
           const orderId = url.searchParams.get('id') || (await request.json().catch(() => ({}))).id;
           if (!orderId) {
