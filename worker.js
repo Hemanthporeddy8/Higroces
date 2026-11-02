@@ -460,6 +460,34 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // API: /api/store/status (Online / Offline Toggle for Butcher/Shop)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/store/status") {
+      if (request.method === "GET") {
+        try {
+          const row = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'store_is_online'").first();
+          const isOnline = row ? row.value !== '0' : true;
+          return new Response(JSON.stringify({ is_online: isOnline }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ is_online: true }), { headers: corsHeaders() });
+        }
+      }
+
+      if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          const isOnline = body.is_online === true || body.is_online === 1 || body.is_online === '1';
+          await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('store_is_online', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+            .bind(isOnline ? '1' : '0').run();
+
+          return new Response(JSON.stringify({ success: true, is_online: isOnline }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // API: /api/settings (Feature Flags & Dark Store Hub Coordinates)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/settings") {
@@ -470,6 +498,7 @@ export default {
           const settings = {
             feature_fresh_tmrw: false,
             feature_subscriptions: false,
+            store_is_online: true,
             dark_store_name: "HSR Meat Hub & Dark Store",
             dark_store_lat: "12.9121",
             dark_store_lng: "77.6408",
@@ -478,6 +507,7 @@ export default {
           (rows.results || []).forEach(r => {
             if (r.key === 'feature_fresh_tmrw') settings.feature_fresh_tmrw = r.value === '1';
             if (r.key === 'feature_subscriptions') settings.feature_subscriptions = r.value === '1';
+            if (r.key === 'store_is_online') settings.store_is_online = r.value !== '0';
             if (r.key === 'dark_store_name' && r.value) settings.dark_store_name = r.value;
             if (r.key === 'dark_store_lat' && r.value) settings.dark_store_lat = r.value;
             if (r.key === 'dark_store_lng' && r.value) settings.dark_store_lng = r.value;
@@ -497,6 +527,10 @@ export default {
             return new Response(JSON.stringify({ error: "Access denied: Only Founder Admins can modify global settings and dark store GPS coordinates." }), { status: 403, headers: corsHeaders() });
           }
           const body = await request.json();
+          if (body.store_is_online !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('store_is_online', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(body.store_is_online ? '1' : '0').run();
+          }
           if (body.feature_fresh_tmrw !== undefined) {
             await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
               .bind(body.feature_fresh_tmrw ? '1' : '0').run();

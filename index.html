@@ -1777,6 +1777,21 @@ header {
         <button class="hero-action butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
       </div>
     </div>
+  <!-- ZOMATO-STYLE STORE CLOSED BANNER -->
+  <div id="storeOfflineBanner" style="display:none; background:linear-gradient(90deg, #381510, #220F0C); border:1.5px solid #E74C3C; border-radius:12px; padding:16px 20px; margin-bottom:20px; box-shadow:0 6px 20px rgba(231,76,60,0.25);">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="font-size:2rem;">🛑</span>
+      <div style="flex:1; min-width:240px;">
+        <div style="font-size:1.05rem; font-weight:800; color:#FFA39E; display:flex; align-items:center; gap:8px;">
+          <span>Dark Store is Currently Taking a Break / Closed</span>
+          <span style="background:#E74C3C; color:white; font-size:0.65rem; padding:2px 8px; border-radius:4px; text-transform:uppercase; font-weight:800;">Offline</span>
+        </div>
+        <p style="font-size:0.82rem; color:#D8B6B2; margin-top:4px;">
+          Instant 15-minute delivery is temporarily paused while the store restocks. 
+          <strong>You can still pre-order farm produce from 🌱 Fresh Tmrw for tomorrow morning!</strong>
+        </p>
+      </div>
+    </div>
   </div>
 
   <!-- BUTCHER MODE STRIP -->
@@ -2494,12 +2509,19 @@ function applyFeatureVisibility() {
   const tabTmrw = document.getElementById('tabFreshTmrw');
   const bannerTmrw = document.getElementById('freshTmrwBanner');
   const tabSubs = document.getElementById('tabSubscriptions');
+  const offlineBanner = document.getElementById('storeOfflineBanner');
 
   if (tabTmrw) tabTmrw.style.display = appSettings.feature_fresh_tmrw ? 'inline-block' : 'none';
   if (bannerTmrw) {
     bannerTmrw.style.display = (appSettings.feature_fresh_tmrw && currentCategory === 'fresh_tmrw') ? 'block' : 'none';
   }
   if (tabSubs) tabSubs.style.display = appSettings.feature_subscriptions ? 'inline-block' : 'none';
+
+  // Online / Offline Store Status Banner
+  const isOnline = appSettings.store_is_online !== false;
+  if (offlineBanner) {
+    offlineBanner.style.display = isOnline ? 'none' : 'block';
+  }
 }
 
 function filterCategory(cat, btn) {
@@ -2725,6 +2747,18 @@ function openOrderModal() {
     alert('Your cart is empty! Add some items first.');
     return;
   }
+
+  const isOnline = appSettings.store_is_online !== false;
+  const hasInstantItems = cart.some(item => {
+    const prod = PRODUCTS.find(p => p.id === item.id);
+    return !prod || prod.category !== 'fresh_tmrw';
+  });
+
+  if (!isOnline && hasInstantItems) {
+    alert('🛑 Dark Store is currently CLOSED / OFFLINE for 15-minute instant delivery.\n\nYou can still pre-order 🌱 Fresh Tmrw farm produce for tomorrow morning delivery, or check back shortly when the shop re-opens!');
+    return;
+  }
+
   closeCartDrawer();
   document.getElementById('orderModalBg').classList.add('open');
 }
@@ -2755,6 +2789,12 @@ async function submitDirectOrder() {
   const hasFreshTmrw = cart.some(i => i.category === 'fresh_tmrw');
   const order_type = hasFreshTmrw ? 'fresh_tmrw' : 'instant';
   const delivery_slot = hasFreshTmrw ? 'Tomorrow Morning (6:30 AM - 8:00 AM)' : 'Instant (15 mins)';
+
+  const isOnline = appSettings.store_is_online !== false;
+  if (!isOnline && order_type === 'instant') {
+    alert('🛑 The local Dark Store & Butcher shop is currently OFFLINE for 15-minute instant delivery.\n\nYou can still order items from 🌱 Fresh Tmrw for tomorrow morning, or check back when the shop re-opens!');
+    return;
+  }
 
   const orderItemsData = cart.map(i => ({
     id: i.id,

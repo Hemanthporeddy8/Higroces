@@ -824,6 +824,23 @@ input:checked + .toggle-slider:before {
         <div id="darkStoreStatusMsg" style="font-size:0.78rem; color:var(--green); margin-top:8px; display:none;"></div>
       </div>
 
+      <!-- Store Online / Offline Master Override -->
+      <div class="flag-card" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="flag-info" style="max-width:650px;">
+          <div class="flag-title">🏪 Dark Store Operational Status (Instant 15-Min Ordering)</div>
+          <div class="flag-desc">Controls whether the Dark Store &amp; Butcher shops are open for instant orders. When turned OFF, customers see the store is taking a break and instant checkout is paused.</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span id="adminStoreStatusBadge" style="font-size:0.85rem; font-weight:800; padding:4px 12px; border-radius:20px; background:rgba(46,204,113,0.18); color:var(--green); border:1px solid rgba(46,204,113,0.4);">
+            🟢 ONLINE
+          </span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="flagStoreOnline" onchange="saveFeatureFlags()" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
       <!-- Smart Recommendations AI Engine -->
       <div class="flag-card" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
         <div class="flag-info" style="max-width:650px;">
@@ -1648,6 +1665,17 @@ async function loadFeatureFlags() {
     document.getElementById('flagFreshTmrw').checked = !!settings.feature_fresh_tmrw;
     document.getElementById('flagSubscriptions').checked = !!settings.feature_subscriptions;
 
+    const isOnline = settings.store_is_online !== false;
+    const onlineEl = document.getElementById('flagStoreOnline');
+    const badgeEl = document.getElementById('adminStoreStatusBadge');
+    if (onlineEl) onlineEl.checked = isOnline;
+    if (badgeEl) {
+      badgeEl.textContent = isOnline ? '🟢 ONLINE' : '🔴 OFFLINE';
+      badgeEl.style.color = isOnline ? 'var(--green)' : 'var(--danger)';
+      badgeEl.style.borderColor = isOnline ? 'rgba(46,204,113,0.4)' : 'rgba(231,76,60,0.4)';
+      badgeEl.style.background = isOnline ? 'rgba(46,204,113,0.18)' : 'rgba(231,76,60,0.18)';
+    }
+
     if (settings.dark_store_name) document.getElementById('darkStoreName').value = settings.dark_store_name;
     if (settings.dark_store_lat)  document.getElementById('darkStoreLat').value  = settings.dark_store_lat;
     if (settings.dark_store_lng)  document.getElementById('darkStoreLng').value  = settings.dark_store_lng;
@@ -1662,10 +1690,19 @@ async function loadFeatureFlags() {
 async function saveFeatureFlags() {
   const freshTmrw = document.getElementById('flagFreshTmrw').checked;
   const subs = document.getElementById('flagSubscriptions').checked;
+  const storeOnline = document.getElementById('flagStoreOnline')?.checked ?? true;
   const storeName = document.getElementById('darkStoreName').value.trim();
   const storeLat  = document.getElementById('darkStoreLat').value.trim();
   const storeLng  = document.getElementById('darkStoreLng').value.trim();
   const recMode   = document.getElementById('smartRecMode').value;
+
+  const badgeEl = document.getElementById('adminStoreStatusBadge');
+  if (badgeEl) {
+    badgeEl.textContent = storeOnline ? '🟢 ONLINE' : '🔴 OFFLINE';
+    badgeEl.style.color = storeOnline ? 'var(--green)' : 'var(--danger)';
+    badgeEl.style.borderColor = storeOnline ? 'rgba(46,204,113,0.4)' : 'rgba(231,76,60,0.4)';
+    badgeEl.style.background = storeOnline ? 'rgba(46,204,113,0.18)' : 'rgba(231,76,60,0.18)';
+  }
 
   const btn = document.getElementById('btnSaveFlags');
   if (btn) btn.textContent = 'Saving... ⌛';
@@ -1675,6 +1712,7 @@ async function saveFeatureFlags() {
       method: 'POST',
       headers: getAdminHeaders(),
       body: JSON.stringify({
+        store_is_online: storeOnline,
         feature_fresh_tmrw: freshTmrw,
         feature_subscriptions: subs,
         dark_store_name: storeName,

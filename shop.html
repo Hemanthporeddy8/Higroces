@@ -146,6 +146,82 @@ header {
   border-color: #2980B9 !important;
   box-shadow: 0 4px 14px rgba(41,128,185,0.35);
 }
+.station-tab.active-inventory {
+  background: #8E44AD !important;
+  color: white !important;
+  border-color: #8E44AD !important;
+  box-shadow: 0 4px 14px rgba(142,68,173,0.35);
+}
+.station-tab.active-mandi {
+  background: #16A085 !important;
+  color: white !important;
+  border-color: #16A085 !important;
+  box-shadow: 0 4px 14px rgba(22,160,133,0.35);
+}
+
+/* Zomato-Style Online / Offline Status Toggle Pill */
+.store-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.store-status-pill.online {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ECC71;
+  border-color: rgba(46, 204, 113, 0.5);
+  box-shadow: 0 0 12px rgba(46, 204, 113, 0.2);
+}
+.store-status-pill.online:hover {
+  background: rgba(46, 204, 113, 0.25);
+}
+.store-status-pill.offline {
+  background: rgba(231, 76, 60, 0.15);
+  color: #FFA39E;
+  border-color: rgba(231, 76, 60, 0.5);
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.2);
+}
+.store-status-pill.offline:hover {
+  background: rgba(231, 76, 60, 0.25);
+}
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.store-status-pill.online .status-dot {
+  background: #2ECC71;
+  box-shadow: 0 0 8px #2ECC71;
+  animation: pulseGreen 2s infinite;
+}
+.store-status-pill.offline .status-dot {
+  background: #E74C3C;
+  box-shadow: 0 0 8px #E74C3C;
+}
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+.store-closed-notice {
+  background: linear-gradient(90deg, #3A1B16, #241410);
+  border-bottom: 2px solid #E74C3C;
+  padding: 10px 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFB0A3;
+  display: none;
+}
 .sub-other-note {
   font-size: 0.76rem;
   color: #798E84;
@@ -614,6 +690,10 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 
   <div class="header-controls">
+    <button class="store-status-pill online" id="btnStoreStatus" onclick="toggleStoreOnlineStatus()" title="Tap to switch store Online/Offline">
+      <span class="status-dot"></span>
+      <span id="storeStatusText">ONLINE</span>
+    </button>
     <select class="zone-select" id="zoneSelect" onchange="fetchShopOrders()">
       <option value="HSR Layout">Zone: HSR Layout</option>
       <option value="Koramangala">Zone: Koramangala</option>
@@ -625,6 +705,11 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     </button>
   </div>
 </header>
+
+<!-- STORE CLOSED ALERT BANNER -->
+<div class="store-closed-notice" id="shopClosedNotice">
+  🛑 STORE IS CURRENTLY OFFLINE — Customer instant 15-min ordering is paused. Tap the button above to go Online.
+</div>
 
 <!-- STATION TOGGLE NAVIGATION -->
 <div class="station-nav-bar">
@@ -640,6 +725,9 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     </button>
     <button class="station-tab" id="tabInventory" onclick="switchStation('inventory')">
       📦 Stock &amp; Inventory Toggles
+    </button>
+    <button class="station-tab" id="tabMandi" onclick="switchStation('mandi')">
+      🌱 4 AM Mandi Sheet
     </button>
   </div>
 </div>
@@ -684,6 +772,25 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     </div>
 
     <div class="inventory-station-grid" id="shopInventoryGrid">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+
+  <!-- 4 AM MANDI PROCUREMENT VIEW (MOBILE APMC SHEET) -->
+  <div id="kdsMandiContainer" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:1.3rem; color:var(--text-main);">🌱 4 AM APMC Mandi Procurement Sheet</h2>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">
+          Aggregated bulk quantities needed for overnight Fresh Tmrw customer pre-orders.
+        </p>
+      </div>
+      <button class="btn-refresh" onclick="loadMandiSheet()" style="background:#1E2623;">
+        <span>🔄</span> Refresh Mandi List
+      </button>
+    </div>
+
+    <div id="mandiGridContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
       <!-- Injected by JS -->
     </div>
   </div>
@@ -799,18 +906,24 @@ function switchStation(station) {
   document.getElementById('tabGrocery').className = 'station-tab' + (station === 'grocery' ? ' active-grocery' : '');
   document.getElementById('tabAll').className = 'station-tab' + (station === 'all' ? ' active-all' : '');
   document.getElementById('tabInventory').className = 'station-tab' + (station === 'inventory' ? ' active-inventory' : '');
+  const tabMandiEl = document.getElementById('tabMandi');
+  if (tabMandiEl) tabMandiEl.className = 'station-tab' + (station === 'mandi' ? ' active-mandi' : '');
 
   const ordersContainer = document.getElementById('kdsOrdersContainer');
   const inventoryContainer = document.getElementById('kdsInventoryContainer');
+  const mandiContainer = document.getElementById('kdsMandiContainer');
+
+  ordersContainer.style.display = (station === 'butcher' || station === 'grocery' || station === 'all') ? 'block' : 'none';
+  inventoryContainer.style.display = (station === 'inventory') ? 'block' : 'none';
+  if (mandiContainer) mandiContainer.style.display = (station === 'mandi') ? 'block' : 'none';
 
   if (station === 'inventory') {
-    ordersContainer.style.display = 'none';
-    inventoryContainer.style.display = 'block';
     loadShopInventory();
     return;
-  } else {
-    ordersContainer.style.display = 'block';
-    inventoryContainer.style.display = 'none';
+  }
+  if (station === 'mandi') {
+    loadMandiSheet();
+    return;
   }
 
   // Update Header & Labels
@@ -1239,6 +1352,139 @@ async function manualRefresh() {
   }, 400);
 }
 
+// ── STORE ONLINE / OFFLINE CONTROLLER ──
+let isStoreOnline = true;
+
+async function loadStoreStatus() {
+  try {
+    const res = await fetch('/api/store/status?t=' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      isStoreOnline = data.is_online !== false;
+      updateStoreStatusUI();
+    }
+  } catch(e) {
+    console.warn("loadStoreStatus error:", e);
+  }
+}
+
+function updateStoreStatusUI() {
+  const btn = document.getElementById('btnStoreStatus');
+  const text = document.getElementById('storeStatusText');
+  const notice = document.getElementById('shopClosedNotice');
+
+  if (!btn || !text) return;
+
+  if (isStoreOnline) {
+    btn.className = 'store-status-pill online';
+    text.textContent = 'ONLINE';
+    if (notice) notice.style.display = 'none';
+  } else {
+    btn.className = 'store-status-pill offline';
+    text.textContent = 'OFFLINE';
+    if (notice) notice.style.display = 'block';
+  }
+}
+
+async function toggleStoreOnlineStatus() {
+  const newStatus = !isStoreOnline;
+  const actionText = newStatus ? "OPEN the store and go ONLINE (Start accepting instant orders)?" : "CLOSE the store and go OFFLINE (Pause customer instant orders)?";
+  if (!confirm(`Are you sure you want to ${actionText}`)) return;
+
+  try {
+    const text = document.getElementById('storeStatusText');
+    if (text) text.textContent = 'Updating... ⌛';
+
+    const res = await fetch('/api/store/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_online: newStatus })
+    });
+    if (res.ok) {
+      isStoreOnline = newStatus;
+      updateStoreStatusUI();
+    } else {
+      alert("Failed to update store status.");
+      updateStoreStatusUI();
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    updateStoreStatusUI();
+  }
+}
+
+// ── 4 AM APMC MANDI PROCUREMENT SHEET ──
+let mandiPurchasedSet = new Set();
+
+async function loadMandiSheet() {
+  const container = document.getElementById('mandiGridContainer');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--text-muted); padding:30px; text-align:center; grid-column:1/-1;">Loading 4 AM Mandi requirements... ⌛</div>';
+
+  try {
+    const res = await fetch('/api/mandi?t=' + Date.now());
+    if (!res.ok) {
+      container.innerHTML = '<div style="color:var(--accent-orange); padding:20px; text-align:center; grid-column:1/-1;">Failed to load Mandi data.</div>';
+      return;
+    }
+    const data = await res.json();
+    const list = data.mandiList || [];
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; background:var(--bg-card); border:1.5px dashed var(--border-color); border-radius:12px; padding:40px; text-align:center;">
+          <div style="font-size:2.8rem; margin-bottom:12px;">🌱</div>
+          <h3 style="font-size:1.15rem; color:var(--text-main);">No Fresh Tmrw Orders Scheduled</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; max-width:480px; margin-left:auto; margin-right:auto;">
+            When customers place overnight pre-orders for farm produce, the aggregated bulk kg purchase list will appear here automatically for your 4:30 AM APMC Mandi visit.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(item => {
+      const isDone = mandiPurchasedSet.has(item.name);
+      return `
+        <div style="background:${isDone ? '#12251D' : 'var(--bg-card)'}; border:1.5px solid ${isDone ? '#2ECC71' : 'var(--border-color)'}; border-radius:12px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+              <span style="font-size:1.8rem;">${item.emoji || '🥬'}</span>
+              <span style="background:${isDone ? '#2ECC71' : 'rgba(255,183,77,0.18)'}; color:${isDone ? '#000' : 'var(--accent-gold)'}; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:20px;">
+                ${isDone ? '✅ PURCHASED' : 'PENDING 5 AM'}
+              </span>
+            </div>
+            <div style="font-size:1.1rem; font-weight:800; color:white;">${item.name}</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">Across ${item.orderCount} customer bag(s)</div>
+          </div>
+          <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Buy Total Quantity</div>
+              <div style="font-size:1.4rem; font-weight:900; color:${isDone ? '#2ECC71' : 'var(--accent-gold)'};">${item.totalQty} ${item.unit}</div>
+            </div>
+            <button onclick="toggleMandiPurchased('${encodeURIComponent(item.name)}')" style="background:${isDone ? '#27AE60' : '#25312D'}; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; cursor:pointer;">
+              ${isDone ? '↩️ Undo' : '✔️ Mark Bought'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    console.warn("loadMandiSheet error:", e);
+    container.innerHTML = '<div style="color:var(--accent-orange); padding:20px; text-align:center; grid-column:1/-1;">Connection error.</div>';
+  }
+}
+
+function toggleMandiPurchased(nameEncoded) {
+  const name = decodeURIComponent(nameEncoded);
+  if (mandiPurchasedSet.has(name)) {
+    mandiPurchasedSet.delete(name);
+  } else {
+    mandiPurchasedSet.add(name);
+  }
+  loadMandiSheet();
+}
+
 // ── OPTION B: SLIDE-OUT NAVIGATION DRAWER ──
 function openNavDrawer() {
   const drawer = document.getElementById('navDrawer');
@@ -1266,7 +1512,9 @@ document.addEventListener('keydown', (e) => {
 
 window.addEventListener('DOMContentLoaded', () => {
   fetchShopOrders();
+  loadStoreStatus();
   setInterval(fetchShopOrders, 5000);
+  setInterval(loadStoreStatus, 10000);
 });
 </script>
 </body>
