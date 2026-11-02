@@ -254,10 +254,8 @@ export default {
         if (!email || !password || !full_name) {
           return new Response(JSON.stringify({ error: "Full Name, email, and password are required." }), { status: 400, headers: corsHeaders() });
         }
-        const countRes = await env.DB.prepare("SELECT COUNT(*) as count FROM admin_users").first();
-        const count = countRes ? (countRes.count || 0) : 0;
-        if (count > 0 && setup_key !== ADMIN_SECRET_KEY) {
-          return new Response(JSON.stringify({ error: "Valid master setup key required to register additional super admins." }), { status: 403, headers: corsHeaders() });
+        if (setup_key !== ADMIN_SECRET_KEY) {
+          return new Response(JSON.stringify({ error: "Invalid master setup key. Emergency master key required to register a super admin." }), { status: 403, headers: corsHeaders() });
         }
         const salt = generateSalt();
         const hash = await hashPassword(password, salt);
