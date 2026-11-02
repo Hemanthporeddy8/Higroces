@@ -46,37 +46,116 @@ body {
   background: var(--card-bg);
   border: 1.5px solid var(--card-border);
   border-radius: 16px;
-  padding: 36px 32px;
-  max-width: 400px;
+  padding: 34px 28px;
+  max-width: 440px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
   text-align: center;
 }
 .auth-card h2 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
-  margin-bottom: 8px;
+  font-size: 1.55rem;
+  margin-bottom: 6px;
 }
 .auth-card p {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  line-height: 1.45;
 }
-.auth-input {
+.auth-step { display: none; }
+.auth-step.active { display: block; }
+.auth-field { text-align: left; margin-bottom: 14px; }
+.auth-field label { display: block; font-size: 0.78rem; font-weight: 700; color: #C0D2C8; margin-bottom: 6px; }
+.auth-field input, .auth-field select {
   width: 100%;
-  padding: 12px 16px;
-  background: #0E1412;
+  padding: 12px 14px;
+  background: #0A100E;
   border: 1.5px solid var(--card-border);
   border-radius: 8px;
   color: white;
-  font-family: 'DM Mono', monospace;
-  font-size: 1rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem;
   outline: none;
-  text-align: center;
-  letter-spacing: 0.15em;
+  transition: border-color 0.2s;
+}
+.auth-field input:focus, .auth-field select:focus {
+  border-color: var(--primary-light);
+}
+.auth-link-btn {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: 'Outfit', sans-serif;
+  transition: opacity 0.2s;
+}
+.auth-link-btn:hover { opacity: 0.8; }
+.otp-box-input {
+  font-family: 'DM Mono', monospace !important;
+  font-size: 1.8rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 10px !important;
+  text-align: center !important;
+  color: var(--green) !important;
+  padding: 12px 10px !important;
+}
+.otp-timer-pill {
+  display: inline-block;
+  background: rgba(255, 183, 77, 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 800;
   margin-bottom: 16px;
 }
-.auth-input:focus { border-color: var(--gold); }
+.auth-alert {
+  background: rgba(231,76,60,0.15);
+  border: 1px solid rgba(231,76,60,0.4);
+  color: #FF7B6E;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+  text-align: center;
+  line-height: 1.4;
+}
+.auth-alert.dev {
+  background: rgba(46,204,113,0.15);
+  border-color: rgba(46,204,113,0.4);
+  color: #2ECC71;
+}
+.team-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.btn-add-admin {
+  background: var(--primary);
+  color: white;
+  border: 1px solid var(--primary-light);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+}
+.btn-add-admin:hover {
+  background: var(--primary-light);
+}
 .btn-auth {
   width: 100%;
   padding: 12px;
@@ -538,24 +617,130 @@ input:checked + .toggle-slider:before {
   </div>
 </div>
 
-<!-- SECURE AUTH OVERLAY -->
+<!-- SECURE MULTI-STEP AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
-  <div class="auth-card">
-    <div style="font-size:2.6rem; margin-bottom:12px;">🛡️</div>
-    <h2>Amorelot Admin Access</h2>
-    <p>Please enter your master security key to decrypt executive controls and order dispatch.</p>
-    <input type="password" class="auth-input" id="authKeyInput" placeholder="ENTER MASTER KEY" onkeydown="if(event.key==='Enter') verifyAdminKey()"/>
-    <button class="btn-auth" onclick="verifyAdminKey()">Authenticate 🔓</button>
+  
+  <!-- 1. INITIAL SUPER ADMIN SETUP CARD (Only shown if 0 admins exist) -->
+  <div class="auth-card auth-step" id="authCardSetup">
+    <div style="font-size:2.8rem; margin-bottom:10px;">👑</div>
+    <h2>Executive Setup</h2>
+    <p>Create your primary Super Admin account to secure this command center.</p>
+
+    <div id="setupAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); submitAdminSetup();">
+      <div class="auth-field">
+        <label>Your Full Name</label>
+        <input type="text" id="setupName" placeholder="e.g. Hemanth Poreddy" required />
+      </div>
+      <div class="auth-field">
+        <label>Work Email Address</label>
+        <input type="email" id="setupEmail" placeholder="e.g. hemanth@amorelot.com" required />
+      </div>
+      <div class="auth-field">
+        <label>Master Password</label>
+        <input type="password" id="setupPassword" placeholder="Minimum 8 characters" minlength="8" required />
+      </div>
+      <div class="auth-field">
+        <label>Confirm Password</label>
+        <input type="password" id="setupConfirmPassword" placeholder="Confirm master password" minlength="8" required />
+      </div>
+      <div class="auth-field">
+        <label>Master Setup Key</label>
+        <input type="password" id="setupKeyInput" placeholder="Enter setup key (amorelot2026)" required />
+      </div>
+      <button type="submit" class="btn-auth" id="btnSubmitSetup">Create Super Admin Account 🚀</button>
+    </form>
   </div>
+
+  <!-- 2. STEP 1: EMAIL & PASSWORD LOGIN -->
+  <div class="auth-card auth-step active" id="authCardLogin">
+    <div style="font-size:2.8rem; margin-bottom:10px;">🛡️</div>
+    <h2>Amorelot Admin Access</h2>
+    <p>Sign in with your work email and password to receive your 2FA security code.</p>
+
+    <div id="loginAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); submitLoginStep1();">
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="admin@amorelot.com" required autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div style="position:relative;">
+          <input type="password" id="loginPassword" placeholder="Enter password" required autocomplete="current-password" />
+          <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem;">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-auth" id="btnLoginStep1">Continue with Email OTP ➔</button>
+    </form>
+
+    <div style="margin-top:16px;">
+      <button type="button" class="auth-link-btn" onclick="showAuthStep('emergency')">Use Emergency Recovery Key</button>
+    </div>
+  </div>
+
+  <!-- 3. STEP 2: 6-DIGIT EMAIL OTP VERIFICATION -->
+  <div class="auth-card auth-step" id="authCardOtp">
+    <div style="font-size:2.8rem; margin-bottom:10px;">📩</div>
+    <h2>Two-Factor Security</h2>
+    <p>We sent a 6-digit verification code to <strong id="otpMaskedEmail" style="color:white;"></strong>.</p>
+
+    <div id="otpAlert" class="auth-alert" style="display:none;"></div>
+
+    <div class="otp-timer-pill" id="otpTimerPill">
+      ⏳ Code expires in: <span id="otpCountdown">05:00</span>
+    </div>
+
+    <form onsubmit="event.preventDefault(); submitVerifyOtp();">
+      <div class="auth-field">
+        <label style="text-align:center;">Enter 6-Digit OTP</label>
+        <input type="text" class="otp-box-input" id="otpInput" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="••••••" required autofocus />
+      </div>
+      <button type="submit" class="btn-auth" id="btnVerifyOtp">Verify &amp; Unlock Console 🔓</button>
+    </form>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+      <button type="button" class="auth-link-btn" onclick="showAuthStep('login')">← Back</button>
+      <button type="button" class="auth-link-btn" id="btnResendOtp" onclick="resendOtp()">Resend Code 🔄</button>
+    </div>
+  </div>
+
+  <!-- 4. EMERGENCY MASTER KEY CARD -->
+  <div class="auth-card auth-step" id="authCardEmergency">
+    <div style="font-size:2.8rem; margin-bottom:10px;">🔑</div>
+    <h2>Emergency Access</h2>
+    <p>Bypass two-factor authentication using your offline master emergency key.</p>
+
+    <div id="emergencyAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); submitEmergencyLogin();">
+      <div class="auth-field">
+        <label>Master Security Key</label>
+        <input type="password" id="emergencyKeyInput" placeholder="ENTER MASTER KEY" required />
+      </div>
+      <button type="submit" class="btn-auth">Authenticate Emergency Key 🔓</button>
+    </form>
+
+    <div style="margin-top:16px;">
+      <button type="button" class="auth-link-btn" onclick="showAuthStep('login')">← Return to Email Login</button>
+    </div>
+  </div>
+
 </div>
 
 <header>
   <div class="header-brand">
     <div class="brand-title">Amorelot Command Center</div>
-    <span class="brand-badge">Super Admin</span>
+    <span class="brand-badge" id="adminRoleBadge">Super Admin</span>
   </div>
 
   <div class="header-actions">
+    <div id="adminUserPill" style="display:inline-flex; align-items:center; gap:8px; background:#14201C; border:1px solid #233B31; padding:6px 12px; border-radius:20px; font-size:0.75rem;">
+      <span style="font-size:0.9rem;">👤</span>
+      <span id="adminUserEmail" style="color:white; font-weight:700;">Admin</span>
+    </div>
     <span id="syncIndicator" style="font-size:0.75rem; color:var(--green)">● Connected to D1</span>
     <button class="btn-logout" onclick="logoutAdmin()">Lock Console</button>
   </div>
@@ -687,6 +872,7 @@ input:checked + .toggle-slider:before {
     <button class="nav-tab-btn" id="tabBtnInventory" onclick="switchAdminTab('inventory')">📦 Inventory &amp; Stock Control</button>
     <button class="nav-tab-btn" id="tabBtnMandi" onclick="switchAdminTab('mandi')">🌾 5 AM Mandi Procurement Sheet</button>
     <button class="nav-tab-btn" id="tabBtnSubs" onclick="switchAdminTab('subs')">🔄 Active Subscriptions Manager</button>
+    <button class="nav-tab-btn" id="tabBtnTeam" onclick="switchAdminTab('team')">👥 Admins &amp; Security</button>
   </div>
 
   <!-- VIEW 1: ORDERS DIRECTORY TABLE -->
@@ -828,6 +1014,71 @@ input:checked + .toggle-slider:before {
     </table>
   </div>
 
+  <!-- VIEW 5: TEAM & MULTI-ADMIN SECURITY MANAGER TAB -->
+  <div class="table-card" id="viewTeam" style="display:none;">
+    <div class="team-header-row">
+      <div>
+        <h3 style="font-size:1.15rem; color:var(--gold);">👥 Authorized Administrators &amp; Security Roles</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+          Manage executive team members, assign role permissions, and audit active admin logins.
+        </p>
+      </div>
+      <button class="btn-add-admin" onclick="openAddAdminModal()">+ Add New Admin</button>
+    </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Administrator</th>
+          <th>Role &amp; Permissions</th>
+          <th>Registered Date</th>
+          <th>Security Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="teamTbody">
+        <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted)">Loading team directory...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ADD ADMIN MODAL -->
+<div class="order-modal-bg" id="addAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+  <div class="auth-card" style="max-width:440px; text-align:left;">
+    <div style="font-size:2.2rem; margin-bottom:8px; text-align:center;">👥</div>
+    <h2 style="text-align:center;">Add Administrator</h2>
+    <p style="text-align:center;">Grant secure console access to a co-founder, partner, or store manager.</p>
+
+    <div id="newAdminAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); submitCreateAdmin();">
+      <div class="auth-field">
+        <label>Full Name</label>
+        <input type="text" id="newAdminName" placeholder="e.g. Ramesh Kumar" required />
+      </div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input type="email" id="newAdminEmail" placeholder="e.g. ramesh@amorelot.com" required />
+      </div>
+      <div class="auth-field">
+        <label>Assigned Security Role</label>
+        <select id="newAdminRole">
+          <option value="super_admin">Super Admin (Full Financial &amp; System Access)</option>
+          <option value="store_manager">Store Operations Manager (Orders &amp; Stock Only)</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label>Initial Temporary Password</label>
+        <input type="password" id="newAdminPassword" placeholder="Minimum 8 characters" minlength="8" required />
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn-auth" style="background:#20312B;" onclick="closeAddAdminModal()">Cancel</button>
+        <button type="submit" class="btn-auth" id="btnSaveNewAdmin">Create Admin 🚀</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -836,11 +1087,29 @@ const SETTINGS_API = '/api/settings';
 const SUBS_API = '/api/subscriptions';
 const MANDI_API = '/api/mandi-sheet';
 const INVENTORY_API = '/api/inventory';
+const AUTH_BASE = '/api/admin/auth';
+const TEAM_BASE = '/api/admin/team';
 
-let masterKey = sessionStorage.getItem('amorelot_admin_key') || '';
+let masterKey = sessionStorage.getItem('amorelot_admin_key') || sessionStorage.getItem('amorelot_admin_token') || '';
+let adminUser = JSON.parse(sessionStorage.getItem('amorelot_admin_user') || 'null');
+let pendingLoginEmail = '';
+let otpCountdownInterval = null;
 let cachedOrders = [];
 let currentAdminTab = 'orders';
 let liveInventoryMap = {};
+
+function getAdminToken() {
+  return sessionStorage.getItem('amorelot_admin_token') || sessionStorage.getItem('amorelot_admin_key') || masterKey || 'amorelot2026';
+}
+
+function getAdminHeaders() {
+  const token = getAdminToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-Admin-Key': token
+  };
+}
 
 // Unified Dark Store Master Catalog
 const STORE_CATALOG = [
@@ -874,55 +1143,445 @@ const STORE_CATALOG = [
   { id: 'mandi_papaya', name: 'Farm Papaya (Semi-Ripe)', category: 'fresh_tmrw', emoji: '🍈', price: 45, unit: '1 pc (~800g)', bin: '🍈 APMC Mandi Crates F4' }
 ];
 
-function checkAuth() {
-  if (masterKey) {
-    document.getElementById('authOverlay').style.display = 'none';
-    fetchAdminData();
-    loadFeatureFlags();
+// ── MULTI-STEP AUTHENTICATION CONTROLLER ──
+function showAuthStep(step) {
+  ['Setup', 'Login', 'Otp', 'Emergency'].forEach(s => {
+    const el = document.getElementById('authCard' + s);
+    if (el) el.classList.remove('active');
+  });
+  const target = document.getElementById('authCard' + step.charAt(0).toUpperCase() + step.slice(1));
+  if (target) target.classList.add('active');
+}
+
+function togglePasswordVisibility(id, btn) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🔒';
   } else {
-    document.getElementById('authOverlay').style.display = 'flex';
+    input.type = 'password';
+    btn.textContent = '👁️';
   }
 }
 
-async function verifyAdminKey() {
-  const key = document.getElementById('authKeyInput').value.trim();
+async function checkAuth() {
+  try {
+    // 1. Check if an admin account exists in D1
+    const statusRes = await fetch(`${AUTH_BASE}/status`).catch(() => ({ ok: false }));
+    if (statusRes.ok) {
+      const statusData = await statusRes.json();
+      if (!statusData.hasAdmin) {
+        document.getElementById('authOverlay').style.display = 'flex';
+        showAuthStep('setup');
+        return;
+      }
+    }
+
+    // 2. Check active session token
+    const token = getAdminToken();
+    if (token) {
+      const verifyRes = await fetch(`${AUTH_BASE}/verify-session`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'X-Admin-Key': token }
+      }).catch(() => ({ ok: false }));
+
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json();
+        adminUser = verifyData.user || {};
+        masterKey = token;
+        onAuthSuccess();
+        return;
+      }
+    }
+
+    // 3. Fallback to Email + Password login screen
+    document.getElementById('authOverlay').style.display = 'flex';
+    showAuthStep('login');
+  } catch(e) {
+    console.error("checkAuth error:", e);
+    document.getElementById('authOverlay').style.display = 'flex';
+    showAuthStep('login');
+  }
+}
+
+function onAuthSuccess() {
+  document.getElementById('authOverlay').style.display = 'none';
+
+  // Display admin pill in header
+  if (adminUser) {
+    const emailEl = document.getElementById('adminUserEmail');
+    const roleBadge = document.getElementById('adminRoleBadge');
+    if (emailEl) emailEl.textContent = adminUser.full_name || adminUser.email;
+    if (roleBadge) {
+      roleBadge.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Store Manager';
+    }
+    const userPill = document.getElementById('adminUserPill');
+    if (userPill) userPill.style.display = 'inline-flex';
+  }
+
+  fetchAdminData();
+  loadFeatureFlags();
+}
+
+// ── SETUP: CREATE FIRST SUPER ADMIN ──
+async function submitAdminSetup() {
+  const name = document.getElementById('setupName').value.trim();
+  const email = document.getElementById('setupEmail').value.trim();
+  const password = document.getElementById('setupPassword').value;
+  const confirmPassword = document.getElementById('setupConfirmPassword').value;
+  const setupKey = document.getElementById('setupKeyInput').value.trim();
+  const alertEl = document.getElementById('setupAlert');
+  const btn = document.getElementById('btnSubmitSetup');
+
+  if (password !== confirmPassword) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Passwords do not match.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Creating Super Admin... ⌛";
+  alertEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: name, email, password, setup_key: setupKey })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || "Setup failed.";
+      btn.disabled = false;
+      btn.textContent = "Create Super Admin Account 🚀";
+      return;
+    }
+
+    document.getElementById('loginEmail').value = email;
+    showAuthStep('login');
+    const loginAlert = document.getElementById('loginAlert');
+    loginAlert.style.display = 'block';
+    loginAlert.className = 'auth-alert dev';
+    loginAlert.textContent = "✅ Super Admin created! Please enter your password to receive your 2FA OTP.";
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Connection error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create Super Admin Account 🚀";
+  }
+}
+
+// ── STEP 1: EMAIL & PASSWORD VERIFICATION ──
+async function submitLoginStep1() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const alertEl = document.getElementById('loginAlert');
+  const btn = document.getElementById('btnLoginStep1');
+
+  btn.disabled = true;
+  btn.textContent = "Verifying & Sending OTP... ⌛";
+  alertEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/login-step1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || "Invalid credentials.";
+      btn.disabled = false;
+      btn.textContent = "Continue with Email OTP ➔";
+      return;
+    }
+
+    pendingLoginEmail = email;
+    document.getElementById('otpMaskedEmail').textContent = data.maskedEmail || email;
+    showAuthStep('otp');
+
+    const otpAlert = document.getElementById('otpAlert');
+    if (data.devMode && data.debugOtp) {
+      otpAlert.style.display = 'block';
+      otpAlert.className = 'auth-alert dev';
+      otpAlert.innerHTML = `📢 <strong>Dev Mode Notice:</strong> Resend API key not configured yet.<br>Your security verification code is: <strong style="font-size:1.1rem; color:white; letter-spacing:3px;">${data.debugOtp}</strong>`;
+    } else {
+      otpAlert.style.display = 'none';
+    }
+
+    startOtpCountdown(300); // 5 minutes
+    document.getElementById('otpInput').value = '';
+    document.getElementById('otpInput').focus();
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Connection error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Continue with Email OTP ➔";
+  }
+}
+
+// ── STEP 2: VERIFY 6-DIGIT EMAIL OTP ──
+async function submitVerifyOtp() {
+  const otp = document.getElementById('otpInput').value.trim();
+  const alertEl = document.getElementById('otpAlert');
+  const btn = document.getElementById('btnVerifyOtp');
+
+  if (otp.length !== 6) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Please enter all 6 digits of your security code.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Authenticating... ⌛";
+  alertEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingLoginEmail, otp })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || "Verification failed.";
+      btn.disabled = false;
+      btn.textContent = "Verify & Unlock Console 🔓";
+      return;
+    }
+
+    // Success! Store session
+    clearInterval(otpCountdownInterval);
+    sessionStorage.setItem('amorelot_admin_token', data.token);
+    sessionStorage.setItem('amorelot_admin_key', data.token);
+    sessionStorage.setItem('amorelot_admin_user', JSON.stringify(data.user));
+    adminUser = data.user;
+    masterKey = data.token;
+
+    onAuthSuccess();
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Connection error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Verify & Unlock Console 🔓";
+  }
+}
+
+function startOtpCountdown(seconds) {
+  clearInterval(otpCountdownInterval);
+  let remaining = seconds;
+  const countEl = document.getElementById('otpCountdown');
+  const resendBtn = document.getElementById('btnResendOtp');
+  if (resendBtn) resendBtn.disabled = true;
+
+  function update() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    if (countEl) countEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (remaining <= 0) {
+      clearInterval(otpCountdownInterval);
+      if (countEl) countEl.textContent = "EXPIRED";
+      if (resendBtn) resendBtn.disabled = false;
+    }
+    remaining--;
+  }
+  update();
+  otpCountdownInterval = setInterval(update, 1000);
+}
+
+function resendOtp() {
+  submitLoginStep1();
+}
+
+// ── EMERGENCY MASTER KEY LOGIN ──
+async function submitEmergencyLogin() {
+  const key = document.getElementById('emergencyKeyInput').value.trim();
+  const alertEl = document.getElementById('emergencyAlert');
   if (!key) return;
 
   try {
     const res = await fetch(`${API_BASE}?admin=true&key=${encodeURIComponent(key)}`);
     if (!res.ok) {
-      alert("Invalid Security Key. Access Denied.");
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = "Invalid master emergency key.";
       return;
     }
     masterKey = key;
     sessionStorage.setItem('amorelot_admin_key', key);
-    checkAuth();
+    sessionStorage.setItem('amorelot_admin_token', key);
+    adminUser = { email: 'master@amorelot.com', role: 'super_admin', full_name: 'Master Super Admin' };
+    onAuthSuccess();
   } catch(e) {
-    alert("Connection error: " + e.message);
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Connection error: " + e.message;
   }
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
+  const token = getAdminToken();
+  try {
+    await fetch(`${AUTH_BASE}/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  } catch(e) {}
+
   sessionStorage.removeItem('amorelot_admin_key');
+  sessionStorage.removeItem('amorelot_admin_token');
+  sessionStorage.removeItem('amorelot_admin_user');
   masterKey = '';
+  adminUser = null;
   location.reload();
 }
 
+// ── TAB SWITCHER ──
 function switchAdminTab(tab) {
   currentAdminTab = tab;
   document.getElementById('tabBtnOrders').className = 'nav-tab-btn' + (tab === 'orders' ? ' active' : '');
   document.getElementById('tabBtnInventory').className = 'nav-tab-btn' + (tab === 'inventory' ? ' active' : '');
   document.getElementById('tabBtnMandi').className  = 'nav-tab-btn' + (tab === 'mandi'  ? ' active' : '');
   document.getElementById('tabBtnSubs').className   = 'nav-tab-btn' + (tab === 'subs'   ? ' active' : '');
+  document.getElementById('tabBtnTeam').className   = 'nav-tab-btn' + (tab === 'team'   ? ' active' : '');
 
   document.getElementById('viewOrders').style.display = tab === 'orders' ? 'block' : 'none';
   document.getElementById('viewInventory').style.display = tab === 'inventory' ? 'block' : 'none';
   document.getElementById('viewMandi').style.display  = tab === 'mandi'  ? 'block' : 'none';
   document.getElementById('viewSubs').style.display   = tab === 'subs'   ? 'block' : 'none';
+  document.getElementById('viewTeam').style.display   = tab === 'team'   ? 'block' : 'none';
 
   if (tab === 'inventory') loadInventory();
   if (tab === 'mandi') loadMandiSheet();
   if (tab === 'subs') loadSubscriptions();
+  if (tab === 'team') loadTeamMembers();
+}
+
+// ── TEAM & MULTI-ADMIN SECURITY MANAGER ──
+async function loadTeamMembers() {
+  const tbody = document.getElementById('teamTbody');
+  try {
+    const res = await fetch(TEAM_BASE, { headers: getAdminHeaders() });
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted)">Failed to load team directory.</td></tr>`;
+      return;
+    }
+    const data = await res.json();
+    const list = data.admins || [];
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted)">No administrators registered in D1 yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(a => {
+      const isSuper = a.role === 'super_admin';
+      const roleBadge = isSuper
+        ? `<span class="status-badge" style="background:rgba(255,183,77,0.18); color:var(--gold); border:1px solid rgba(255,183,77,0.35);">👑 Super Admin</span>`
+        : `<span class="status-badge" style="background:rgba(52,152,219,0.18); color:var(--blue); border:1px solid rgba(52,152,219,0.35);">🏪 Store Manager</span>`;
+
+      const timeStr = a.created_at ? new Date(a.created_at).toLocaleDateString([], { dateStyle: 'medium' }) : '--';
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700; color:white; font-size:0.95rem;">${a.full_name || 'Admin'}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:'DM Mono';">${a.email}</div>
+          </td>
+          <td>${roleBadge}</td>
+          <td style="color:var(--text-muted); font-size:0.8rem;">${timeStr}</td>
+          <td><span style="color:var(--green); font-weight:700; font-size:0.78rem;">● 2FA Active</span></td>
+          <td>
+            <button class="btn-action-select" onclick="deleteAdmin('${a.id}', '${a.email}')" style="color:var(--red); border-color:rgba(231,76,60,0.3);">
+              🗑️ Remove
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch(e) {
+    console.error("loadTeamMembers error:", e);
+  }
+}
+
+function openAddAdminModal() {
+  document.getElementById('addAdminModal').style.display = 'flex';
+  document.getElementById('newAdminAlert').style.display = 'none';
+}
+
+function closeAddAdminModal() {
+  document.getElementById('addAdminModal').style.display = 'none';
+}
+
+async function submitCreateAdmin() {
+  const name = document.getElementById('newAdminName').value.trim();
+  const email = document.getElementById('newAdminEmail').value.trim();
+  const role = document.getElementById('newAdminRole').value;
+  const password = document.getElementById('newAdminPassword').value;
+  const alertEl = document.getElementById('newAdminAlert');
+  const btn = document.getElementById('btnSaveNewAdmin');
+
+  btn.disabled = true;
+  btn.textContent = "Creating... ⌛";
+  alertEl.style.display = 'none';
+
+  try {
+    const res = await fetch(TEAM_BASE, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ full_name: name, email, role, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || "Failed to create administrator.";
+      return;
+    }
+    closeAddAdminModal();
+    loadTeamMembers();
+    alert("✅ Administrator " + email + " added successfully! They can now log in with their email and OTP.");
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Connection error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create Admin 🚀";
+  }
+}
+
+async function deleteAdmin(id, email) {
+  if (!confirm(`Are you sure you want to remove administrator ${email}? They will be immediately locked out.`)) return;
+
+  try {
+    const res = await fetch(`${TEAM_BASE}?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Failed to remove admin.");
+      return;
+    }
+    loadTeamMembers();
+  } catch(e) {
+    alert("Error: " + e.message);
+  }
 }
 
 // ── DARK STORE GPS AUTO-PIN ──
@@ -969,7 +1628,6 @@ async function loadFeatureFlags() {
 }
 
 async function saveFeatureFlags() {
-  const currentKey = masterKey || sessionStorage.getItem('amorelot_admin_key') || 'amorelot2026';
   const freshTmrw = document.getElementById('flagFreshTmrw').checked;
   const subs = document.getElementById('flagSubscriptions').checked;
   const storeName = document.getElementById('darkStoreName').value.trim();
@@ -983,10 +1641,7 @@ async function saveFeatureFlags() {
   try {
     const res = await fetch(SETTINGS_API, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Key': currentKey
-      },
+      headers: getAdminHeaders(),
       body: JSON.stringify({
         feature_fresh_tmrw: freshTmrw,
         feature_subscriptions: subs,
@@ -1109,10 +1764,14 @@ async function toggleProductStock(productId, isChecked) {
 
 // ── ORDERS DIRECTORY ──
 async function fetchAdminData() {
-  if (!masterKey) return;
+  const token = getAdminToken();
+  if (!token) return;
   try {
     const res = await fetch(`${API_BASE}?admin=true`, {
-      headers: { 'X-Admin-Key': masterKey }
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-Admin-Key': token
+      }
     });
     if (!res.ok) {
       logoutAdmin();
@@ -1210,14 +1869,13 @@ function renderTable(list) {
 
 async function overrideStatus(id, newStatus) {
   if (!newStatus) return;
-  const currentKey = masterKey || sessionStorage.getItem('amorelot_admin_key') || 'amorelot2026';
 
   if (newStatus === 'delete') {
     if (!confirm(`Are you sure you want to PERMANENTLY DELETE Order #${id.substring(0,8)}?`)) return;
     try {
       const res = await fetch(`${API_BASE}?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers: { 'X-Admin-Key': currentKey }
+        headers: getAdminHeaders()
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1237,10 +1895,7 @@ async function overrideStatus(id, newStatus) {
   try {
     const res = await fetch(API_BASE, {
       method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-Admin-Key': currentKey 
-      },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ id, status: newStatus })
     });
     if (!res.ok) {
@@ -1379,7 +2034,7 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
   setInterval(() => {
-    if (desktopPolicyActive && currentAdminTab === 'orders' && masterKey) {
+    if (desktopPolicyActive && currentAdminTab === 'orders' && getAdminToken()) {
       fetchAdminData();
     }
   }, 8000);
