@@ -742,7 +742,7 @@ input:checked + .toggle-slider:before {
       <span id="adminUserEmail" style="color:white; font-weight:700;">Admin</span>
     </div>
     <span id="syncIndicator" style="font-size:0.75rem; color:var(--green)">● Connected to D1</span>
-    <button class="btn-logout" onclick="logoutAdmin()">Lock Console</button>
+    <button class="btn-logout" onclick="logoutAdmin()">🚪 Sign Out</button>
   </div>
 </header>
 
@@ -1116,7 +1116,8 @@ let currentAdminTab = 'orders';
 let liveInventoryMap = {};
 
 function getAdminToken() {
-  return sessionStorage.getItem('amorelot_admin_token') || sessionStorage.getItem('amorelot_admin_key') || masterKey || 'amorelot2026';
+  const token = sessionStorage.getItem('amorelot_admin_token') || sessionStorage.getItem('amorelot_admin_key') || masterKey;
+  return token && token.trim().length > 0 ? token.trim() : null;
 }
 
 function getAdminHeaders() {
