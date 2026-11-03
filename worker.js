@@ -45,6 +45,81 @@ async function hashPassword(password, salt) {
   return Array.from(new Uint8Array(exported)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// ── RFC 6238 TOTP (GOOGLE AUTHENTICATOR ENGINE) ──
+function base32ToBuf(base32) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const clean = String(base32).toUpperCase().replace(/=+$/, '').replace(/\s+/g, '');
+  let bits = 0, value = 0, index = 0;
+  const output = new Uint8Array(Math.floor((clean.length * 5) / 8));
+  for (let i = 0; i < clean.length; i++) {
+    const val = alphabet.indexOf(clean[i]);
+    if (val === -1) continue;
+    value = (value << 5) | val;
+    bits += 5;
+    if (bits >= 8) {
+      output[index++] = (value >>> (bits - 8)) & 255;
+      bits -= 8;
+    }
+  }
+  return output;
+}
+
+function generateBase32Secret(length = 20) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let str = '';
+  for (let i = 0; i < bytes.length; i++) {
+    str += alphabet[bytes[i] % 32];
+  }
+  return str;
+}
+
+async function generateTOTPCode(secretBase32, timeStep) {
+  const keyBuf = base32ToBuf(secretBase32);
+  const key = await crypto.subtle.importKey(
+    'raw', keyBuf, { name: 'HMAC', hash: { name: 'SHA-1' } }, false, ['sign']
+  );
+  const counterBuf = new ArrayBuffer(8);
+  const view = new DataView(counterBuf);
+  const high = Math.floor(timeStep / 0x100000000);
+  const low = timeStep % 0x100000000;
+  view.setUint32(0, high, false);
+  view.setUint32(4, low, false);
+
+  const signature = await crypto.subtle.sign('HMAC', key, counterBuf);
+  const sigBytes = new Uint8Array(signature);
+  const offset = sigBytes[sigBytes.length - 1] & 0x0f;
+  const binary =
+    ((sigBytes[offset] & 0x7f) << 24) |
+    ((sigBytes[offset + 1] & 0xff) << 16) |
+    ((sigBytes[offset + 2] & 0xff) << 8) |
+    (sigBytes[offset + 3] & 0xff);
+  const otp = binary % 1000000;
+  return otp.toString().padStart(6, '0');
+}
+
+async function verifyTOTP(secretBase32, inputOtp, window = 1) {
+  if (!secretBase32 || !inputOtp) return false;
+  const currentStep = Math.floor(Date.now() / 1000 / 30);
+  const cleanInput = String(inputOtp).trim();
+  for (let offset = -window; offset <= window; offset++) {
+    const code = await generateTOTPCode(secretBase32, currentStep + offset);
+    if (code === cleanInput) return true;
+  }
+  return false;
+}
+
+async function getAdminSessionDurationMs(env) {
+  try {
+    const row = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'admin_session_hours'").first();
+    const hours = row ? parseFloat(row.value) || 4 : 4;
+    return hours * 60 * 60 * 1000;
+  } catch(e) {
+    return 4 * 60 * 60 * 1000;
+  }
+}
+
 async function sendEmailOtp(email, otp, env) {
   // If RESEND_API_KEY is configured in worker secrets, send live email
   if (env && env.RESEND_API_KEY) {
@@ -253,6 +328,8 @@ async function ensureAllSchemas(db) {
     `).run();
   } catch(e) {}
 
+  try { await db.prepare("ALTER TABLE admin_users ADD COLUMN totp_secret TEXT").run(); } catch(e) {}
+
   try {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS admin_otps (
@@ -378,10 +455,13 @@ export default {
         const parts = user.email.split('@');
         const masked = parts[0].length <= 2 ? parts[0] + '***@' + parts[1] : parts[0][0] + '***' + parts[0].slice(-1) + '@' + parts[1];
 
+        const hasTotp = !!(user.totp_secret && user.totp_secret.trim().length > 0);
+
         return new Response(JSON.stringify({
           success: true,
-          message: `6-digit security code sent to ${masked}`,
+          message: hasTotp ? "Enter Google Authenticator code or check your email" : `6-digit security code sent to ${masked}`,
           maskedEmail: masked,
+          hasTotp,
           devMode: emailResult.devMode,
           debugOtp: emailResult.devMode ? otpCode : undefined,
           emailError: emailResult.error
@@ -401,31 +481,50 @@ export default {
         const cleanEmail = email.toLowerCase().trim();
         const cleanOtp = String(otp).trim();
 
-        const record = await env.DB.prepare(`
-          SELECT * FROM admin_otps WHERE email = ? AND is_used = 0 ORDER BY created_at DESC LIMIT 1
-        `).bind(cleanEmail).first();
-
-        if (!record) {
-          return new Response(JSON.stringify({ error: "No active security code found. Please login again." }), { status: 400, headers: corsHeaders() });
-        }
-        if (Date.now() > record.expires_at) {
-          return new Response(JSON.stringify({ error: "Security code expired. Please request a new code." }), { status: 400, headers: corsHeaders() });
-        }
-        if (record.attempts >= 3) {
-          return new Response(JSON.stringify({ error: "Maximum attempts exceeded. Please restart login." }), { status: 429, headers: corsHeaders() });
-        }
-        if (record.otp_code !== cleanOtp) {
-          await env.DB.prepare("UPDATE admin_otps SET attempts = attempts + 1 WHERE id = ?").bind(record.id).run();
-          const remaining = 2 - record.attempts;
-          return new Response(JSON.stringify({ error: `Incorrect security code. ${remaining > 0 ? remaining + ' attempt(s) remaining.' : 'Locked out.'}` }), { status: 400, headers: corsHeaders() });
+        const user = await env.DB.prepare("SELECT id, email, full_name, role, totp_secret FROM admin_users WHERE email = ?").bind(cleanEmail).first();
+        if (!user) {
+          return new Response(JSON.stringify({ error: "Administrator account not found." }), { status: 404, headers: corsHeaders() });
         }
 
-        // OTP verified
-        await env.DB.prepare("UPDATE admin_otps SET is_used = 1 WHERE id = ?").bind(record.id).run();
+        let authPassed = false;
+        let authMethod = 'email_otp';
 
-        const user = await env.DB.prepare("SELECT id, email, full_name, role FROM admin_users WHERE email = ?").bind(cleanEmail).first();
+        // 1. Check Google Authenticator (TOTP) if enabled for this user
+        if (user.totp_secret && user.totp_secret.trim().length > 0) {
+          const isTotp = await verifyTOTP(user.totp_secret, cleanOtp);
+          if (isTotp) {
+            authPassed = true;
+            authMethod = 'totp';
+          }
+        }
+
+        // 2. If TOTP didn't pass, verify Email OTP from admin_otps
+        if (!authPassed) {
+          const record = await env.DB.prepare(`
+            SELECT * FROM admin_otps WHERE email = ? AND is_used = 0 ORDER BY created_at DESC LIMIT 1
+          `).bind(cleanEmail).first();
+
+          if (record) {
+            if (Date.now() <= record.expires_at && record.attempts < 3) {
+              if (record.otp_code === cleanOtp) {
+                authPassed = true;
+                authMethod = 'email_otp';
+                await env.DB.prepare("UPDATE admin_otps SET is_used = 1 WHERE id = ?").bind(record.id).run();
+              } else {
+                await env.DB.prepare("UPDATE admin_otps SET attempts = attempts + 1 WHERE id = ?").bind(record.id).run();
+              }
+            }
+          }
+        }
+
+        if (!authPassed) {
+          return new Response(JSON.stringify({ error: "Invalid code. Please check your Google Authenticator app or email." }), { status: 400, headers: corsHeaders() });
+        }
+
+        // Session creation with configurable session duration
+        const durationMs = await getAdminSessionDurationMs(env);
         const token = crypto.randomUUID() + "-" + crypto.randomUUID();
-        const expiresAt = Date.now() + 4 * 60 * 60 * 1000; // 4-hour session
+        const expiresAt = Date.now() + durationMs;
 
         await env.DB.prepare(`
           INSERT INTO admin_sessions (token, user_id, expires_at)
@@ -435,6 +534,7 @@ export default {
         return new Response(JSON.stringify({
           success: true,
           token,
+          authMethod,
           user: {
             id: user.id,
             email: user.email,
@@ -472,6 +572,63 @@ export default {
       }
     }
 
+    // ── GOOGLE AUTHENTICATOR (TOTP) SETUP & MANAGEMENT ──
+    if (url.pathname === "/api/admin/auth/totp/setup" && request.method === "POST") {
+      try {
+        const adminAuth = await verifyAdminAuth(request, env);
+        if (!adminAuth) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Admin session required." }), { status: 401, headers: corsHeaders() });
+        }
+        const secret = generateBase32Secret(20);
+        const issuer = "Amorelot";
+        const label = `${issuer}:${adminAuth.email}`;
+        const otpauth_url = `otpauth://totp/${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&digits=6&period=30`;
+        return new Response(JSON.stringify({ success: true, secret, otpauth_url, email: adminAuth.email }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    if (url.pathname === "/api/admin/auth/totp/verify-setup" && request.method === "POST") {
+      try {
+        const adminAuth = await verifyAdminAuth(request, env);
+        if (!adminAuth) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Admin session required." }), { status: 401, headers: corsHeaders() });
+        }
+        const body = await request.json();
+        const { secret, code } = body;
+        if (!secret || !code) {
+          return new Response(JSON.stringify({ error: "Secret and 6-digit confirmation code are required." }), { status: 400, headers: corsHeaders() });
+        }
+        const isValid = await verifyTOTP(secret, code);
+        if (!isValid) {
+          return new Response(JSON.stringify({ error: "Incorrect 6-digit code. Please verify the time on your phone and try again." }), { status: 400, headers: corsHeaders() });
+        }
+        await env.DB.prepare("UPDATE admin_users SET totp_secret = ? WHERE id = ?").bind(secret, adminAuth.id).run();
+        return new Response(JSON.stringify({ success: true, message: "Google Authenticator 2FA activated successfully!" }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    if (url.pathname === "/api/admin/auth/totp/reset" && request.method === "POST") {
+      try {
+        const adminAuth = await verifyAdminAuth(request, env);
+        if (!adminAuth) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Admin session required." }), { status: 401, headers: corsHeaders() });
+        }
+        const body = await request.json();
+        const targetId = body.target_id || adminAuth.id;
+        if (targetId !== adminAuth.id && !isFounder(adminAuth)) {
+          return new Response(JSON.stringify({ error: "Permission denied: Only Founder Admins can reset 2FA for team members." }), { status: 403, headers: corsHeaders() });
+        }
+        await env.DB.prepare("UPDATE admin_users SET totp_secret = NULL WHERE id = ?").bind(targetId).run();
+        return new Response(JSON.stringify({ success: true, message: "Authenticator 2FA has been reset." }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
     // ── TEAM & MULTI-ADMIN MANAGEMENT ──
     if (url.pathname === "/api/admin/team") {
       const adminAuth = await verifyAdminAuth(request, env);
@@ -485,7 +642,7 @@ export default {
 
       if (request.method === "GET") {
         try {
-          const rows = await env.DB.prepare("SELECT id, email, full_name, role, created_at FROM admin_users ORDER BY created_at DESC").all();
+          const rows = await env.DB.prepare("SELECT id, email, full_name, role, (totp_secret IS NOT NULL AND length(totp_secret) > 0) AS has_totp, created_at FROM admin_users ORDER BY created_at DESC").all();
           return new Response(JSON.stringify({ admins: rows.results || [] }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
@@ -563,6 +720,7 @@ export default {
             feature_fresh_tmrw: false,
             feature_subscriptions: false,
             store_is_online: isOnline,
+            admin_session_hours: 4,
             dark_store_name: "HSR Meat Hub & Dark Store",
             dark_store_lat: "12.9121",
             dark_store_lng: "77.6408",
@@ -571,6 +729,7 @@ export default {
           (rows.results || []).forEach(r => {
             if (r.key === 'feature_fresh_tmrw') settings.feature_fresh_tmrw = r.value === '1';
             if (r.key === 'feature_subscriptions') settings.feature_subscriptions = r.value === '1';
+            if (r.key === 'admin_session_hours') settings.admin_session_hours = parseFloat(r.value) || 4;
             if (r.key === 'dark_store_name' && r.value) settings.dark_store_name = r.value;
             if (r.key === 'dark_store_lat' && r.value) settings.dark_store_lat = r.value;
             if (r.key === 'dark_store_lng' && r.value) settings.dark_store_lng = r.value;
@@ -592,6 +751,10 @@ export default {
           const body = await request.json();
           if (body.store_is_online !== undefined) {
             await setStoreOnlineStatus(body.store_is_online === true || body.store_is_online === 1, env);
+          }
+          if (body.admin_session_hours !== undefined) {
+            await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('admin_session_hours', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+              .bind(String(body.admin_session_hours)).run();
           }
           if (body.feature_fresh_tmrw !== undefined) {
             await env.DB.prepare("INSERT INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")

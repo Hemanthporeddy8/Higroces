@@ -681,11 +681,11 @@ input:checked + .toggle-slider:before {
     </div>
   </div>
 
-  <!-- 3. STEP 2: 6-DIGIT EMAIL OTP VERIFICATION -->
+  <!-- 3. STEP 2: 6-DIGIT 2FA VERIFICATION (TOTP & EMAIL OTP) -->
   <div class="auth-card auth-step" id="authCardOtp">
-    <div style="font-size:2.8rem; margin-bottom:10px;">📩</div>
+    <div style="font-size:2.8rem; margin-bottom:10px;" id="authOtpIcon">🔐</div>
     <h2>Two-Factor Security</h2>
-    <p>We sent a 6-digit verification code to <strong id="otpMaskedEmail" style="color:white;"></strong>.</p>
+    <p id="otpInstructionText">Enter the 6-digit code from <strong>Google Authenticator</strong> or check your email (<strong id="otpMaskedEmail" style="color:white;"></strong>).</p>
 
     <div id="otpAlert" class="auth-alert" style="display:none;"></div>
 
@@ -695,7 +695,7 @@ input:checked + .toggle-slider:before {
 
     <form onsubmit="event.preventDefault(); submitVerifyOtp();">
       <div class="auth-field">
-        <label style="text-align:center;">Enter 6-Digit OTP</label>
+        <label style="text-align:center;">Enter 6-Digit Code (App or Email)</label>
         <input type="text" class="otp-box-input" id="otpInput" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="••••••" required autofocus />
       </div>
       <button type="submit" class="btn-auth" id="btnVerifyOtp">Verify &amp; Unlock Console 🔓</button>
@@ -703,7 +703,7 @@ input:checked + .toggle-slider:before {
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
       <button type="button" class="auth-link-btn" onclick="showAuthStep('login')">← Back</button>
-      <button type="button" class="auth-link-btn" id="btnResendOtp" onclick="resendOtp()">Resend Code 🔄</button>
+      <button type="button" class="auth-link-btn" id="btnResendOtp" onclick="resendOtp()">Resend Email Code ✉️</button>
     </div>
   </div>
 
@@ -880,6 +880,23 @@ input:checked + .toggle-slider:before {
           <span class="toggle-slider"></span>
         </label>
       </div>
+
+      <!-- Admin Session Lifetime Card -->
+      <div class="flag-card" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="flag-info" style="max-width:650px;">
+          <div class="flag-title">⏱️ Admin Session Lifetime (Auto-Lock Duration)</div>
+          <div class="flag-desc">Set how many hours administrators stay logged into the command center before requiring 2FA re-authentication. (Founder Only).</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <select id="adminSessionHours" onchange="saveFeatureFlags()" style="background:#0E1412; border:1.5px solid var(--green); color:var(--green); font-size:0.88rem; font-weight:700; padding:8px 14px; border-radius:6px; outline:none; cursor:pointer;">
+            <option value="4">4 Hours (Standard Shift)</option>
+            <option value="8">8 Hours (Full Shift)</option>
+            <option value="12">12 Hours (Extended Shift)</option>
+            <option value="24">24 Hours (Full Day)</option>
+            <option value="168">7 Days (Weekly Persistent)</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1040,7 +1057,10 @@ input:checked + .toggle-slider:before {
           Manage executive team members, assign role permissions, and audit active admin logins.
         </p>
       </div>
-      <button class="btn-add-admin" onclick="openAddAdminModal()">+ Add New Admin</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-add-admin" onclick="openTotpSetupModal()" style="background:#1B2E28; color:var(--green); border:1.5px solid var(--green);">📱 Link Google Authenticator</button>
+        <button class="btn-add-admin" onclick="openAddAdminModal()">+ Add New Admin</button>
+      </div>
     </div>
 
     <table class="orders-table">
@@ -1093,6 +1113,40 @@ input:checked + .toggle-slider:before {
       <div style="display:flex; gap:10px; margin-top:20px;">
         <button type="button" class="btn-auth" style="background:#20312B;" onclick="closeAddAdminModal()">Cancel</button>
         <button type="submit" class="btn-auth" id="btnSaveNewAdmin">Create Admin 🚀</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- GOOGLE AUTHENTICATOR (TOTP) SETUP MODAL -->
+<div class="order-modal-bg" id="totpSetupModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+  <div class="auth-card" style="max-width:460px; text-align:center;">
+    <div style="font-size:2.4rem; margin-bottom:8px;">📱</div>
+    <h2>Google Authenticator 2FA</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Scan this QR code with Google Authenticator, Microsoft Authenticator, or Apple Keychain.</p>
+
+    <div id="totpSetupAlert" class="auth-alert" style="display:none;"></div>
+
+    <div style="background:white; padding:12px; border-radius:12px; display:inline-block; margin:8px 0 16px 0; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+      <img id="totpQrImage" src="" alt="Scan QR Code" style="width:170px; height:170px; display:block;" />
+    </div>
+
+    <div style="background:#14201C; border:1px solid #233B31; border-radius:8px; padding:10px 14px; margin-bottom:16px; text-align:left;">
+      <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Or enter key manually:</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+        <span id="totpSecretText" style="font-family:'DM Mono', monospace; font-size:1.02rem; font-weight:700; color:var(--gold); letter-spacing:2px;"></span>
+        <button type="button" onclick="copyTotpSecret()" style="background:#20312B; border:1px solid rgba(255,255,255,0.15); color:white; padding:4px 10px; border-radius:4px; font-size:0.75rem; cursor:pointer;">📋 Copy</button>
+      </div>
+    </div>
+
+    <form onsubmit="event.preventDefault(); submitVerifyTotpSetup();">
+      <div class="auth-field">
+        <label style="text-align:center;">Enter 6-digit code shown on phone to activate:</label>
+        <input type="text" id="totpConfirmCode" class="otp-box-input" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="••••••" required />
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn-auth" style="background:#20312B;" onclick="closeTotpSetupModal()">Cancel</button>
+        <button type="submit" class="btn-auth" id="btnConfirmTotp">Activate Authenticator 🚀</button>
       </div>
     </form>
   </div>
@@ -1355,6 +1409,14 @@ async function submitLoginStep1() {
 
     pendingLoginEmail = email;
     document.getElementById('otpMaskedEmail').textContent = data.maskedEmail || email;
+    const instructionEl = document.getElementById('otpInstructionText');
+    if (instructionEl) {
+      if (data.hasTotp) {
+        instructionEl.innerHTML = `Enter the 6-digit code from <strong>Google Authenticator</strong> on your phone, or check your email (<strong style="color:white;">${data.maskedEmail || email}</strong>).`;
+      } else {
+        instructionEl.innerHTML = `We sent a 6-digit verification code to <strong style="color:white;">${data.maskedEmail || email}</strong>.`;
+      }
+    }
     showAuthStep('otp');
 
     const otpAlert = document.getElementById('otpAlert');
@@ -1555,17 +1617,128 @@ async function loadTeamMembers() {
           </td>
           <td>${roleBadge}</td>
           <td style="color:var(--text-muted); font-size:0.8rem;">${timeStr}</td>
-          <td><span style="color:var(--green); font-weight:700; font-size:0.78rem;">● 2FA Active</span></td>
           <td>
-            <button class="btn-action-select" onclick="deleteAdmin('${a.id}', '${a.email}')" style="color:var(--red); border-color:rgba(231,76,60,0.3);">
-              🗑️ Remove
-            </button>
+            ${a.has_totp 
+              ? `<span style="background:rgba(46,204,113,0.15); color:var(--green); border:1px solid rgba(46,204,113,0.3); padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">📱 App Linked</span>`
+              : `<span style="background:rgba(255,255,255,0.06); color:var(--text-muted); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:4px; font-size:0.75rem;">✉️ Email Only</span>`
+            }
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              ${a.has_totp ? `<button class="btn-action-select" onclick="resetAdminTotp('${a.id}', '${a.email}')" style="color:var(--gold); border-color:rgba(255,183,77,0.3);" title="Reset Google Authenticator">🔄 Reset 2FA</button>` : ''}
+              <button class="btn-action-select" onclick="deleteAdmin('${a.id}', '${a.email}')" style="color:var(--red); border-color:rgba(231,76,60,0.3);">
+                🗑️ Remove
+              </button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
   } catch(e) {
     console.error("loadTeamMembers error:", e);
+  }
+}
+
+// ── GOOGLE AUTHENTICATOR (TOTP) CLIENT LOGIC ──
+let currentTotpSecret = '';
+
+async function openTotpSetupModal() {
+  const modal = document.getElementById('totpSetupModal');
+  const alertEl = document.getElementById('totpSetupAlert');
+  alertEl.style.display = 'none';
+  document.getElementById('totpConfirmCode').value = '';
+  modal.style.display = 'flex';
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/totp/setup`, {
+      method: 'POST',
+      headers: getAdminHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.textContent = data.error || "Failed to initialize Authenticator setup.";
+      return;
+    }
+    currentTotpSecret = data.secret;
+    document.getElementById('totpSecretText').textContent = data.secret;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauth_url)}`;
+    document.getElementById('totpQrImage').src = qrUrl;
+    setTimeout(() => document.getElementById('totpConfirmCode').focus(), 150);
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.textContent = "Error: " + e.message;
+  }
+}
+
+function closeTotpSetupModal() {
+  document.getElementById('totpSetupModal').style.display = 'none';
+}
+
+function copyTotpSecret() {
+  if (currentTotpSecret) {
+    navigator.clipboard.writeText(currentTotpSecret);
+    alert("Secret key copied to clipboard! You can paste it into Google Authenticator.");
+  }
+}
+
+async function submitVerifyTotpSetup() {
+  const code = document.getElementById('totpConfirmCode').value.trim();
+  const alertEl = document.getElementById('totpSetupAlert');
+  const btn = document.getElementById('btnConfirmTotp');
+
+  if (code.length !== 6) {
+    alertEl.style.display = 'block';
+    alertEl.textContent = "Please enter the 6-digit code shown in your Authenticator app.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Activating... ⌛";
+  alertEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/totp/verify-setup`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ secret: currentTotpSecret, code })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.textContent = data.error || "Invalid code. Please try again.";
+      return;
+    }
+    alert("🎉 Google Authenticator 2FA is now activated on your account!");
+    closeTotpSetupModal();
+    loadTeamMembers();
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.textContent = "Error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Activate Authenticator 🚀";
+  }
+}
+
+async function resetAdminTotp(targetId, email) {
+  if (!confirm(`Are you sure you want to reset Google Authenticator for ${email}? They will receive OTP via email until re-linked.`)) return;
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/totp/reset`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ target_id: targetId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert("Failed to reset 2FA: " + (data.error || res.statusText));
+      return;
+    }
+    alert("Google Authenticator 2FA reset successfully.");
+    loadTeamMembers();
+  } catch(e) {
+    alert("Error: " + e.message);
   }
 }
 
@@ -1684,6 +1857,10 @@ async function loadFeatureFlags() {
     if (settings.smart_recommendation_mode) {
       document.getElementById('smartRecMode').value = settings.smart_recommendation_mode;
     }
+    if (settings.admin_session_hours) {
+      const sessionEl = document.getElementById('adminSessionHours');
+      if (sessionEl) sessionEl.value = String(settings.admin_session_hours);
+    }
   } catch(e) {
     console.warn("loadFeatureFlags error:", e);
   }
@@ -1697,6 +1874,7 @@ async function saveFeatureFlags() {
   const storeLat  = document.getElementById('darkStoreLat').value.trim();
   const storeLng  = document.getElementById('darkStoreLng').value.trim();
   const recMode   = document.getElementById('smartRecMode').value;
+  const sessionHours = document.getElementById('adminSessionHours')?.value || '4';
 
   const badgeEl = document.getElementById('adminStoreStatusBadge');
   if (badgeEl) {
@@ -1715,6 +1893,7 @@ async function saveFeatureFlags() {
       headers: getAdminHeaders(),
       body: JSON.stringify({
         store_is_online: storeOnline,
+        admin_session_hours: sessionHours,
         feature_fresh_tmrw: freshTmrw,
         feature_subscriptions: subs,
         dark_store_name: storeName,
