@@ -1361,7 +1361,8 @@ async function submitLoginStep1() {
     if (data.devMode && data.debugOtp) {
       otpAlert.style.display = 'block';
       otpAlert.className = 'auth-alert dev';
-      otpAlert.innerHTML = `📢 <strong>Dev Mode Notice:</strong> Resend API key not configured yet.<br>Your security verification code is: <strong style="font-size:1.1rem; color:white; letter-spacing:3px;">${data.debugOtp}</strong>`;
+      const notice = data.emailError ? `⚠️ <strong>Email Service Notice:</strong> ${data.emailError}` : `📢 <strong>Dev Mode Notice:</strong> Resend API key not configured yet.`;
+      otpAlert.innerHTML = `${notice}<br>Your security verification code is: <strong style="font-size:1.1rem; color:white; letter-spacing:3px;">${data.debugOtp}</strong>`;
     } else {
       otpAlert.style.display = 'none';
     }

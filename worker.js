@@ -73,10 +73,16 @@ async function sendEmailOtp(email, otp, env) {
           `
         })
       });
-      return { devMode: false, sent: res.ok };
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Resend API failed:", res.status, errText);
+        // Fail-safe: if Resend fails, fallback so admin is NEVER locked out
+        return { devMode: true, sent: false, error: `Resend error (${res.status})` };
+      }
+      return { devMode: false, sent: true };
     } catch(e) {
       console.error("sendEmailOtp error:", e);
-      return { devMode: false, sent: false, error: e.message };
+      return { devMode: true, sent: false, error: e.message };
     }
   }
 
@@ -377,7 +383,8 @@ export default {
           message: `6-digit security code sent to ${masked}`,
           maskedEmail: masked,
           devMode: emailResult.devMode,
-          debugOtp: emailResult.devMode ? otpCode : undefined
+          debugOtp: emailResult.devMode ? otpCode : undefined,
+          emailError: emailResult.error
         }), { headers: corsHeaders() });
       } catch(err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
