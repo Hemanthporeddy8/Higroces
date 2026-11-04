@@ -425,7 +425,7 @@ export default {
     if (url.pathname === "/api/admin/auth/login-step1" && request.method === "POST") {
       try {
         const body = await request.json();
-        const { email, password } = body;
+        const { email, password, method } = body;
         if (!email || !password) {
           return new Response(JSON.stringify({ error: "Email and password are required." }), { status: 400, headers: corsHeaders() });
         }
@@ -439,7 +439,26 @@ export default {
           return new Response(JSON.stringify({ error: "Invalid email or password." }), { status: 401, headers: corsHeaders() });
         }
 
-        // Credentials valid -> Generate 6-digit cryptographic OTP
+        // Mask email: h***@domain.com
+        const parts = user.email.split('@');
+        const masked = parts[0].length <= 2 ? parts[0] + '***@' + parts[1] : parts[0][0] + '***' + parts[0].slice(-1) + '@' + parts[1];
+        const hasTotp = !!(user.totp_secret && user.totp_secret.trim().length > 0);
+
+        // ── METHOD A: GOOGLE AUTHENTICATOR (ZERO EMAILS SENT) ──
+        if (method === 'totp') {
+          if (!hasTotp) {
+            return new Response(JSON.stringify({ error: "Google Authenticator is not linked to this account yet. Please use 'Send Code to Email' to log in." }), { status: 400, headers: corsHeaders() });
+          }
+          return new Response(JSON.stringify({
+            success: true,
+            method: 'totp',
+            hasTotp: true,
+            message: "Enter the 6-digit code from your Google Authenticator app",
+            maskedEmail: masked
+          }), { headers: corsHeaders() });
+        }
+
+        // ── METHOD B: EMAIL OTP (RESEND) ──
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
         const otpId = crypto.randomUUID();
         const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
@@ -451,15 +470,10 @@ export default {
         // Send OTP via Resend or log
         const emailResult = await sendEmailOtp(user.email, otpCode, env);
 
-        // Mask email: h***@domain.com
-        const parts = user.email.split('@');
-        const masked = parts[0].length <= 2 ? parts[0] + '***@' + parts[1] : parts[0][0] + '***' + parts[0].slice(-1) + '@' + parts[1];
-
-        const hasTotp = !!(user.totp_secret && user.totp_secret.trim().length > 0);
-
         return new Response(JSON.stringify({
           success: true,
-          message: hasTotp ? "Enter Google Authenticator code or check your email" : `6-digit security code sent to ${masked}`,
+          method: 'email',
+          message: `6-digit security code sent to ${masked}`,
           maskedEmail: masked,
           hasTotp,
           devMode: emailResult.devMode,

@@ -657,11 +657,11 @@ input:checked + .toggle-slider:before {
   <div class="auth-card auth-step active" id="authCardLogin">
     <div style="font-size:2.8rem; margin-bottom:10px;">🛡️</div>
     <h2>Amorelot Admin Access</h2>
-    <p>Sign in with your work email and password to receive your 2FA security code.</p>
+    <p>Sign in with your work credentials. Choose Google Authenticator for instant ₹0 login, or request an email OTP.</p>
 
     <div id="loginAlert" class="auth-alert" style="display:none;"></div>
 
-    <form onsubmit="event.preventDefault(); submitLoginStep1();">
+    <form onsubmit="event.preventDefault(); submitLoginWithMethod('totp');">
       <div class="auth-field">
         <label>Email Address</label>
         <input type="email" id="loginEmail" placeholder="admin@amorelot.com" required autocomplete="email" />
@@ -673,7 +673,15 @@ input:checked + .toggle-slider:before {
           <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem;">👁️</button>
         </div>
       </div>
-      <button type="submit" class="btn-auth" id="btnLoginStep1">Continue with Email OTP ➔</button>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+        <button type="submit" class="btn-auth" id="btnLoginTotp" style="background:#0F9D58; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>📱</span> Sign In with Google Authenticator
+        </button>
+        <button type="button" class="btn-auth" id="btnLoginEmail" onclick="submitLoginWithMethod('email')" style="background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.14); color:#cbd5e1; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>✉️</span> Or Send Code to Email
+        </button>
+      </div>
     </form>
 
     <div style="margin-top:16px;">
@@ -684,7 +692,7 @@ input:checked + .toggle-slider:before {
   <!-- 3. STEP 2: 6-DIGIT 2FA VERIFICATION (TOTP & EMAIL OTP) -->
   <div class="auth-card auth-step" id="authCardOtp">
     <div style="font-size:2.8rem; margin-bottom:10px;" id="authOtpIcon">🔐</div>
-    <h2>Two-Factor Security</h2>
+    <h2 id="authOtpH2">Two-Factor Security</h2>
     <p id="otpInstructionText">Enter the 6-digit code from <strong>Google Authenticator</strong> or check your email (<strong id="otpMaskedEmail" style="color:white;"></strong>).</p>
 
     <div id="otpAlert" class="auth-alert" style="display:none;"></div>
@@ -695,15 +703,15 @@ input:checked + .toggle-slider:before {
 
     <form onsubmit="event.preventDefault(); submitVerifyOtp();">
       <div class="auth-field">
-        <label style="text-align:center;">Enter 6-Digit Code (App or Email)</label>
+        <label id="otpInputLabel" style="text-align:center;">Enter 6-Digit Code</label>
         <input type="text" class="otp-box-input" id="otpInput" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="••••••" required autofocus />
       </div>
       <button type="submit" class="btn-auth" id="btnVerifyOtp">Verify &amp; Unlock Console 🔓</button>
     </form>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; gap:8px;">
       <button type="button" class="auth-link-btn" onclick="showAuthStep('login')">← Back</button>
-      <button type="button" class="auth-link-btn" id="btnResendOtp" onclick="resendOtp()">Resend Email Code ✉️</button>
+      <button type="button" class="auth-link-btn" id="btnSwitchOtpMethod" onclick="submitLoginWithMethod('email')">Send code to email ✉️</button>
     </div>
   </div>
 
@@ -1380,43 +1388,97 @@ async function submitAdminSetup() {
   }
 }
 
-// ── STEP 1: EMAIL & PASSWORD VERIFICATION ──
-async function submitLoginStep1() {
+// ── STEP 1: AUTHENTICATION WITH DUAL 2FA OPTIONS (OPTION 3) ──
+let currentAuthMethod = 'totp'; // 'totp' or 'email'
+
+async function submitLoginWithMethod(method = 'totp') {
+  const form = document.querySelector('#authCardLogin form');
+  if (form && !form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const alertEl = document.getElementById('loginAlert');
-  const btn = document.getElementById('btnLoginStep1');
+  const btnTotp = document.getElementById('btnLoginTotp');
+  const btnEmail = document.getElementById('btnLoginEmail');
 
-  btn.disabled = true;
-  btn.textContent = "Verifying & Sending OTP... ⌛";
+  currentAuthMethod = method;
+  if (btnTotp) btnTotp.disabled = true;
+  if (btnEmail) btnEmail.disabled = true;
+  if (method === 'totp' && btnTotp) btnTotp.innerHTML = `<span>⏳</span> Authenticating...`;
+  if (method === 'email' && btnEmail) btnEmail.innerHTML = `<span>⏳</span> Sending OTP to Email...`;
   alertEl.style.display = 'none';
 
   try {
     const res = await fetch(`${AUTH_BASE}/login-step1`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, method })
     });
     const data = await res.json();
     if (!res.ok) {
       alertEl.style.display = 'block';
       alertEl.className = 'auth-alert';
       alertEl.textContent = data.error || "Invalid credentials.";
-      btn.disabled = false;
-      btn.textContent = "Continue with Email OTP ➔";
       return;
     }
 
     pendingLoginEmail = email;
-    document.getElementById('otpMaskedEmail').textContent = data.maskedEmail || email;
+    const otpMasked = data.maskedEmail || email;
+    const maskedEl = document.getElementById('otpMaskedEmail');
+    if (maskedEl) maskedEl.textContent = otpMasked;
+
+    const authOtpIcon = document.getElementById('authOtpIcon');
+    const authOtpH2 = document.getElementById('authOtpH2');
     const instructionEl = document.getElementById('otpInstructionText');
-    if (instructionEl) {
-      if (data.hasTotp) {
-        instructionEl.innerHTML = `Enter the 6-digit code from <strong>Google Authenticator</strong> on your phone, or check your email (<strong style="color:white;">${data.maskedEmail || email}</strong>).`;
-      } else {
-        instructionEl.innerHTML = `We sent a 6-digit verification code to <strong style="color:white;">${data.maskedEmail || email}</strong>.`;
+    const otpTimerPill = document.getElementById('otpTimerPill');
+    const otpLabel = document.getElementById('otpInputLabel');
+    const switchMethodBtn = document.getElementById('btnSwitchOtpMethod');
+
+    if (method === 'totp') {
+      if (authOtpIcon) authOtpIcon.textContent = '📱';
+      if (authOtpH2) authOtpH2.textContent = 'Google Authenticator 2FA';
+      if (instructionEl) {
+        instructionEl.innerHTML = `Enter the 6-digit live code from <strong>Google Authenticator</strong> on your mobile phone.<br><span style="display:inline-block; margin-top:4px; font-size:0.8rem; color:#8cd4b9; font-weight:600;">⚡ Instant 2FA • 0 Resend emails consumed</span>`;
       }
+      if (otpTimerPill) {
+        otpTimerPill.innerHTML = `🛡️ Live Google Authenticator TOTP`;
+        otpTimerPill.style.display = 'inline-block';
+      }
+      if (otpLabel) otpLabel.textContent = 'Enter 6-Digit Authenticator Code';
+      if (switchMethodBtn) {
+        switchMethodBtn.style.display = 'inline-block';
+        switchMethodBtn.textContent = "Don't have your phone? Send code to email ✉️";
+        switchMethodBtn.onclick = () => submitLoginWithMethod('email');
+      }
+      clearInterval(otpCountdownInterval);
+    } else {
+      if (authOtpIcon) authOtpIcon.textContent = '✉️';
+      if (authOtpH2) authOtpH2.textContent = 'Email Verification Code';
+      if (instructionEl) {
+        instructionEl.innerHTML = `We sent a 6-digit verification code to <strong style="color:white;">${otpMasked}</strong>.`;
+      }
+      if (otpTimerPill) {
+        otpTimerPill.style.display = 'inline-block';
+        otpTimerPill.innerHTML = `⏳ Code expires in: <span id="otpCountdown">05:00</span>`;
+      }
+      if (otpLabel) otpLabel.textContent = 'Enter 6-Digit Email Code';
+      if (switchMethodBtn) {
+        if (data.hasTotp) {
+          switchMethodBtn.style.display = 'inline-block';
+          switchMethodBtn.textContent = 'Use Google Authenticator instead 📱';
+          switchMethodBtn.onclick = () => submitLoginWithMethod('totp');
+        } else {
+          switchMethodBtn.style.display = 'inline-block';
+          switchMethodBtn.textContent = 'Resend Email Code ✉️';
+          switchMethodBtn.onclick = () => submitLoginWithMethod('email');
+        }
+      }
+      startOtpCountdown(300); // 5 minutes
     }
+
     showAuthStep('otp');
 
     const otpAlert = document.getElementById('otpAlert');
@@ -1429,20 +1491,33 @@ async function submitLoginStep1() {
       otpAlert.style.display = 'none';
     }
 
-    startOtpCountdown(300); // 5 minutes
-    document.getElementById('otpInput').value = '';
-    document.getElementById('otpInput').focus();
+    const otpInput = document.getElementById('otpInput');
+    if (otpInput) {
+      otpInput.value = '';
+      otpInput.focus();
+    }
   } catch(e) {
     alertEl.style.display = 'block';
     alertEl.className = 'auth-alert';
     alertEl.textContent = "Connection error: " + e.message;
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Continue with Email OTP ➔";
+    if (btnTotp) {
+      btnTotp.disabled = false;
+      btnTotp.innerHTML = `<span>📱</span> Sign In with Google Authenticator`;
+    }
+    if (btnEmail) {
+      btnEmail.disabled = false;
+      btnEmail.innerHTML = `<span>✉️</span> Or Send Code to Email`;
+    }
   }
 }
 
-// ── STEP 2: VERIFY 6-DIGIT EMAIL OTP ──
+// Backward-compatibility wrapper
+function submitLoginStep1() {
+  return submitLoginWithMethod('totp');
+}
+
+// ── STEP 2: VERIFY 6-DIGIT 2FA (APP OR EMAIL) ──
 async function submitVerifyOtp() {
   const otp = document.getElementById('otpInput').value.trim();
   const alertEl = document.getElementById('otpAlert');
@@ -1498,17 +1573,27 @@ function startOtpCountdown(seconds) {
   clearInterval(otpCountdownInterval);
   let remaining = seconds;
   const countEl = document.getElementById('otpCountdown');
-  const resendBtn = document.getElementById('btnResendOtp');
-  if (resendBtn) resendBtn.disabled = true;
+  const switchBtn = document.getElementById('btnSwitchOtpMethod');
+  if (switchBtn && currentAuthMethod === 'email') {
+    switchBtn.disabled = true;
+    switchBtn.style.opacity = '0.5';
+    switchBtn.style.cursor = 'not-allowed';
+  }
 
   function update() {
     const m = Math.floor(remaining / 60);
     const s = remaining % 60;
-    if (countEl) countEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const currentCountEl = document.getElementById('otpCountdown');
+    if (currentCountEl) currentCountEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     if (remaining <= 0) {
       clearInterval(otpCountdownInterval);
-      if (countEl) countEl.textContent = "EXPIRED";
-      if (resendBtn) resendBtn.disabled = false;
+      if (currentCountEl) currentCountEl.textContent = "EXPIRED";
+      if (switchBtn) {
+        switchBtn.disabled = false;
+        switchBtn.style.opacity = '1';
+        switchBtn.style.cursor = 'pointer';
+        switchBtn.textContent = "Resend Email Code ✉️";
+      }
     }
     remaining--;
   }
@@ -1517,7 +1602,7 @@ function startOtpCountdown(seconds) {
 }
 
 function resendOtp() {
-  submitLoginStep1();
+  submitLoginWithMethod('email');
 }
 
 // ── EMERGENCY MASTER KEY LOGIN ──
