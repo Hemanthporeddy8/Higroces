@@ -1215,9 +1215,9 @@ input:checked + .toggle-slider:before {
         </div>
 
         <!-- The Map Container -->
-        <div id="shopMapContainer" style="width:100%; height:260px; border-radius:8px; overflow:hidden; border:1px solid #283B34; position:relative; background:#141C19;">
-          <div id="shopMapLoading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.85rem; z-index:10; background:rgba(20,28,25,0.85);">
-            ⏳ Initializing RydealotMaps...
+        <div id="shopMapContainer" style="width:100%; height:280px; border-radius:8px; overflow:hidden; border:1px solid #283B34; position:relative; background:#141C19;">
+          <div id="shopMapLoading" style="position:absolute; top:10px; left:10px; z-index:5; background:rgba(0,0,0,0.75); color:var(--gold); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; pointer-events:none; transition:opacity 0.3s; display:flex; align-items:center; gap:6px;">
+            <span>🗺️</span> RydealotMaps Vector Active
           </div>
         </div>
 
@@ -1951,6 +1951,11 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
   if (!container) return;
 
   const loadingEl = document.getElementById('shopMapLoading');
+  if (loadingEl) {
+    loadingEl.style.display = 'flex';
+    loadingEl.style.opacity = '1';
+    loadingEl.innerHTML = `<span>🗺️</span> Loading RydealotMaps vector tiles...`;
+  }
 
   try {
     if (!pmtilesProtocolRegistered && window.pmtiles && window.maplibregl) {
@@ -1971,7 +1976,9 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: window.basemaps ? basemaps.layers('protomaps', 'light', { lang: 'en' }) : []
+      layers: (window.basemaps && typeof basemaps.layers === 'function') 
+        ? basemaps.layers('protomaps', 'light', { lang: 'en' }) 
+        : []
     };
 
     if (shopMap) {
@@ -1984,42 +1991,59 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
       container: 'shopMapContainer',
       style: rydealotStyle,
       center: [initialLng, initialLat],
-      zoom: 13
+      zoom: 14,
+      attributionControl: false
     });
 
-    shopMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+    shopMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-    shopMap.on('load', () => {
-      if (loadingEl) loadingEl.style.display = 'none';
+    // 📍 1. ADD DRAGGABLE PIN IMMEDIATELY (Never blocked by tile downloads)
+    shopMarker = new maplibregl.Marker({
+      draggable: true,
+      color: '#FF5E2B'
+    })
+    .setLngLat([initialLng, initialLat])
+    .addTo(shopMap);
 
-      // Create draggable pin marker
-      shopMarker = new maplibregl.Marker({
-        draggable: true,
-        color: '#FF5E2B'
-      })
-      .setLngLat([initialLng, initialLat])
-      .addTo(shopMap);
-
-      shopMarker.on('dragend', () => {
-        const lngLat = shopMarker.getLngLat();
-        updateModalCoordinates(lngLat.lat, lngLat.lng);
-      });
-
-      // Allow clicking on map to move pin
-      shopMap.on('click', (e) => {
-        const { lng, lat } = e.lngLat;
-        shopMarker.setLngLat([lng, lat]);
-        updateModalCoordinates(lat, lng);
-      });
-
-      setTimeout(() => shopMap.resize(), 150);
+    shopMarker.on('dragend', () => {
+      const lngLat = shopMarker.getLngLat();
+      updateModalCoordinates(lngLat.lat, lngLat.lng);
     });
+
+    // 📍 2. ALLOW CLICKING ANYWHERE TO MOVE PIN
+    shopMap.on('click', (e) => {
+      const { lng, lat } = e.lngLat;
+      shopMarker.setLngLat([lng, lat]);
+      updateModalCoordinates(lat, lng);
+    });
+
+    // 📍 3. MULTI-PHASE RESIZE TO PREVENT 0x0 BLANK CANVAS
+    setTimeout(() => { if (shopMap) shopMap.resize(); }, 60);
+    setTimeout(() => { if (shopMap) shopMap.resize(); }, 200);
+    setTimeout(() => { if (shopMap) shopMap.resize(); }, 500);
+
+    // 📍 4. FAST LOADING BADGE FADE OUT
+    const dismissLoading = () => {
+      if (loadingEl) {
+        loadingEl.style.opacity = '0';
+        setTimeout(() => { loadingEl.style.display = 'none'; }, 300);
+      }
+    };
+
+    shopMap.on('styledata', dismissLoading);
+    shopMap.on('load', dismissLoading);
+    shopMap.on('idle', dismissLoading);
+    shopMap.on('error', (e) => {
+      console.warn("RydealotMaps notice:", e);
+      dismissLoading();
+    });
+
+    // Auto-dismiss within 2 seconds regardless of tile network latency
+    setTimeout(dismissLoading, 2000);
+
   } catch(err) {
     console.warn("RydealotMaps init error:", err);
-    if (loadingEl) {
-      loadingEl.textContent = "📍 RydealotMaps ready. Enter coordinates below.";
-      setTimeout(() => { loadingEl.style.display = 'none'; }, 1000);
-    }
+    if (loadingEl) loadingEl.style.display = 'none';
   }
 }
 
@@ -2106,6 +2130,11 @@ function editShop(id) {
 
 function closeShopModal() {
   document.getElementById('shopModal').style.display = 'none';
+  if (shopMap) {
+    try { shopMap.remove(); } catch(e) {}
+    shopMap = null;
+    shopMarker = null;
+  }
 }
 
 async function saveShopModal() {
