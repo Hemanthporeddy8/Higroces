@@ -1206,18 +1206,30 @@ input:checked + .toggle-slider:before {
           <div style="font-size:0.85rem; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:6px;">
             <span>🗺️</span> RydealotMaps Visual Location Pin
           </div>
-          <button type="button" onclick="pinDeviceLocationOnShopMap()" style="background:#0C513F; color:white; border:1px solid #1CA37F; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            <span>📍</span> Pin My Current Device Location
-          </button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <!-- ☀️ Daylight / 🌙 Midnight Theme Switcher -->
+            <button type="button" id="btnMapThemeToggle" onclick="toggleShopMapTheme()" style="background:#1B2623; color:#e0e0e0; border:1px solid #2F3B36; padding:5px 11px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+              <span id="mapThemeIcon">☀️</span> <span id="mapThemeText">Daylight Mode</span>
+            </button>
+            <button type="button" onclick="pinDeviceLocationOnShopMap()" style="background:#0C513F; color:white; border:1px solid #1CA37F; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
+              <span>📍</span> Pin My Current Device Location
+            </button>
+          </div>
         </div>
         <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
           Drag the pin 📍 or click anywhere on the map to set the shop's exact GPS dispatch point.
         </div>
 
-        <!-- The Map Container -->
-        <div id="shopMapContainer" style="width:100%; height:280px; border-radius:8px; overflow:hidden; border:1px solid #283B34; position:relative; background:#141C19;">
-          <div id="shopMapLoading" style="position:absolute; top:10px; left:10px; z-index:5; background:rgba(0,0,0,0.75); color:var(--gold); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; pointer-events:none; transition:opacity 0.3s; display:flex; align-items:center; gap:6px;">
-            <span>🗺️</span> RydealotMaps Vector Active
+        <!-- The Map Container with Progress Meter -->
+        <div id="shopMapContainer" style="width:100%; height:300px; border-radius:8px; overflow:hidden; border:1px solid #283B34; position:relative; background:#e2dfda;">
+          <div id="shopMapLoading" style="position:absolute; top:10px; left:10px; z-index:5; background:rgba(14,20,18,0.92); color:#fff; border:1px solid rgba(255,255,255,0.18); padding:8px 14px; border-radius:8px; font-size:0.75rem; font-weight:600; pointer-events:none; transition:opacity 0.4s; display:flex; flex-direction:column; gap:5px; box-shadow:0 6px 16px rgba(0,0,0,0.5); min-width:180px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span>🗺️ RydealotMaps Vector</span>
+              <strong style="color:var(--gold);" id="shopMapPercent">25%</strong>
+            </div>
+            <div style="width:100%; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden;">
+              <div id="shopMapProgressBar" style="width:25%; height:100%; background:linear-gradient(90deg, #FFB74D, #2ECC71); transition:width 0.25s;"></div>
+            </div>
           </div>
         </div>
 
@@ -1946,16 +1958,59 @@ function updateShopFilterDropdown(shops) {
   if (currentVal) select.value = currentVal;
 }
 
+// ── RYDEALOTMAPS THEME & PROGRESS CONTROLLER ──
+let currentMapTheme = 'light'; // 'light' (Daylight) or 'dark' (Midnight)
+
+function getMapFlavor(theme = 'light') {
+  if (typeof basemaps !== 'undefined') {
+    if (typeof basemaps.namedFlavor === 'function') {
+      return basemaps.namedFlavor(theme);
+    }
+    if (theme === 'dark' && basemaps.DARK) return basemaps.DARK;
+    if (basemaps.LIGHT) return basemaps.LIGHT;
+  }
+  return null;
+}
+
+function toggleShopMapTheme() {
+  currentMapTheme = currentMapTheme === 'light' ? 'dark' : 'light';
+  const icon = document.getElementById('mapThemeIcon');
+  const text = document.getElementById('mapThemeText');
+  const container = document.getElementById('shopMapContainer');
+
+  if (currentMapTheme === 'dark') {
+    if (icon) icon.textContent = '🌙';
+    if (text) text.textContent = 'Midnight Dark';
+    if (container) container.style.background = '#1f1f1f';
+  } else {
+    if (icon) icon.textContent = '☀️';
+    if (text) text.textContent = 'Daylight Mode';
+    if (container) container.style.background = '#e2dfda';
+  }
+
+  const lat = parseFloat(document.getElementById('shopModalLat').value) || 17.987000;
+  const lng = parseFloat(document.getElementById('shopModalLng').value) || 79.535900;
+  initShopMapLibre(lat, lng);
+}
+
 // ── RYDEALOTMAPS MODAL PINNING INITIALIZER ──
 function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
   const container = document.getElementById('shopMapContainer');
   if (!container) return;
 
   const loadingEl = document.getElementById('shopMapLoading');
+  const percentEl = document.getElementById('shopMapPercent');
+  const barEl = document.getElementById('shopMapProgressBar');
+
+  function updateLoadingMeter(percent, text = '') {
+    if (percentEl) percentEl.textContent = `${percent}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
+  }
+
   if (loadingEl) {
     loadingEl.style.display = 'flex';
     loadingEl.style.opacity = '1';
-    loadingEl.innerHTML = `<span>🗺️</span> Loading RydealotMaps vector tiles...`;
+    updateLoadingMeter(25);
   }
 
   try {
@@ -1971,12 +2026,13 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
 
     const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
 
-    // Ensure all 67 vector layers (roads, land, buildings, labels) are loaded
+    // 🎨 Resolve theme flavor palette (all colors properly populated)
+    const flavor = getMapFlavor(currentMapTheme);
     let mapLayers = [];
     if (typeof basemaps !== 'undefined' && typeof basemaps.layers === 'function') {
-      mapLayers = basemaps.layers('protomaps', 'light', { lang: 'en' });
+      mapLayers = basemaps.layers('protomaps', flavor, { lang: 'en' });
     } else if (typeof window !== 'undefined' && window.basemaps && typeof window.basemaps.layers === 'function') {
-      mapLayers = window.basemaps.layers('protomaps', 'light', { lang: 'en' });
+      mapLayers = window.basemaps.layers('protomaps', flavor, { lang: 'en' });
     }
 
     const rydealotStyle = {
@@ -2033,24 +2089,40 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
     setTimeout(() => { if (shopMap) shopMap.resize(); }, 200);
     setTimeout(() => { if (shopMap) shopMap.resize(); }, 500);
 
-    // 📍 4. FAST LOADING BADGE FADE OUT
-    const dismissLoading = () => {
-      if (loadingEl) {
-        loadingEl.style.opacity = '0';
-        setTimeout(() => { loadingEl.style.display = 'none'; }, 300);
-      }
-    };
-
-    shopMap.on('styledata', dismissLoading);
-    shopMap.on('load', dismissLoading);
-    shopMap.on('idle', dismissLoading);
-    shopMap.on('error', (e) => {
-      console.warn("RydealotMaps notice:", e);
-      dismissLoading();
+    // 📍 4. DYNAMIC PROGRESS METER EVENTS
+    shopMap.on('dataloading', () => {
+      updateLoadingMeter(50);
     });
 
-    // Auto-dismiss within 2 seconds regardless of tile network latency
-    setTimeout(dismissLoading, 2000);
+    shopMap.on('styledata', () => {
+      updateLoadingMeter(75);
+    });
+
+    const completeLoading = () => {
+      updateLoadingMeter(100);
+      setTimeout(() => {
+        if (loadingEl) {
+          loadingEl.style.opacity = '0';
+          setTimeout(() => { loadingEl.style.display = 'none'; }, 350);
+        }
+      }, 300);
+    };
+
+    shopMap.on('data', () => {
+      updateLoadingMeter(85);
+    });
+
+    shopMap.on('load', completeLoading);
+    shopMap.on('idle', completeLoading);
+    shopMap.on('error', (e) => {
+      console.warn("RydealotMaps notice:", e);
+      completeLoading();
+    });
+
+    // Fallback: smooth progress tick to 100% within 1.5 seconds
+    setTimeout(() => updateLoadingMeter(70), 500);
+    setTimeout(() => updateLoadingMeter(90), 1000);
+    setTimeout(completeLoading, 1600);
 
   } catch(err) {
     console.warn("RydealotMaps init error:", err);

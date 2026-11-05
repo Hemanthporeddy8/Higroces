@@ -514,7 +514,9 @@
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: basemaps.layers('protomaps', 'light', { lang: 'en' })
+      layers: (typeof basemaps !== 'undefined' && basemaps.namedFlavor) 
+        ? basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'en' }) 
+        : basemaps.layers('protomaps', basemaps.LIGHT, { lang: 'en' })
     };
 
     // ═══════════════════════════════════════════════════════════════
