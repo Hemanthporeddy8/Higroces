@@ -5,8 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Amorelot — Executive Admin Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0C513F">
+
+<!-- RydealotMaps Vector Map Engine -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.2.0/dist/basemaps.js"></script>
+
 <style>
 :root {
   --admin-bg: #0E1412;
@@ -911,6 +917,7 @@ input:checked + .toggle-slider:before {
   <!-- ADMIN NAVIGATION TABS -->
   <div class="admin-nav-tabs">
     <button class="nav-tab-btn active" id="tabBtnOrders" onclick="switchAdminTab('orders')">📦 Orders Directory</button>
+    <button class="nav-tab-btn" id="tabBtnShops" onclick="switchAdminTab('shops')">🏪 Partner Shops</button>
     <button class="nav-tab-btn" id="tabBtnInventory" onclick="switchAdminTab('inventory')">📦 Inventory &amp; Stock Control</button>
     <button class="nav-tab-btn" id="tabBtnMandi" onclick="switchAdminTab('mandi')">🌾 5 AM Mandi Procurement Sheet</button>
     <button class="nav-tab-btn" id="tabBtnSubs" onclick="switchAdminTab('subs')">🔄 Active Subscriptions Manager</button>
@@ -923,6 +930,10 @@ input:checked + .toggle-slider:before {
       <div class="filter-group">
         <input type="text" class="search-input" id="searchInput" placeholder="Search customer, phone, or ID..." oninput="filterOrders()"/>
         
+        <select class="filter-select" id="shopFilter" onchange="filterOrders()">
+          <option value="all">Shop: All Shops</option>
+        </select>
+
         <select class="filter-select" id="statusFilter" onchange="filterOrders()">
           <option value="all">Status: All</option>
           <option value="scheduled">Scheduled (Fresh Tmrw)</option>
@@ -962,6 +973,60 @@ input:checked + .toggle-slider:before {
       </thead>
       <tbody id="ordersTbody">
         <tr><td colspan="7" style="text-align:center; padding:30px;">Loading orders from Cloudflare D1...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VIEW: PARTNER SHOPS & HUBS MANAGER TAB -->
+  <div class="table-card" id="viewShops" style="display:none;">
+    <div class="team-header-row" style="margin-bottom:18px;">
+      <div>
+        <h3 style="font-size:1.15rem; color:var(--gold);">🏪 Partner Shops &amp; Dark Store Dispatch Centers</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+          Manage partner butcher shops, cloud kitchen hubs, delivery radii, and RydealotMaps GPS pins.
+        </p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-add-admin" onclick="openShopModal()" style="background:#0C513F; border:1px solid #1CA37F;">
+          <span>➕</span> Add New Shop
+        </button>
+      </div>
+    </div>
+
+    <!-- Multi-Shop Top Metrics Summary -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
+      <div style="background:#1B2623; border:1px solid var(--card-border); padding:14px; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Registered Shops</div>
+        <div style="font-size:1.6rem; font-weight:900; color:white; margin-top:4px;" id="metricShopCount">0</div>
+      </div>
+      <div style="background:#1B2623; border:1px solid var(--card-border); padding:14px; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Live Online Hubs</div>
+        <div style="font-size:1.6rem; font-weight:900; color:var(--green); margin-top:4px;" id="metricShopActive">0</div>
+      </div>
+      <div style="background:#1B2623; border:1px solid var(--card-border); padding:14px; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Total Orders Handled</div>
+        <div style="font-size:1.6rem; font-weight:900; color:var(--gold); margin-top:4px;" id="metricShopOrders">0</div>
+      </div>
+      <div style="background:#1B2623; border:1px solid var(--card-border); padding:14px; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Multi-Shop Revenue</div>
+        <div style="font-size:1.6rem; font-weight:900; color:var(--primary-light); margin-top:4px;" id="metricShopRevenue">₹0</div>
+      </div>
+    </div>
+
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Shop Details &amp; Hub</th>
+          <th>Owner &amp; Contact</th>
+          <th>Address &amp; Zone</th>
+          <th>RydealotMaps GPS &amp; Radius</th>
+          <th>Orders &amp; Revenue</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="shopsTbody">
+        <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted)">Loading partner shops...</td></tr>
       </tbody>
     </table>
   </div>
@@ -1087,6 +1152,100 @@ input:checked + .toggle-slider:before {
     </table>
   </div>
 
+</div>
+
+<!-- ADD / EDIT SHOP MODAL WITH RYDEALOTMAPS PINNING -->
+<div class="order-modal-bg" id="shopModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:3000; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+  <div class="auth-card" style="max-width:680px; width:100%; text-align:left; max-height:92vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.8rem;">🏪</span>
+        <div>
+          <h2 style="font-size:1.3rem; margin:0;" id="shopModalTitle">Add Partner Shop</h2>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin:0;">Configure shop details and pin exact dispatch location on RydealotMaps.</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeShopModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+
+    <div id="shopModalAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); saveShopModal();">
+      <input type="hidden" id="shopModalId" value="" />
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="auth-field" style="margin-bottom:10px;">
+          <label>Shop / Hub Name *</label>
+          <input type="text" id="shopModalName" placeholder="e.g. Amorelot Warangal Meat Hub" required />
+        </div>
+        <div class="auth-field" style="margin-bottom:10px;">
+          <label>Owner / Manager Name</label>
+          <input type="text" id="shopModalOwner" placeholder="e.g. Hemanth Poreddy" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="auth-field" style="margin-bottom:10px;">
+          <label>Contact Phone Number *</label>
+          <input type="tel" id="shopModalPhone" placeholder="e.g. +91 9876543210" required />
+        </div>
+        <div class="auth-field" style="margin-bottom:10px;">
+          <label>Delivery Radius (km)</label>
+          <input type="number" id="shopModalRadius" min="1" max="50" step="0.5" value="10" required />
+        </div>
+      </div>
+
+      <div class="auth-field" style="margin-bottom:12px;">
+        <label>Physical Address / Landmark</label>
+        <input type="text" id="shopModalAddress" placeholder="Shop #12, Market Road, Near Clock Tower..." />
+      </div>
+
+      <!-- RYDEALOTMAPS INTERACTIVE PIN BOX -->
+      <div style="background:#0F1714; border:1.5px solid var(--card-border); border-radius:12px; padding:14px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:0.85rem; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:6px;">
+            <span>🗺️</span> RydealotMaps Visual Location Pin
+          </div>
+          <button type="button" onclick="pinDeviceLocationOnShopMap()" style="background:#0C513F; color:white; border:1px solid #1CA37F; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
+            <span>📍</span> Pin My Current Device Location
+          </button>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+          Drag the pin 📍 or click anywhere on the map to set the shop's exact GPS dispatch point.
+        </div>
+
+        <!-- The Map Container -->
+        <div id="shopMapContainer" style="width:100%; height:260px; border-radius:8px; overflow:hidden; border:1px solid #283B34; position:relative; background:#141C19;">
+          <div id="shopMapLoading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.85rem; z-index:10; background:rgba(20,28,25,0.85);">
+            ⏳ Initializing RydealotMaps...
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
+          <div class="auth-field" style="margin-bottom:0;">
+            <label style="font-size:0.75rem;">Latitude</label>
+            <input type="number" id="shopModalLat" step="0.000001" placeholder="17.987000" required onchange="onShopCoordManualChange()" />
+          </div>
+          <div class="auth-field" style="margin-bottom:0;">
+            <label style="font-size:0.75rem;">Longitude</label>
+            <input type="number" id="shopModalLng" step="0.000001" placeholder="79.535900" required onchange="onShopCoordManualChange()" />
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem;">
+          <input type="checkbox" id="shopModalActive" checked style="accent-color:var(--green); width:18px; height:18px;" />
+          <span>Operational &amp; Live for Orders (Online)</span>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn-auth" style="background:#20312B; max-width:140px;" onclick="closeShopModal()">Cancel</button>
+        <button type="submit" class="btn-auth" id="btnSaveShop" style="background:var(--primary-light); max-width:200px;">Save Shop 💾</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ADD ADMIN MODAL -->
@@ -1652,21 +1811,393 @@ async function logoutAdmin() {
 function switchAdminTab(tab) {
   currentAdminTab = tab;
   document.getElementById('tabBtnOrders').className = 'nav-tab-btn' + (tab === 'orders' ? ' active' : '');
+  const tabShops = document.getElementById('tabBtnShops');
+  if (tabShops) tabShops.className = 'nav-tab-btn' + (tab === 'shops' ? ' active' : '');
   document.getElementById('tabBtnInventory').className = 'nav-tab-btn' + (tab === 'inventory' ? ' active' : '');
   document.getElementById('tabBtnMandi').className  = 'nav-tab-btn' + (tab === 'mandi'  ? ' active' : '');
   document.getElementById('tabBtnSubs').className   = 'nav-tab-btn' + (tab === 'subs'   ? ' active' : '');
   document.getElementById('tabBtnTeam').className   = 'nav-tab-btn' + (tab === 'team'   ? ' active' : '');
 
   document.getElementById('viewOrders').style.display = tab === 'orders' ? 'block' : 'none';
+  const viewShops = document.getElementById('viewShops');
+  if (viewShops) viewShops.style.display = tab === 'shops' ? 'block' : 'none';
   document.getElementById('viewInventory').style.display = tab === 'inventory' ? 'block' : 'none';
   document.getElementById('viewMandi').style.display  = tab === 'mandi'  ? 'block' : 'none';
   document.getElementById('viewSubs').style.display   = tab === 'subs'   ? 'block' : 'none';
   document.getElementById('viewTeam').style.display   = tab === 'team'   ? 'block' : 'none';
 
+  if (tab === 'shops') loadShops();
   if (tab === 'inventory') loadInventory();
   if (tab === 'mandi') loadMandiSheet();
   if (tab === 'subs') loadSubscriptions();
   if (tab === 'team') loadTeamMembers();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🏪 PARTNER SHOPS & RYDEALOTMAPS PINNING CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+const SHOPS_BASE = '/api/shops';
+let registeredShops = [];
+let shopMap = null;
+let shopMarker = null;
+let pmtilesProtocolRegistered = false;
+
+async function loadShops() {
+  const tbody = document.getElementById('shopsTbody');
+  try {
+    const res = await fetch(`${SHOPS_BASE}?reports=true`, { headers: getAdminHeaders() });
+    if (!res.ok) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted)">Failed to load shops.</td></tr>`;
+      return;
+    }
+    const data = await res.json();
+    registeredShops = data.shops || [];
+
+    // Update Shop Filter Dropdown in Orders tab
+    updateShopFilterDropdown(registeredShops);
+
+    // Update Summary Metrics
+    const totalShops = registeredShops.length;
+    const activeShops = registeredShops.filter(s => s.is_active == 1).length;
+    let totalShopOrders = 0;
+    let totalShopRev = 0;
+
+    registeredShops.forEach(s => {
+      totalShopOrders += Number(s.total_orders) || 0;
+      totalShopRev += Number(s.total_revenue) || 0;
+    });
+
+    const mCount = document.getElementById('metricShopCount');
+    const mActive = document.getElementById('metricShopActive');
+    const mOrders = document.getElementById('metricShopOrders');
+    const mRev = document.getElementById('metricShopRevenue');
+    if (mCount) mCount.textContent = totalShops;
+    if (mActive) mActive.textContent = activeShops;
+    if (mOrders) mOrders.textContent = totalShopOrders;
+    if (mRev) mRev.textContent = '₹' + Math.round(totalShopRev).toLocaleString('en-IN');
+
+    if (!tbody) return;
+    if (registeredShops.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted)">No partner shops registered yet. Click <strong>+ Add New Shop</strong> above.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = registeredShops.map(s => {
+      const isOnline = s.is_active == 1;
+      const statusPill = isOnline
+        ? `<span style="background:rgba(46,204,113,0.15); color:var(--green); border:1px solid rgba(46,204,113,0.3); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700;">🟢 Online</span>`
+        : `<span style="background:rgba(231,76,60,0.15); color:var(--red); border:1px solid rgba(231,76,60,0.3); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700;">🔴 Offline</span>`;
+
+      const ordersCount = Number(s.total_orders) || 0;
+      const revenueVal = Number(s.total_revenue) || 0;
+      const activeOrdersCount = Number(s.active_orders) || 0;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700; color:white; font-size:0.95rem; display:flex; align-items:center; gap:6px;">
+              <span>🏪</span> ${s.name}
+              ${s.id === 'shop_primary_hub' ? '<span style="font-size:0.65rem; background:rgba(255,183,77,0.2); color:var(--gold); border:1px solid rgba(255,183,77,0.4); padding:2px 6px; border-radius:4px; font-weight:800;">CENTRAL HUB</span>' : ''}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:'DM Mono'; margin-top:2px;">ID: ${s.id}</div>
+          </td>
+          <td>
+            <div style="color:#e0e0e0; font-size:0.88rem; font-weight:600;">${s.owner_name || 'Store Manager'}</div>
+            <div style="font-size:0.78rem; color:var(--primary-light); font-family:'DM Mono';">${s.phone || '--'}</div>
+          </td>
+          <td>
+            <div style="color:var(--text-muted); font-size:0.82rem; max-width:220px; white-space:normal;">${s.address || 'Address unlisted'}</div>
+          </td>
+          <td>
+            <div style="font-family:'DM Mono'; font-size:0.8rem; color:white;">📍 ${Number(s.latitude).toFixed(4)}, ${Number(s.longitude).toFixed(4)}</div>
+            <div style="font-size:0.75rem; color:var(--gold);">Radius: ${s.delivery_radius_km || 10} km</div>
+          </td>
+          <td>
+            <div style="font-weight:700; color:white; font-size:0.95rem;">₹${Math.round(revenueVal).toLocaleString('en-IN')}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${ordersCount} orders (${activeOrdersCount} live)</div>
+          </td>
+          <td>
+            <button onclick="toggleShopStatus('${s.id}', ${isOnline})" style="background:none; border:none; cursor:pointer;" title="Click to toggle status">
+              ${statusPill}
+            </button>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn-action-select" onclick="editShop('${s.id}')" style="color:var(--gold); border-color:rgba(255,183,77,0.3);">✏️ Edit</button>
+              ${s.id !== 'shop_primary_hub' ? `<button class="btn-action-select" onclick="deleteShop('${s.id}', '${s.name}')" style="color:var(--red); border-color:rgba(231,76,60,0.3);">🗑️</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch(e) {
+    console.error("loadShops error:", e);
+  }
+}
+
+function updateShopFilterDropdown(shops) {
+  const select = document.getElementById('shopFilter');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '<option value="all">Shop: All Shops</option>' + shops.map(s => {
+    return `<option value="${s.id}">${s.name}</option>`;
+  }).join('');
+  if (currentVal) select.value = currentVal;
+}
+
+// ── RYDEALOTMAPS MODAL PINNING INITIALIZER ──
+function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
+  const container = document.getElementById('shopMapContainer');
+  if (!container) return;
+
+  const loadingEl = document.getElementById('shopMapLoading');
+
+  try {
+    if (!pmtilesProtocolRegistered && window.pmtiles && window.maplibregl) {
+      const protocol = new pmtiles.Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile);
+      pmtilesProtocolRegistered = true;
+    }
+
+    const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
+
+    const rydealotStyle = {
+      version: 8,
+      glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+      sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+      sources: {
+        protomaps: {
+          type: 'vector',
+          url: `pmtiles://${PMTILES_URL}`
+        }
+      },
+      layers: window.basemaps ? basemaps.layers('protomaps', 'light', { lang: 'en' }) : []
+    };
+
+    if (shopMap) {
+      shopMap.remove();
+      shopMap = null;
+      shopMarker = null;
+    }
+
+    shopMap = new maplibregl.Map({
+      container: 'shopMapContainer',
+      style: rydealotStyle,
+      center: [initialLng, initialLat],
+      zoom: 13
+    });
+
+    shopMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    shopMap.on('load', () => {
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      // Create draggable pin marker
+      shopMarker = new maplibregl.Marker({
+        draggable: true,
+        color: '#FF5E2B'
+      })
+      .setLngLat([initialLng, initialLat])
+      .addTo(shopMap);
+
+      shopMarker.on('dragend', () => {
+        const lngLat = shopMarker.getLngLat();
+        updateModalCoordinates(lngLat.lat, lngLat.lng);
+      });
+
+      // Allow clicking on map to move pin
+      shopMap.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        shopMarker.setLngLat([lng, lat]);
+        updateModalCoordinates(lat, lng);
+      });
+
+      setTimeout(() => shopMap.resize(), 150);
+    });
+  } catch(err) {
+    console.warn("RydealotMaps init error:", err);
+    if (loadingEl) {
+      loadingEl.textContent = "📍 RydealotMaps ready. Enter coordinates below.";
+      setTimeout(() => { loadingEl.style.display = 'none'; }, 1000);
+    }
+  }
+}
+
+function updateModalCoordinates(lat, lng) {
+  const latInput = document.getElementById('shopModalLat');
+  const lngInput = document.getElementById('shopModalLng');
+  if (latInput) latInput.value = Number(lat).toFixed(6);
+  if (lngInput) lngInput.value = Number(lng).toFixed(6);
+}
+
+function onShopCoordManualChange() {
+  const lat = parseFloat(document.getElementById('shopModalLat').value);
+  const lng = parseFloat(document.getElementById('shopModalLng').value);
+  if (!isNaN(lat) && !isNaN(lng) && shopMap && shopMarker) {
+    shopMarker.setLngLat([lng, lat]);
+    shopMap.flyTo({ center: [lng, lat], zoom: 14 });
+  }
+}
+
+function pinDeviceLocationOnShopMap() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      updateModalCoordinates(lat, lng);
+      if (shopMap && shopMarker) {
+        shopMarker.setLngLat([lng, lat]);
+        shopMap.flyTo({ center: [lng, lat], zoom: 15 });
+      }
+    },
+    (err) => {
+      alert("Could not access device location: " + err.message);
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+function openShopModal(shopId = null) {
+  const modal = document.getElementById('shopModal');
+  const alertEl = document.getElementById('shopModalAlert');
+  if (alertEl) alertEl.style.display = 'none';
+
+  let lat = 17.987000;
+  let lng = 79.535900;
+
+  if (shopId) {
+    const shop = registeredShops.find(s => s.id === shopId);
+    if (shop) {
+      document.getElementById('shopModalTitle').textContent = 'Edit Partner Shop';
+      document.getElementById('shopModalId').value = shop.id;
+      document.getElementById('shopModalName').value = shop.name || '';
+      document.getElementById('shopModalOwner').value = shop.owner_name || '';
+      document.getElementById('shopModalPhone').value = shop.phone || '';
+      document.getElementById('shopModalAddress').value = shop.address || '';
+      document.getElementById('shopModalRadius').value = shop.delivery_radius_km || 10;
+      document.getElementById('shopModalActive').checked = shop.is_active == 1;
+      lat = Number(shop.latitude) || lat;
+      lng = Number(shop.longitude) || lng;
+      updateModalCoordinates(lat, lng);
+    }
+  } else {
+    document.getElementById('shopModalTitle').textContent = 'Add Partner Shop';
+    document.getElementById('shopModalId').value = '';
+    document.getElementById('shopModalName').value = '';
+    document.getElementById('shopModalOwner').value = '';
+    document.getElementById('shopModalPhone').value = '';
+    document.getElementById('shopModalAddress').value = '';
+    document.getElementById('shopModalRadius').value = 10;
+    document.getElementById('shopModalActive').checked = true;
+    updateModalCoordinates(lat, lng);
+  }
+
+  modal.style.display = 'flex';
+  setTimeout(() => initShopMapLibre(lat, lng), 100);
+}
+
+function editShop(id) {
+  openShopModal(id);
+}
+
+function closeShopModal() {
+  document.getElementById('shopModal').style.display = 'none';
+}
+
+async function saveShopModal() {
+  const id = document.getElementById('shopModalId').value.trim();
+  const name = document.getElementById('shopModalName').value.trim();
+  const owner_name = document.getElementById('shopModalOwner').value.trim();
+  const phone = document.getElementById('shopModalPhone').value.trim();
+  const address = document.getElementById('shopModalAddress').value.trim();
+  const delivery_radius_km = parseFloat(document.getElementById('shopModalRadius').value) || 10;
+  const latitude = parseFloat(document.getElementById('shopModalLat').value);
+  const longitude = parseFloat(document.getElementById('shopModalLng').value);
+  const is_active = document.getElementById('shopModalActive').checked ? 1 : 0;
+  const alertEl = document.getElementById('shopModalAlert');
+  const btn = document.getElementById('btnSaveShop');
+
+  if (!name || isNaN(latitude) || isNaN(longitude)) {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = 'Please enter shop name, latitude, and longitude.';
+    }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving Shop... ⌛';
+
+  try {
+    const isEdit = !!id;
+    const method = isEdit ? 'PATCH' : 'POST';
+    const payload = isEdit
+      ? { id, name, owner_name, phone, address, delivery_radius_km, latitude, longitude, is_active }
+      : { name, owner_name, phone, address, delivery_radius_km, latitude, longitude, is_active };
+
+    const res = await fetch(SHOPS_BASE, {
+      method,
+      headers: { ...getAdminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || 'Failed to save shop.';
+      return;
+    }
+
+    closeShopModal();
+    loadShops();
+  } catch(e) {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = 'Connection error: ' + e.message;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Shop 💾';
+  }
+}
+
+async function toggleShopStatus(id, currentOnline) {
+  try {
+    const res = await fetch(SHOPS_BASE, {
+      method: 'PATCH',
+      headers: { ...getAdminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_active: currentOnline ? 0 : 1 })
+    });
+    if (res.ok) {
+      loadShops();
+    }
+  } catch(e) {
+    console.error('toggleShopStatus error:', e);
+  }
+}
+
+async function deleteShop(id, name) {
+  if (!confirm(`Are you sure you want to remove shop "${name}"?`)) return;
+  try {
+    const res = await fetch(`${SHOPS_BASE}?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    if (res.ok) {
+      loadShops();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to delete shop.');
+    }
+  } catch(e) {
+    alert('Connection error: ' + e.message);
+  }
 }
 
 // ── TEAM & MULTI-ADMIN SECURITY MANAGER ──
@@ -2122,6 +2653,7 @@ async function fetchAdminData() {
     document.getElementById('valDelivered').textContent = data.stats.deliveredCount || 0;
 
     filterOrders();
+    loadShops().catch(() => {});
   } catch(e) {
     console.warn("fetchAdminData error:", e);
   }
@@ -2131,9 +2663,14 @@ function filterOrders() {
   const q = document.getElementById('searchInput').value.toLowerCase().trim();
   const statusF = document.getElementById('statusFilter').value;
   const zoneF = document.getElementById('zoneFilter').value;
+  const shopEl = document.getElementById('shopFilter');
+  const shopF = shopEl ? shopEl.value : 'all';
 
   let list = cachedOrders;
 
+  if (shopF !== 'all') {
+    list = list.filter(o => o.shop_id === shopF || (!o.shop_id && shopF === 'shop_primary_hub'));
+  }
   if (statusF !== 'all') list = list.filter(o => o.status === statusF);
   if (zoneF !== 'all') list = list.filter(o => o.delivery_zone === zoneF);
   if (q) {

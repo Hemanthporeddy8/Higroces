@@ -301,6 +301,36 @@ async function ensureAllSchemas(db) {
   try { await db.prepare("ALTER TABLE orders ADD COLUMN delivery_slot TEXT").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE orders ADD COLUMN cust_lat REAL").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE orders ADD COLUMN cust_lng REAL").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE orders ADD COLUMN shop_id TEXT").run(); } catch(e) {}
+
+  // ── SHOPS / PARTNER HUBS TABLE ──
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS shops (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        owner_name TEXT,
+        phone TEXT,
+        address TEXT,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        delivery_radius_km REAL DEFAULT 10.0,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch(e) {}
+
+  // Auto-seed primary hub if shops table is empty
+  try {
+    const existingShops = await db.prepare("SELECT count(*) as count FROM shops").first();
+    if (!existingShops || existingShops.count === 0) {
+      await db.prepare(`
+        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active)
+        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1)
+      `).run();
+    }
+  } catch(e) {}
 
   // Product Inventory Table (In-Stock / Out-of-Stock toggles)
   try {
@@ -842,6 +872,142 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // API: /api/shops (Partner Shops & Dark Store Hubs)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/shops") {
+      // GET: List all shops (Optionally with aggregated orders & revenue metrics)
+      if (request.method === "GET") {
+        try {
+          const withReports = url.searchParams.get('reports') === 'true';
+          if (withReports) {
+            const adminAuth = await verifyAdminAuth(request, env);
+            if (!adminAuth) {
+              return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
+            }
+            const res = await env.DB.prepare(`
+              SELECT 
+                s.*,
+                COUNT(o.id) as total_orders,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.status != 'expired' THEN o.total_price ELSE 0 END), 0) as total_revenue,
+                COUNT(CASE WHEN o.status = 'pending' OR o.status = 'preparing' OR o.status = 'packed' THEN 1 END) as active_orders,
+                COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as delivered_orders
+              FROM shops s
+              LEFT JOIN orders o ON (o.shop_id = s.id OR (o.shop_id IS NULL AND s.id = 'shop_primary_hub'))
+              GROUP BY s.id
+              ORDER BY s.created_at DESC
+            `).all();
+            return new Response(JSON.stringify({ shops: res.results || [] }), { headers: corsHeaders() });
+          }
+
+          // Public / Fast query for storefront & riders
+          const res = await env.DB.prepare("SELECT * FROM shops ORDER BY created_at DESC").all();
+          return new Response(JSON.stringify({ shops: res.results || [] }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+
+      // POST: Admin creates a new partner shop
+      if (request.method === "POST") {
+        try {
+          const adminAuth = await verifyAdminAuth(request, env);
+          if (!adminAuth) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
+          }
+
+          const body = await request.json();
+          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active } = body;
+
+          if (!name || latitude === undefined || longitude === undefined) {
+            return new Response(JSON.stringify({ error: "Shop Name, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
+          }
+
+          const id = 'shop_' + crypto.randomUUID().slice(0, 8);
+          const lat = Number(latitude);
+          const lng = Number(longitude);
+          const radius = Number(delivery_radius_km) || 10.0;
+          const active = (is_active === false || is_active === 0 || is_active === '0') ? 0 : 1;
+
+          await env.DB.prepare(`
+            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            shop: { id, name, owner_name, phone, address, latitude: lat, longitude: lng, delivery_radius_km: radius, is_active: active }
+          }), { status: 201, headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+
+      // PATCH: Admin updates an existing shop
+      if (request.method === "PATCH") {
+        try {
+          const adminAuth = await verifyAdminAuth(request, env);
+          if (!adminAuth) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
+          }
+
+          const body = await request.json();
+          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active } = body;
+
+          if (!id) {
+            return new Response(JSON.stringify({ error: "Shop ID is required for update." }), { status: 400, headers: corsHeaders() });
+          }
+
+          const existing = await env.DB.prepare("SELECT * FROM shops WHERE id = ?").bind(id).first();
+          if (!existing) {
+            return new Response(JSON.stringify({ error: "Shop not found." }), { status: 404, headers: corsHeaders() });
+          }
+
+          const newName = name !== undefined ? name.trim() : existing.name;
+          const newOwner = owner_name !== undefined ? owner_name.trim() : existing.owner_name;
+          const newPhone = phone !== undefined ? phone.trim() : existing.phone;
+          const newAddress = address !== undefined ? address.trim() : existing.address;
+          const newLat = latitude !== undefined ? Number(latitude) : existing.latitude;
+          const newLng = longitude !== undefined ? Number(longitude) : existing.longitude;
+          const newRadius = delivery_radius_km !== undefined ? Number(delivery_radius_km) : existing.delivery_radius_km;
+          const newActive = is_active !== undefined ? ((is_active === false || is_active === 0 || is_active === '0') ? 0 : 1) : existing.is_active;
+
+          await env.DB.prepare(`
+            UPDATE shops 
+            SET name = ?, owner_name = ?, phone = ?, address = ?, latitude = ?, longitude = ?, delivery_radius_km = ?, is_active = ?
+            WHERE id = ?
+          `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, id).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            shop: { id, name: newName, owner_name: newOwner, phone: newPhone, address: newAddress, latitude: newLat, longitude: newLng, delivery_radius_km: newRadius, is_active: newActive }
+          }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+
+      // DELETE: Admin removes a partner shop
+      if (request.method === "DELETE") {
+        try {
+          const adminAuth = await verifyAdminAuth(request, env);
+          if (!adminAuth) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
+          }
+
+          const id = url.searchParams.get('id');
+          if (!id) {
+            return new Response(JSON.stringify({ error: "Shop ID is required." }), { status: 400, headers: corsHeaders() });
+          }
+
+          await env.DB.prepare("DELETE FROM shops WHERE id = ?").bind(id).run();
+          return new Response(JSON.stringify({ success: true, deletedId: id }), { headers: corsHeaders() });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // API: /api/subscriptions (Daily Repeat Engine)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/subscriptions") {
@@ -976,14 +1142,15 @@ export default {
 
           const cust_lat = (body.cust_lat !== undefined && body.cust_lat !== null && body.cust_lat !== '') ? Number(body.cust_lat) : null;
           const cust_lng = (body.cust_lng !== undefined && body.cust_lng !== null && body.cust_lng !== '') ? Number(body.cust_lng) : null;
+          const shop_id = body.shop_id || 'shop_primary_hub';
 
           await env.DB.prepare(`
             INSERT INTO orders (
               id, customer_name, customer_phone, delivery_address, 
               special_notes, items, subtotal, delivery_fee, total_price, 
               status, delivery_zone, delivery_otp, order_type, delivery_slot,
-              cust_lat, cust_lng, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              cust_lat, cust_lng, shop_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
           `).bind(
             id,
             body.customer_name || 'Customer',
@@ -1000,10 +1167,11 @@ export default {
             order_type,
             delivery_slot,
             cust_lat,
-            cust_lng
+            cust_lng,
+            shop_id
           ).run();
 
-          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, ...body };
+          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, shop_id, ...body };
           return new Response(JSON.stringify({ success: true, order: created }), {
             status: 201,
             headers: corsHeaders()
@@ -1032,9 +1200,18 @@ export default {
               });
             }
 
-            const allOrdersRes = await env.DB.prepare(`
-              SELECT * FROM orders ORDER BY datetime(created_at) DESC LIMIT 100
-            `).all();
+            const shopFilter = url.searchParams.get('shop_id');
+            let query = "SELECT * FROM orders";
+            let params = [];
+            if (shopFilter && shopFilter !== 'all') {
+              query += " WHERE (shop_id = ? OR (shop_id IS NULL AND ? = 'shop_primary_hub'))";
+              params.push(shopFilter, shopFilter);
+            }
+            query += " ORDER BY datetime(created_at) DESC LIMIT 100";
+
+            const allOrdersRes = params.length > 0 
+              ? await env.DB.prepare(query).bind(...params).all()
+              : await env.DB.prepare(query).all();
             const allOrders = allOrdersRes.results || [];
 
             let totalRevenue = 0;
