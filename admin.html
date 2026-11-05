@@ -1840,6 +1840,7 @@ const SHOPS_BASE = '/api/shops';
 let registeredShops = [];
 let shopMap = null;
 let shopMarker = null;
+let rydealotProtocol = null;
 let pmtilesProtocolRegistered = false;
 
 async function loadShops() {
@@ -1958,13 +1959,25 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
   }
 
   try {
-    if (!pmtilesProtocolRegistered && window.pmtiles && window.maplibregl) {
-      const protocol = new pmtiles.Protocol();
-      maplibregl.addProtocol('pmtiles', protocol.tile);
-      pmtilesProtocolRegistered = true;
+    if (!pmtilesProtocolRegistered) {
+      const PMTilesLib = (typeof pmtiles !== 'undefined') ? pmtiles : window.pmtiles;
+      const MapLibreLib = (typeof maplibregl !== 'undefined') ? maplibregl : window.maplibregl;
+      if (PMTilesLib && MapLibreLib) {
+        rydealotProtocol = new PMTilesLib.Protocol();
+        MapLibreLib.addProtocol('pmtiles', rydealotProtocol.tile);
+        pmtilesProtocolRegistered = true;
+      }
     }
 
     const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
+
+    // Ensure all 67 vector layers (roads, land, buildings, labels) are loaded
+    let mapLayers = [];
+    if (typeof basemaps !== 'undefined' && typeof basemaps.layers === 'function') {
+      mapLayers = basemaps.layers('protomaps', 'light', { lang: 'en' });
+    } else if (typeof window !== 'undefined' && window.basemaps && typeof window.basemaps.layers === 'function') {
+      mapLayers = window.basemaps.layers('protomaps', 'light', { lang: 'en' });
+    }
 
     const rydealotStyle = {
       version: 8,
@@ -1976,9 +1989,7 @@ function initShopMapLibre(initialLat = 17.987000, initialLng = 79.535900) {
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: (window.basemaps && typeof basemaps.layers === 'function') 
-        ? basemaps.layers('protomaps', 'light', { lang: 'en' }) 
-        : []
+      layers: mapLayers
     };
 
     if (shopMap) {
