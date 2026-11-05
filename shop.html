@@ -694,14 +694,56 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
       <span class="status-dot"></span>
       <span id="storeStatusText">ONLINE</span>
     </button>
-    <select class="zone-select" id="shopPartnerSelect" onchange="onShopSelectChange(this.value)" style="max-width:240px; font-weight:700;">
-      <option value="all">🏢 All Partner Hubs</option>
-    </select>
+    <!-- 🔒 LOCKED MERCHANT IDENTITY BADGE (NO ACCESS TO OTHER SHOPS) -->
+    <div id="merchantIdentityBadge" style="display:none; align-items:center; gap:8px; background:rgba(12,81,63,0.3); border:1px solid rgba(46,204,113,0.35); padding:5px 12px; border-radius:8px;">
+      <span id="merchantShopIcon" style="font-size:1.15rem;">🏪</span>
+      <div style="line-height:1.2; text-align:left;">
+        <div style="font-weight:800; font-size:0.85rem; color:#fff;" id="merchantShopName">Partner Shop</div>
+        <div style="font-size:0.68rem; color:#A3D9C9; font-weight:700;" id="merchantCategoryBadge">MERCHANT TERMINAL</div>
+      </div>
+      <button type="button" onclick="merchantLogout()" title="Sign out of this shop terminal" style="background:rgba(231,76,60,0.2); border:1px solid rgba(231,76,60,0.4); color:#FFA39E; padding:4px 8px; border-radius:5px; font-size:0.72rem; font-weight:700; cursor:pointer; margin-left:6px;">
+        Sign Out
+      </button>
+    </div>
     <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()">
       <span>🔄</span> Refresh
     </button>
   </div>
 </header>
+
+<!-- MERCHANT AUTHENTICATION OVERLAY (0 SMS BILLS) -->
+<div id="merchantLoginModal" style="display:none; position:fixed; inset:0; background:rgba(10,14,13,0.94); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#151D1A; border:1.5px solid #283932; border-radius:18px; width:100%; max-width:420px; padding:30px 24px; box-shadow:0 16px 40px rgba(0,0,0,0.6); text-align:center;">
+    <div style="font-size:2.4rem; margin-bottom:10px;">🏪</div>
+    <h2 style="font-family:'Playfair Display', serif; font-size:1.5rem; color:#fff; margin-bottom:6px;">Merchant Partner Station</h2>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:20px;">
+      Enter your shop email and 6-digit passcode to access your live order queue and stock control.
+    </p>
+
+    <div id="merchantLoginAlert" style="display:none; background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.4); color:#FFA39E; padding:10px; border-radius:8px; font-size:0.82rem; font-weight:600; margin-bottom:16px; text-align:left;"></div>
+
+    <form onsubmit="handleMerchantLogin(event)" style="text-align:left;">
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.8rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Shop Login Email</label>
+        <input type="email" id="mLoginEmail" placeholder="e.g. balaji@higroces.com" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block; font-size:0.8rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">6-Digit Secret Passcode / PIN</label>
+        <input type="password" id="mLoginPasscode" placeholder="Enter your 6-digit passcode" minlength="4" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+      </div>
+
+      <button type="submit" id="btnMerchantLogin" style="width:100%; background:linear-gradient(135deg, #0C513F, #1CA37F); color:white; border:none; padding:13px; border-radius:9px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>🔐</span> Sign In to My Shop
+      </button>
+    </form>
+
+    <div style="margin-top:20px; font-size:0.8rem; color:var(--text-muted); border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
+      Want to list your shop on HiGroces? <br>
+      <a href="/partner.html" style="color:var(--accent-gold); font-weight:700; text-decoration:none;">Apply to become a Partner Shop →</a>
+    </div>
+  </div>
+</div>
 
 <!-- STORE CLOSED ALERT BANNER -->
 <div class="store-closed-notice" id="shopClosedNotice">
@@ -952,40 +994,124 @@ function switchStation(station) {
   renderKdsOrders(rawOrdersCache);
 }
 
-let currentSelectedShopId = new URLSearchParams(window.location.search).get('shopId') || localStorage.getItem('kds_shop_id') || 'all';
+// ═══════════════════════════════════════════════
+// MERCHANT PARTNER AUTHENTICATION (0 SMS BILLS)
+// ═══════════════════════════════════════════════
+let currentMerchant = null;
 
-async function loadKdsShops() {
-  const sel = document.getElementById('shopPartnerSelect') || document.getElementById('zoneSelect');
-  if (!sel) return;
-  try {
-    const res = await fetch('/api/shops');
-    if (!res.ok) return;
-    const data = await res.json();
-    const shops = data.shops || [];
-    sel.innerHTML = '<option value="all">🏢 All Partner Hubs</option>' + shops.map(s => {
-      const emoji = s.category === 'grocery' ? '🛒' : (s.category === 'meat' ? '🥩' : '🏪');
-      return `<option value="${s.id}">${emoji} ${s.name}</option>`;
-    }).join('');
-    if (currentSelectedShopId && Array.from(sel.options).some(o => o.value === currentSelectedShopId)) {
-      sel.value = currentSelectedShopId;
-    }
-  } catch(e) {
-    console.warn("loadKdsShops err:", e);
-  }
+function getShopAuthHeaders() {
+  const token = localStorage.getItem('amorelot_shop_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-function onShopSelectChange(shopId) {
-  currentSelectedShopId = shopId;
-  localStorage.setItem('kds_shop_id', shopId);
+async function checkMerchantSession() {
+  try {
+    const res = await fetch('/api/shop/auth/session', {
+      headers: getShopAuthHeaders()
+    });
+    const data = await res.json();
+    if (res.ok && data.authenticated && data.shop) {
+      currentMerchant = data.shop;
+      onMerchantAuthenticated();
+      return true;
+    }
+  } catch(e) {
+    console.warn("Session check error:", e);
+  }
+  showMerchantLoginModal();
+  return false;
+}
+
+function onMerchantAuthenticated() {
+  const modal = document.getElementById('merchantLoginModal');
+  if (modal) modal.style.display = 'none';
+
+  const badge = document.getElementById('merchantIdentityBadge');
+  const nameEl = document.getElementById('merchantShopName');
+  const iconEl = document.getElementById('merchantShopIcon');
+  const catEl = document.getElementById('merchantCategoryBadge');
+
+  if (badge) badge.style.display = 'flex';
+  if (nameEl) nameEl.textContent = currentMerchant.name;
+  if (iconEl) {
+    iconEl.textContent = currentMerchant.category === 'grocery' ? '🛒' : (currentMerchant.category === 'meat' ? '🥩' : '🏪');
+  }
+  if (catEl) {
+    catEl.textContent = (currentMerchant.category || 'ALL').toUpperCase() + ' STATION';
+  }
+
   fetchShopOrders();
 }
 
-async function fetchShopOrders() {
-  const sel = document.getElementById('shopPartnerSelect') || document.getElementById('zoneSelect');
-  const shopId = sel ? sel.value : (currentSelectedShopId || 'all');
+function showMerchantLoginModal() {
+  const modal = document.getElementById('merchantLoginModal');
+  const badge = document.getElementById('merchantIdentityBadge');
+  if (modal) modal.style.display = 'flex';
+  if (badge) badge.style.display = 'none';
+}
+
+async function handleMerchantLogin(e) {
+  e.preventDefault();
+  const alertEl = document.getElementById('merchantLoginAlert');
+  const btn = document.getElementById('btnMerchantLogin');
+  alertEl.style.display = 'none';
+
+  const email = document.getElementById('mLoginEmail').value.trim();
+  const passcode = document.getElementById('mLoginPasscode').value.trim();
+
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Verifying...';
+
   try {
-    const url = `${API_BASE}?shop=true&shop_id=${encodeURIComponent(shopId)}`;
-    const res = await fetch(url);
+    const res = await fetch('/api/shop/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, passcode })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Login failed');
+    }
+
+    if (data.token) {
+      localStorage.setItem('amorelot_shop_token', data.token);
+    }
+    currentMerchant = data.shop;
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔐</span> Sign In to My Shop';
+    onMerchantAuthenticated();
+  } catch(err) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔐</span> Sign In to My Shop';
+    alertEl.textContent = err.message;
+    alertEl.style.display = 'block';
+  }
+}
+
+async function merchantLogout() {
+  if (!confirm("Are you sure you want to sign out of this shop terminal?")) return;
+  try {
+    await fetch('/api/shop/auth/logout', {
+      method: 'POST',
+      headers: getShopAuthHeaders()
+    });
+  } catch(e) {}
+  localStorage.removeItem('amorelot_shop_token');
+  currentMerchant = null;
+  location.reload();
+}
+
+async function fetchShopOrders() {
+  if (!currentMerchant) return;
+  try {
+    const url = `${API_BASE}?shop=true`;
+    const res = await fetch(url, {
+      headers: getShopAuthHeaders()
+    });
+    if (res.status === 401) {
+      showMerchantLoginModal();
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     rawOrdersCache = data.orders || [];
@@ -1538,7 +1664,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-  loadKdsShops().then(() => fetchShopOrders());
+  checkMerchantSession();
   loadStoreStatus();
   setInterval(fetchShopOrders, 5000);
   setInterval(loadStoreStatus, 10000);

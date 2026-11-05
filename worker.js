@@ -207,6 +207,37 @@ function isFounder(adminAuth) {
   return adminAuth.role === 'founder' || adminAuth.role === 'super_admin';
 }
 
+// ── SHOPKEEPER MERCHANT AUTHENTICATION ENGINE (0 SMS BILLS) ──
+async function verifyShopAuth(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  let token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+  if (!token) {
+    token = request.headers.get('X-Shop-Token');
+  }
+  if (!token) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/shop_session=([a-zA-Z0-9_\-]+)/);
+    if (match) token = match[1];
+  }
+  if (!token) return null;
+
+  try {
+    const session = await env.DB.prepare(`
+      SELECT s.token, s.expires_at, sh.id, sh.name, sh.owner_name, sh.phone, sh.email, sh.address, sh.category, sh.is_active, sh.approval_status
+      FROM shop_sessions s
+      JOIN shops sh ON s.shop_id = sh.id
+      WHERE s.token = ? AND s.expires_at > ?
+    `).bind(token, Date.now()).first();
+
+    if (session && session.is_active == 1 && (session.approval_status === 'approved' || !session.approval_status)) {
+      return session;
+    }
+  } catch(e) {
+    console.warn("verifyShopAuth error:", e);
+  }
+  return null;
+}
+
 // ── ZERO-D1-WRITE STORE STATUS CONTROLLER (KV / EDGE CACHE) ──
 let globalStoreIsOnline = true;
 
@@ -335,14 +366,30 @@ async function ensureAllSchemas(db) {
   } catch(e) {}
 
   try { await db.prepare("ALTER TABLE shops ADD COLUMN category TEXT DEFAULT 'all'").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN email TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN passcode_hash TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN salt TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN approval_status TEXT DEFAULT 'approved'").run(); } catch(e) {}
+
+  // Shop Sessions Table (Merchant Login Sessions)
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS shop_sessions (
+        token TEXT PRIMARY KEY,
+        shop_id TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch(e) {}
 
   // Auto-seed primary hub if shops table is empty
   try {
     const existingShops = await db.prepare("SELECT count(*) as count FROM shops").first();
     if (!existingShops || existingShops.count === 0) {
       await db.prepare(`
-        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category)
-        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1, 'meat')
+        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, approval_status)
+        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1, 'meat', 'hub@amorelot.com', 'approved')
       `).run();
     }
   } catch(e) {}
@@ -351,6 +398,23 @@ async function ensureAllSchemas(db) {
   try {
     await db.prepare("UPDATE shops SET category = 'grocery' WHERE name LIKE '%kiranam%' AND (category IS NULL OR category = 'all')").run();
     await db.prepare("UPDATE shops SET category = 'meat' WHERE (name LIKE '%meat%' OR name LIKE '%butcher%') AND (category IS NULL OR category = 'all')").run();
+    await db.prepare("UPDATE shops SET approval_status = 'approved' WHERE approval_status IS NULL").run();
+  } catch(e) {}
+
+  // Auto-seed initial 6-digit merchant passcodes ('123456') for existing shops if unassigned
+  try {
+    const s1 = await db.prepare("SELECT passcode_hash FROM shops WHERE id = 'shop_primary_hub'").first();
+    if (!s1 || !s1.passcode_hash) {
+      const salt1 = generateSalt();
+      const hash1 = await hashPassword('123456', salt1);
+      await db.prepare("UPDATE shops SET email = 'hub@amorelot.com', passcode_hash = ?, salt = ?, approval_status = 'approved' WHERE id = 'shop_primary_hub'").bind(hash1, salt1).run();
+    }
+    const s2 = await db.prepare("SELECT passcode_hash FROM shops WHERE id = 'shop_84917e65'").first();
+    if (!s2 || !s2.passcode_hash) {
+      const salt2 = generateSalt();
+      const hash2 = await hashPassword('123456', salt2);
+      await db.prepare("UPDATE shops SET email = 'balaji@higroces.com', passcode_hash = ?, salt = ?, approval_status = 'approved' WHERE id = 'shop_84917e65'").bind(hash2, salt2).run();
+    }
   } catch(e) {}
 
   // Product Inventory Table (In-Stock / Out-of-Stock toggles)
@@ -896,9 +960,19 @@ export default {
     // API: /api/shops (Partner Shops & Dark Store Hubs)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/shops") {
-      // GET: List all shops (Optionally with aggregated orders & revenue metrics)
+      // GET: List all shops (Optionally with aggregated orders & revenue metrics, or pending applications)
       if (request.method === "GET") {
         try {
+          const withPending = url.searchParams.get('pending') === 'true';
+          if (withPending) {
+            const adminAuth = await verifyAdminAuth(request, env);
+            if (!adminAuth) {
+              return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
+            }
+            const res = await env.DB.prepare("SELECT * FROM shops WHERE approval_status = 'pending' ORDER BY datetime(created_at) DESC").all();
+            return new Response(JSON.stringify({ pendingShops: res.results || [] }), { headers: corsHeaders() });
+          }
+
           const withReports = url.searchParams.get('reports') === 'true';
           if (withReports) {
             const adminAuth = await verifyAdminAuth(request, env);
@@ -907,21 +981,34 @@ export default {
             }
             const res = await env.DB.prepare(`
               SELECT 
-                s.*,
+                s.id, s.name, s.owner_name, s.phone, s.email, s.address, s.latitude, s.longitude,
+                s.delivery_radius_km, s.is_active, s.category, s.approval_status, s.created_at,
                 COUNT(o.id) as total_orders,
                 COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.status != 'expired' THEN o.total_price ELSE 0 END), 0) as total_revenue,
                 COUNT(CASE WHEN o.status = 'pending' OR o.status = 'preparing' OR o.status = 'packed' THEN 1 END) as active_orders,
                 COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as delivered_orders
               FROM shops s
               LEFT JOIN orders o ON (o.shop_id = s.id OR (o.shop_id IS NULL AND s.id = 'shop_primary_hub'))
+              WHERE s.approval_status != 'pending' OR s.approval_status IS NULL
               GROUP BY s.id
               ORDER BY s.created_at DESC
             `).all();
-            return new Response(JSON.stringify({ shops: res.results || [] }), { headers: corsHeaders() });
+
+            const pendingCountRow = await env.DB.prepare("SELECT COUNT(*) as count FROM shops WHERE approval_status = 'pending'").first();
+
+            return new Response(JSON.stringify({ 
+              shops: res.results || [],
+              pendingCount: pendingCountRow ? pendingCountRow.count : 0
+            }), { headers: corsHeaders() });
           }
 
-          // Public / Fast query for storefront & riders
-          const res = await env.DB.prepare("SELECT * FROM shops ORDER BY created_at DESC").all();
+          // Public storefront & riders query: ONLY return active and approved shops
+          const res = await env.DB.prepare(`
+            SELECT id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, created_at 
+            FROM shops 
+            WHERE is_active = 1 AND (approval_status IS NULL OR approval_status = 'approved') 
+            ORDER BY created_at DESC
+          `).all();
           return new Response(JSON.stringify({ shops: res.results || [] }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
@@ -937,7 +1024,7 @@ export default {
           }
 
           const body = await request.json();
-          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category } = body;
+          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode } = body;
 
           if (!name || latitude === undefined || longitude === undefined) {
             return new Response(JSON.stringify({ error: "Shop Name, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
@@ -949,22 +1036,30 @@ export default {
           const radius = Number(delivery_radius_km) || 10.0;
           const active = (is_active === false || is_active === 0 || is_active === '0') ? 0 : 1;
           const cat = (category === 'grocery' || category === 'meat') ? category : 'all';
+          const emailVal = (email || '').toLowerCase().trim();
+
+          let hash = null;
+          let salt = null;
+          if (passcode && String(passcode).trim()) {
+            salt = generateSalt();
+            hash = await hashPassword(String(passcode).trim(), salt);
+          }
 
           await env.DB.prepare(`
-            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active, cat).run();
+            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode_hash, salt, approval_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
+          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active, cat, emailVal, hash, salt).run();
 
           return new Response(JSON.stringify({
             success: true,
-            shop: { id, name, owner_name, phone, address, latitude: lat, longitude: lng, delivery_radius_km: radius, is_active: active, category: cat }
+            shop: { id, name, owner_name, phone, address, latitude: lat, longitude: lng, delivery_radius_km: radius, is_active: active, category: cat, email: emailVal }
           }), { status: 201, headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
       }
 
-      // PATCH: Admin updates an existing shop
+      // PATCH: Admin updates an existing shop or approves pending application
       if (request.method === "PATCH") {
         try {
           const adminAuth = await verifyAdminAuth(request, env);
@@ -973,7 +1068,7 @@ export default {
           }
 
           const body = await request.json();
-          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category } = body;
+          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode, action } = body;
 
           if (!id) {
             return new Response(JSON.stringify({ error: "Shop ID is required for update." }), { status: 400, headers: corsHeaders() });
@@ -982,6 +1077,11 @@ export default {
           const existing = await env.DB.prepare("SELECT * FROM shops WHERE id = ?").bind(id).first();
           if (!existing) {
             return new Response(JSON.stringify({ error: "Shop not found." }), { status: 404, headers: corsHeaders() });
+          }
+
+          if (action === 'approve') {
+            await env.DB.prepare("UPDATE shops SET approval_status = 'approved', is_active = 1 WHERE id = ?").bind(id).run();
+            return new Response(JSON.stringify({ success: true, approvedId: id, message: "Shop approved and activated successfully!" }), { headers: corsHeaders() });
           }
 
           const newName = name !== undefined ? name.trim() : existing.name;
@@ -993,16 +1093,24 @@ export default {
           const newRadius = delivery_radius_km !== undefined ? Number(delivery_radius_km) : existing.delivery_radius_km;
           const newActive = is_active !== undefined ? ((is_active === false || is_active === 0 || is_active === '0') ? 0 : 1) : existing.is_active;
           const newCategory = category !== undefined ? category : (existing.category || 'all');
+          const newEmail = email !== undefined ? email.toLowerCase().trim() : existing.email;
 
           await env.DB.prepare(`
             UPDATE shops 
-            SET name = ?, owner_name = ?, phone = ?, address = ?, latitude = ?, longitude = ?, delivery_radius_km = ?, is_active = ?, category = ?
+            SET name = ?, owner_name = ?, phone = ?, address = ?, latitude = ?, longitude = ?, delivery_radius_km = ?, is_active = ?, category = ?, email = ?
             WHERE id = ?
-          `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, newCategory, id).run();
+          `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, newCategory, newEmail, id).run();
+
+          // If admin resets or updates merchant passcode
+          if (passcode && String(passcode).trim()) {
+            const salt = generateSalt();
+            const hash = await hashPassword(String(passcode).trim(), salt);
+            await env.DB.prepare("UPDATE shops SET passcode_hash = ?, salt = ? WHERE id = ?").bind(hash, salt, id).run();
+          }
 
           return new Response(JSON.stringify({
             success: true,
-            shop: { id, name: newName, owner_name: newOwner, phone: newPhone, address: newAddress, latitude: newLat, longitude: newLng, delivery_radius_km: newRadius, is_active: newActive, category: newCategory }
+            shop: { id, name: newName, owner_name: newOwner, phone: newPhone, address: newAddress, latitude: newLat, longitude: newLng, delivery_radius_km: newRadius, is_active: newActive, category: newCategory, email: newEmail }
           }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
@@ -1023,10 +1131,158 @@ export default {
           }
 
           await env.DB.prepare("DELETE FROM shops WHERE id = ?").bind(id).run();
+          await env.DB.prepare("DELETE FROM shop_sessions WHERE shop_id = ?").bind(id).run();
           return new Response(JSON.stringify({ success: true, deletedId: id }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/shop/auth/* (Merchant Email + Passcode Authentication)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/shop/auth/login" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const { email, passcode } = body;
+        if (!email || !passcode) {
+          return new Response(JSON.stringify({ error: "Email and Passcode are required." }), { status: 400, headers: corsHeaders() });
+        }
+
+        const shop = await env.DB.prepare("SELECT * FROM shops WHERE LOWER(email) = LOWER(?)").bind(email.trim()).first();
+        if (!shop || !shop.passcode_hash || !shop.salt) {
+          return new Response(JSON.stringify({ error: "Invalid merchant credentials." }), { status: 401, headers: corsHeaders() });
+        }
+
+        if (shop.approval_status === 'pending') {
+          return new Response(JSON.stringify({ error: "Your shop application is still under review by the admin." }), { status: 403, headers: corsHeaders() });
+        }
+
+        if (shop.approval_status === 'rejected' || shop.is_active == 0) {
+          return new Response(JSON.stringify({ error: "This merchant account is currently inactive." }), { status: 403, headers: corsHeaders() });
+        }
+
+        const computed = await hashPassword(String(passcode).trim(), shop.salt);
+        if (computed !== shop.passcode_hash) {
+          return new Response(JSON.stringify({ error: "Invalid merchant credentials." }), { status: 401, headers: corsHeaders() });
+        }
+
+        const token = crypto.randomUUID();
+        const expires_at = Date.now() + (30 * 24 * 3600 * 1000); // 30 days
+        await env.DB.prepare("INSERT INTO shop_sessions (token, shop_id, expires_at) VALUES (?, ?, ?)").bind(token, shop.id, expires_at).run();
+
+        const headers = corsHeaders();
+        headers['Set-Cookie'] = `shop_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`;
+
+        return new Response(JSON.stringify({
+          success: true,
+          token,
+          shop: {
+            id: shop.id,
+            name: shop.name,
+            owner_name: shop.owner_name,
+            phone: shop.phone,
+            email: shop.email,
+            category: shop.category,
+            address: shop.address
+          }
+        }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    if (url.pathname === "/api/shop/auth/session") {
+      try {
+        const shopAuth = await verifyShopAuth(request, env);
+        if (!shopAuth) {
+          return new Response(JSON.stringify({ authenticated: false }), { headers: corsHeaders() });
+        }
+        return new Response(JSON.stringify({
+          authenticated: true,
+          shop: {
+            id: shopAuth.id,
+            name: shopAuth.name,
+            owner_name: shopAuth.owner_name,
+            phone: shopAuth.phone,
+            email: shopAuth.email,
+            category: shopAuth.category,
+            address: shopAuth.address
+          }
+        }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    if (url.pathname === "/api/shop/auth/logout" && request.method === "POST") {
+      try {
+        const authHeader = request.headers.get('Authorization') || '';
+        let token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+        if (!token) {
+          const cookie = request.headers.get('Cookie') || '';
+          const match = cookie.match(/shop_session=([a-zA-Z0-9_\-]+)/);
+          if (match) token = match[1];
+        }
+        if (token) {
+          await env.DB.prepare("DELETE FROM shop_sessions WHERE token = ?").bind(token).run();
+        }
+        const headers = corsHeaders();
+        headers['Set-Cookie'] = `shop_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+        return new Response(JSON.stringify({ success: true, message: "Logged out" }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/partner/apply (Public Partner Shop Onboarding Application)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/partner/apply" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const { name, owner_name, phone, email, passcode, category, address, latitude, longitude, delivery_radius_km } = body;
+
+        if (!name || !email || !passcode || latitude === undefined || longitude === undefined) {
+          return new Response(JSON.stringify({ error: "Shop Name, Email, Passcode, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
+        }
+
+        if (String(passcode).trim().length < 4) {
+          return new Response(JSON.stringify({ error: "Passcode must be at least 4 digits or characters." }), { status: 400, headers: corsHeaders() });
+        }
+
+        const existing = await env.DB.prepare("SELECT id FROM shops WHERE LOWER(email) = LOWER(?)").bind(email.trim()).first();
+        if (existing) {
+          return new Response(JSON.stringify({ error: "A partner shop with this login email is already registered." }), { status: 400, headers: corsHeaders() });
+        }
+
+        const salt = generateSalt();
+        const hash = await hashPassword(String(passcode).trim(), salt);
+        const id = 'shop_' + crypto.randomUUID().slice(0, 8);
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        const radius = Number(delivery_radius_km) || 10.0;
+        const cat = (category === 'grocery' || category === 'meat') ? category : 'all';
+
+        await env.DB.prepare(`
+          INSERT INTO shops (
+            id, name, owner_name, phone, email, passcode_hash, salt, 
+            category, address, latitude, longitude, delivery_radius_km, 
+            is_active, approval_status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))
+        `).bind(
+          id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), 
+          email.toLowerCase().trim(), hash, salt, cat, (address || '').trim(), 
+          lat, lng, radius
+        ).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: "🎉 Partner application submitted successfully! Your shop is under review by our team and will be activated shortly. Once approved, you can log in to your merchant portal at /shop."
+        }), { status: 201, headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
       }
     }
 
@@ -1318,18 +1574,32 @@ export default {
             return new Response(JSON.stringify({ order }), { headers: corsHeaders() });
           }
 
-          // C. Shop / Butcher Portal Query
+          // C. Shop / Butcher Portal Query (Strict Merchant Privacy Lock)
           if (isShop) {
-            const reqShopId = url.searchParams.get('shop_id') || url.searchParams.get('shopId');
+            const shopAuth = await verifyShopAuth(request, env);
+            const adminAuth = await verifyAdminAuth(request, env);
+
+            if (!shopAuth && !adminAuth) {
+              return new Response(JSON.stringify({ error: "Unauthorized: Merchant login required", requireLogin: true }), { status: 401, headers: corsHeaders() });
+            }
+
+            let targetShopId = null;
+            if (shopAuth) {
+              // 🔒 STRICT PRIVACY LOCK: Shopkeeper can ONLY view orders belonging to their own shop!
+              targetShopId = shopAuth.id;
+            } else if (adminAuth) {
+              targetShopId = url.searchParams.get('shop_id') || url.searchParams.get('shopId');
+            }
+
             let shopQuery = `
               SELECT * FROM orders 
               WHERE status IN ('pending', 'preparing', 'packed', 'scheduled') 
               AND datetime(created_at) >= datetime('now', '-12 hours')
             `;
             let params = [];
-            if (reqShopId && reqShopId !== 'all') {
+            if (targetShopId && targetShopId !== 'all') {
               shopQuery += ` AND (shop_id = ? OR (shop_id IS NULL AND ? = 'shop_primary_hub'))`;
-              params.push(reqShopId, reqShopId);
+              params.push(targetShopId, targetShopId);
             } else if (zone && zone !== 'all') {
               shopQuery += ` AND delivery_zone = ?`;
               params.push(zone);

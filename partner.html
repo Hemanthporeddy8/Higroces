@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner With HiGroces — 15-Minute Instant Grocery & Butcher Deliveries</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0E1311">
+
+<!-- MAPLIBRE & PROTOMAPS VECTOR STACK (100% ₹0 RYDEALOTMAPS) -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/@protomaps/basemaps@5.2.0/dist/basemaps.js"></script>
+
+<style>
+:root {
+  --bg-dark: #0E1311;
+  --bg-card: #151D1A;
+  --bg-input: #1C2622;
+  --primary-green: #0C513F;
+  --accent-green: #2ECC71;
+  --accent-gold: #FFB74D;
+  --accent-orange: #FF5E2B;
+  --text-main: #FFFFFF;
+  --text-muted: #8E9F97;
+  --border-card: #283932;
+  --border-focus: #1CA37F;
+  --danger-red: #E74C3C;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+header {
+  background: rgba(14, 19, 17, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-card);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: white;
+}
+.brand-icon { font-size: 1.6rem; }
+.brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.brand-badge {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.header-right a {
+  color: var(--accent-gold);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  background: rgba(255, 183, 77, 0.08);
+  transition: all 0.2s;
+}
+.header-right a:hover {
+  background: rgba(255, 183, 77, 0.18);
+}
+
+/* HERO CONTAINER */
+.container {
+  width: 100%;
+  max-width: 760px;
+  margin: 30px auto 60px;
+  padding: 0 16px;
+}
+.hero-box {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.hero-box h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+.hero-box p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* FORM CARD */
+.form-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+.form-section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.form-section-title:first-of-type {
+  margin-top: 0;
+}
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+  .form-card { padding: 20px 16px; }
+  .hero-box h1 { font-size: 1.7rem; }
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #D3DDD8;
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-card);
+  border-radius: 9px;
+  color: white;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(28, 163, 127, 0.25);
+}
+.form-group small {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  margin-top: 5px;
+  display: block;
+}
+
+/* MAP CONTAINER */
+.map-box {
+  background: #0B0F0E;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 18px;
+}
+.map-canvas-container {
+  width: 100%;
+  height: 280px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  position: relative;
+  background: #e2dfda;
+}
+
+/* SUBMIT BUTTON */
+.btn-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #0C513F, #1CA37F);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(28, 163, 127, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  transition: all 0.2s;
+}
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(28, 163, 127, 0.5);
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ALERT MESSAGES */
+.alert-box {
+  padding: 12px 16px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  display: none;
+}
+.alert-danger {
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #FFA39E;
+}
+.alert-success {
+  background: rgba(46, 204, 113, 0.15);
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  color: #A3D9C9;
+}
+
+/* SUCCESS CARD */
+.success-card {
+  display: none;
+  background: var(--bg-card);
+  border: 1.5px solid var(--accent-green);
+  border-radius: 18px;
+  padding: 40px 24px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+.success-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/index.html" class="brand-logo">
+    <span class="brand-icon">🥬</span>
+    <div>
+      <span class="brand-name">HiGroces</span>
+      <span class="brand-badge">Partner Network</span>
+    </div>
+  </a>
+  <div class="header-right">
+    <a href="/shop.html">
+      <span>🔐</span> Existing Partner Login
+    </a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-box">
+    <h1>List Your Shop on HiGroces</h1>
+    <p>Empower your local Kiranam or Butcher shop with 15-minute ultra-fast doorstep deliveries. Get more orders, higher margins, and dedicated riders.</p>
+  </div>
+
+  <!-- APPLICATION FORM -->
+  <div class="form-card" id="applyCard">
+    <div id="applyAlert" class="alert-box"></div>
+
+    <form id="partnerForm" onsubmit="handlePartnerSubmit(event)">
+      
+      <!-- 1. STORE & OWNER IDENTITY -->
+      <div class="form-section-title">
+        <span>🏪</span> Store &amp; Owner Profile
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Shop / Business Name *</label>
+          <input type="text" id="pShopName" placeholder="e.g. Sri Rama Kiranam &amp; General Store" required />
+        </div>
+        <div class="form-group">
+          <label>Owner / Manager Full Name *</label>
+          <input type="text" id="pOwnerName" placeholder="e.g. Ramesh Kumar" required />
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Contact Mobile Phone *</label>
+          <input type="tel" id="pPhone" placeholder="10-digit mobile number" maxlength="10" required />
+        </div>
+        <div class="form-group">
+          <label>Shop Category / Specialization *</label>
+          <select id="pCategory" required>
+            <option value="grocery">🛒 Grocery &amp; Kiranam (Packaged, Dairy, Staples, Snacks)</option>
+            <option value="meat">🥩 Butcher &amp; Fresh Meat (Raw Chicken, Mutton, Fish)</option>
+            <option value="all">🏢 All-in-One Super Hub (Both Meat &amp; Groceries)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 2. LOGIN & PASSCODE (0 SMS BILLS) -->
+      <div class="form-section-title">
+        <span>🔑</span> Secure Merchant Login (No SMS OTP Required)
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Login Email Address *</label>
+          <input type="email" id="pEmail" placeholder="e.g. ramesh.store@gmail.com" required />
+          <small>You will use this email to log in to your merchant dashboard.</small>
+        </div>
+        <div class="form-group">
+          <label>Choose 6-Digit Passcode / PIN *</label>
+          <input type="password" id="pPasscode" placeholder="e.g. 6-digit PIN (123456)" minlength="4" maxlength="20" required />
+          <small>Keep this safe. Used to unlock your store terminal.</small>
+        </div>
+      </div>
+
+      <!-- 3. LOCATION & RYDEALOTMAPS PINNING -->
+      <div class="form-section-title">
+        <span>📍</span> Store Location &amp; Dispatch Point
+      </div>
+
+      <div class="form-group">
+        <label>Physical Address / Landmark *</label>
+        <input type="text" id="pAddress" placeholder="Shop #4, Market Road, Near Clock Tower..." required />
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Delivery Radius (km)</label>
+          <select id="pRadius">
+            <option value="5">5 km (Fastest ~15 mins)</option>
+            <option value="10" selected>10 km (Standard City Hub)</option>
+            <option value="15">15 km (Extended Reach)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pin Coordinates</label>
+          <input type="text" id="pCoordDisplay" readonly value="17.987000, 79.535900" style="color:var(--accent-gold); font-family:'DM Mono';" />
+        </div>
+      </div>
+
+      <input type="hidden" id="pLat" value="17.987000" />
+      <input type="hidden" id="pLng" value="79.535900" />
+
+      <!-- RYDEALOTMAPS BOX -->
+      <div class="map-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:0.82rem; font-weight:700; color:var(--accent-gold); display:flex; align-items:center; gap:6px;">
+            <span>🗺️</span> RydealotMaps Dispatch Pin
+          </div>
+          <button type="button" onclick="pinDeviceLocation()" style="background:#0C513F; color:white; border:1px solid #1CA37F; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
+            <span>📍</span> Auto-Pin My Shop Shutter
+          </button>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">
+          Drag the orange pin 📍 or click on the map to set the exact shop shutter where delivery riders collect packages.
+        </div>
+        <div class="map-canvas-container" id="partnerMap"></div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnApply">
+        <span>🚀</span> Submit Partner Application
+      </button>
+
+      <div style="text-align:center; margin-top:14px; font-size:0.75rem; color:var(--text-muted);">
+        By submitting, you agree to partner with HiGroces for instant customer deliveries. Zero setup cost.
+      </div>
+    </form>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-card" id="successCard">
+    <div class="success-icon">🎉</div>
+    <h2 style="font-family:'Playfair Display', serif; font-size:1.8rem; margin-bottom:8px;">Application Submitted Successfully!</h2>
+    <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; max-width:540px; margin:0 auto 24px;">
+      Thank you for applying to partner with HiGroces. Your store application is currently in the <strong>Admin Verification Queue</strong>. 
+      Our team will review and approve your store profile shortly.
+    </p>
+
+    <div style="background:#1B2521; border:1px solid var(--border-card); border-radius:12px; padding:18px; max-width:440px; margin:0 auto 24px; text-align:left;">
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">Your Merchant Login Credentials:</div>
+      <div style="font-size:0.92rem; font-weight:700; color:white; margin-bottom:4px;">Email: <span id="sEmailDisplay" style="color:var(--accent-gold);">--</span></div>
+      <div style="font-size:0.78rem; color:#A3D9C9;">Use your 6-digit passcode to log in once your store is activated.</div>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+      <a href="/shop.html" style="background:#0C513F; color:white; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; font-size:0.9rem;">
+        Go to Merchant Station →
+      </a>
+      <a href="/index.html" style="background:transparent; color:var(--text-muted); text-decoration:none; border:1px solid var(--border-card); padding:12px 20px; border-radius:8px; font-weight:700; font-size:0.9rem;">
+        Back to Storefront
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── RYDEALOTMAPS VECTOR ENGINE FOR PARTNER APPLICATION ──
+let partnerMap = null;
+let partnerMarker = null;
+
+function updateCoordinates(lat, lng) {
+  document.getElementById('pLat').value = Number(lat).toFixed(6);
+  document.getElementById('pLng').value = Number(lng).toFixed(6);
+  document.getElementById('pCoordDisplay').value = `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+}
+
+function initPartnerMap(initialLat = 17.987000, initialLng = 79.535900) {
+  const container = document.getElementById('partnerMap');
+  if (!container) return;
+
+  try {
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol("pmtiles", protocol.tile);
+
+    const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
+    const flavor = (typeof basemaps !== 'undefined' && basemaps.namedFlavor) 
+      ? basemaps.namedFlavor('light') 
+      : (basemaps.LIGHT || null);
+
+    let mapLayers = [];
+    if (typeof basemaps !== 'undefined' && typeof basemaps.layers === 'function') {
+      mapLayers = basemaps.layers('protomaps', flavor, { lang: 'en' });
+    }
+
+    const rydealotStyle = {
+      version: 8,
+      sources: {
+        protomaps: {
+          type: 'vector',
+          url: `pmtiles://${PMTILES_URL}`
+        }
+      },
+      layers: mapLayers
+    };
+
+    partnerMap = new maplibregl.Map({
+      container: 'partnerMap',
+      style: rydealotStyle,
+      center: [initialLng, initialLat],
+      zoom: 13,
+      maxZoom: 18,
+      minZoom: 4
+    });
+
+    partnerMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+    const pinEl = document.createElement('div');
+    pinEl.style.cssText = `
+      width: 32px;
+      height: 32px;
+      background: #FF5E2B;
+      border: 3px solid #FFFFFF;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 4px 14px rgba(255, 94, 43, 0.6);
+      cursor: grab;
+    `;
+
+    partnerMarker = new maplibregl.Marker({ element: pinEl, draggable: true })
+      .setLngLat([initialLng, initialLat])
+      .addTo(partnerMap);
+
+    partnerMarker.on('dragend', () => {
+      const lngLat = partnerMarker.getLngLat();
+      updateCoordinates(lngLat.lat, lngLat.lng);
+    });
+
+    partnerMap.on('click', (e) => {
+      partnerMarker.setLngLat(e.lngLat);
+      updateCoordinates(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 300);
+
+  } catch(e) {
+    console.warn("RydealotMaps init notice:", e);
+  }
+}
+
+function pinDeviceLocation() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      updateCoordinates(lat, lng);
+      if (partnerMap && partnerMarker) {
+        partnerMarker.setLngLat([lng, lat]);
+        partnerMap.flyTo({ center: [lng, lat], zoom: 15 });
+      }
+    },
+    (err) => {
+      alert("Could not access device location: " + err.message);
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+// ── PARTNER FORM SUBMISSION CONTROLLER ──
+async function handlePartnerSubmit(e) {
+  e.preventDefault();
+
+  const alertEl = document.getElementById('applyAlert');
+  const btn = document.getElementById('btnApply');
+  alertEl.style.display = 'none';
+
+  const name = document.getElementById('pShopName').value.trim();
+  const owner_name = document.getElementById('pOwnerName').value.trim();
+  const phone = document.getElementById('pPhone').value.trim();
+  const category = document.getElementById('pCategory').value;
+  const email = document.getElementById('pEmail').value.trim();
+  const passcode = document.getElementById('pPasscode').value.trim();
+  const address = document.getElementById('pAddress').value.trim();
+  const delivery_radius_km = parseFloat(document.getElementById('pRadius').value) || 10;
+  const latitude = parseFloat(document.getElementById('pLat').value);
+  const longitude = parseFloat(document.getElementById('pLng').value);
+
+  if (!name || !owner_name || !phone || !email || !passcode || !address) {
+    alertEl.className = 'alert-box alert-danger';
+    alertEl.textContent = 'Please fill out all required fields.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (phone.length !== 10) {
+    alertEl.className = 'alert-box alert-danger';
+    alertEl.textContent = 'Please enter a valid 10-digit mobile number.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (passcode.length < 4) {
+    alertEl.className = 'alert-box alert-danger';
+    alertEl.textContent = 'Passcode must be at least 4 digits or characters.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Submitting Application...';
+
+  try {
+    const res = await fetch('/api/partner/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        owner_name,
+        phone,
+        email,
+        passcode,
+        category,
+        address,
+        delivery_radius_km,
+        latitude,
+        longitude
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to submit application.');
+    }
+
+    // Success transition
+    document.getElementById('applyCard').style.display = 'none';
+    document.getElementById('sEmailDisplay').textContent = email;
+    document.getElementById('successCard').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch(err) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀</span> Submit Partner Application';
+    alertEl.className = 'alert-box alert-danger';
+    alertEl.textContent = err.message;
+    alertEl.style.display = 'block';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  initPartnerMap(17.987000, 79.535900);
+});
+</script>
+</body>
+</html>
