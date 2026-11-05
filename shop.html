@@ -694,11 +694,8 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
       <span class="status-dot"></span>
       <span id="storeStatusText">ONLINE</span>
     </button>
-    <select class="zone-select" id="zoneSelect" onchange="fetchShopOrders()">
-      <option value="HSR Layout">Zone: HSR Layout</option>
-      <option value="Koramangala">Zone: Koramangala</option>
-      <option value="Indiranagar">Zone: Indiranagar</option>
-      <option value="Jayanagar">Zone: Jayanagar</option>
+    <select class="zone-select" id="shopPartnerSelect" onchange="onShopSelectChange(this.value)" style="max-width:240px; font-weight:700;">
+      <option value="all">🏢 All Partner Hubs</option>
     </select>
     <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()">
       <span>🔄</span> Refresh
@@ -955,10 +952,40 @@ function switchStation(station) {
   renderKdsOrders(rawOrdersCache);
 }
 
-async function fetchShopOrders() {
-  const zone = document.getElementById('zoneSelect').value;
+let currentSelectedShopId = new URLSearchParams(window.location.search).get('shopId') || localStorage.getItem('kds_shop_id') || 'all';
+
+async function loadKdsShops() {
+  const sel = document.getElementById('shopPartnerSelect') || document.getElementById('zoneSelect');
+  if (!sel) return;
   try {
-    const res = await fetch(`${API_BASE}?shop=true&zone=${encodeURIComponent(zone)}`);
+    const res = await fetch('/api/shops');
+    if (!res.ok) return;
+    const data = await res.json();
+    const shops = data.shops || [];
+    sel.innerHTML = '<option value="all">🏢 All Partner Hubs</option>' + shops.map(s => {
+      const emoji = s.category === 'grocery' ? '🛒' : (s.category === 'meat' ? '🥩' : '🏪');
+      return `<option value="${s.id}">${emoji} ${s.name}</option>`;
+    }).join('');
+    if (currentSelectedShopId && Array.from(sel.options).some(o => o.value === currentSelectedShopId)) {
+      sel.value = currentSelectedShopId;
+    }
+  } catch(e) {
+    console.warn("loadKdsShops err:", e);
+  }
+}
+
+function onShopSelectChange(shopId) {
+  currentSelectedShopId = shopId;
+  localStorage.setItem('kds_shop_id', shopId);
+  fetchShopOrders();
+}
+
+async function fetchShopOrders() {
+  const sel = document.getElementById('shopPartnerSelect') || document.getElementById('zoneSelect');
+  const shopId = sel ? sel.value : (currentSelectedShopId || 'all');
+  try {
+    const url = `${API_BASE}?shop=true&shop_id=${encodeURIComponent(shopId)}`;
+    const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
     rawOrdersCache = data.orders || [];
@@ -1511,7 +1538,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-  fetchShopOrders();
+  loadKdsShops().then(() => fetchShopOrders());
   loadStoreStatus();
   setInterval(fetchShopOrders, 5000);
   setInterval(loadStoreStatus, 10000);

@@ -270,6 +270,18 @@ async function setStoreOnlineStatus(isOnline, env) {
   return { success: true, is_online: isOnline, storage: 'edge_memory', d1_writes: 0 };
 }
 
+// ── HAVERSINE DISTANCE HELPER (KM) ──
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 // Auto-migration & Schema Initializer
 async function ensureAllSchemas(db) {
   try {
@@ -316,20 +328,29 @@ async function ensureAllSchemas(db) {
         longitude REAL NOT NULL,
         delivery_radius_km REAL DEFAULT 10.0,
         is_active INTEGER DEFAULT 1,
+        category TEXT DEFAULT 'all',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
   } catch(e) {}
+
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN category TEXT DEFAULT 'all'").run(); } catch(e) {}
 
   // Auto-seed primary hub if shops table is empty
   try {
     const existingShops = await db.prepare("SELECT count(*) as count FROM shops").first();
     if (!existingShops || existingShops.count === 0) {
       await db.prepare(`
-        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active)
-        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1)
+        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category)
+        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1, 'meat')
       `).run();
     }
+  } catch(e) {}
+
+  // Auto-categorize known shops if still generic 'all'
+  try {
+    await db.prepare("UPDATE shops SET category = 'grocery' WHERE name LIKE '%kiranam%' AND (category IS NULL OR category = 'all')").run();
+    await db.prepare("UPDATE shops SET category = 'meat' WHERE (name LIKE '%meat%' OR name LIKE '%butcher%') AND (category IS NULL OR category = 'all')").run();
   } catch(e) {}
 
   // Product Inventory Table (In-Stock / Out-of-Stock toggles)
@@ -916,7 +937,7 @@ export default {
           }
 
           const body = await request.json();
-          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active } = body;
+          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category } = body;
 
           if (!name || latitude === undefined || longitude === undefined) {
             return new Response(JSON.stringify({ error: "Shop Name, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
@@ -927,15 +948,16 @@ export default {
           const lng = Number(longitude);
           const radius = Number(delivery_radius_km) || 10.0;
           const active = (is_active === false || is_active === 0 || is_active === '0') ? 0 : 1;
+          const cat = (category === 'grocery' || category === 'meat') ? category : 'all';
 
           await env.DB.prepare(`
-            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active).run();
+            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active, cat).run();
 
           return new Response(JSON.stringify({
             success: true,
-            shop: { id, name, owner_name, phone, address, latitude: lat, longitude: lng, delivery_radius_km: radius, is_active: active }
+            shop: { id, name, owner_name, phone, address, latitude: lat, longitude: lng, delivery_radius_km: radius, is_active: active, category: cat }
           }), { status: 201, headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
@@ -951,7 +973,7 @@ export default {
           }
 
           const body = await request.json();
-          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active } = body;
+          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category } = body;
 
           if (!id) {
             return new Response(JSON.stringify({ error: "Shop ID is required for update." }), { status: 400, headers: corsHeaders() });
@@ -970,16 +992,17 @@ export default {
           const newLng = longitude !== undefined ? Number(longitude) : existing.longitude;
           const newRadius = delivery_radius_km !== undefined ? Number(delivery_radius_km) : existing.delivery_radius_km;
           const newActive = is_active !== undefined ? ((is_active === false || is_active === 0 || is_active === '0') ? 0 : 1) : existing.is_active;
+          const newCategory = category !== undefined ? category : (existing.category || 'all');
 
           await env.DB.prepare(`
             UPDATE shops 
-            SET name = ?, owner_name = ?, phone = ?, address = ?, latitude = ?, longitude = ?, delivery_radius_km = ?, is_active = ?
+            SET name = ?, owner_name = ?, phone = ?, address = ?, latitude = ?, longitude = ?, delivery_radius_km = ?, is_active = ?, category = ?
             WHERE id = ?
-          `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, id).run();
+          `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, newCategory, id).run();
 
           return new Response(JSON.stringify({
             success: true,
-            shop: { id, name: newName, owner_name: newOwner, phone: newPhone, address: newAddress, latitude: newLat, longitude: newLng, delivery_radius_km: newRadius, is_active: newActive }
+            shop: { id, name: newName, owner_name: newOwner, phone: newPhone, address: newAddress, latitude: newLat, longitude: newLng, delivery_radius_km: newRadius, is_active: newActive, category: newCategory }
           }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
@@ -1142,7 +1165,47 @@ export default {
 
           const cust_lat = (body.cust_lat !== undefined && body.cust_lat !== null && body.cust_lat !== '') ? Number(body.cust_lat) : null;
           const cust_lng = (body.cust_lng !== undefined && body.cust_lng !== null && body.cust_lng !== '') ? Number(body.cust_lng) : null;
-          const shop_id = body.shop_id || 'shop_primary_hub';
+          let shop_id = (body.shop_id && String(body.shop_id).trim()) ? String(body.shop_id).trim() : null;
+
+          // 🧠 Smart Shop Routing: If shop_id not provided by customer, auto-assign best eligible shop
+          if (!shop_id) {
+            try {
+              let hasMeat = false;
+              const parsedItems = typeof body.items === 'string' ? JSON.parse(body.items) : (body.items || []);
+              hasMeat = parsedItems.some(it => {
+                const n = (it.name || '').toLowerCase();
+                const c = (it.category || '').toLowerCase();
+                return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' ||
+                       n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn');
+              });
+
+              const targetCat = hasMeat ? 'meat' : 'grocery';
+              const shopRes = await env.DB.prepare("SELECT * FROM shops WHERE is_active = 1").all();
+              const activeShops = shopRes.results || [];
+              const eligible = activeShops.filter(s => s.category === 'all' || !s.category || s.category === targetCat);
+
+              if (eligible.length > 0) {
+                if (cust_lat && cust_lng) {
+                  let closest = eligible[0];
+                  let minD = Infinity;
+                  for (const s of eligible) {
+                    const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
+                    if (d < minD) {
+                      minD = d;
+                      closest = s;
+                    }
+                  }
+                  shop_id = closest.id;
+                } else {
+                  shop_id = eligible[0].id;
+                }
+              }
+            } catch(e) {}
+          }
+
+          if (!shop_id) {
+            shop_id = 'shop_primary_hub';
+          }
 
           await env.DB.prepare(`
             INSERT INTO orders (
@@ -1257,13 +1320,17 @@ export default {
 
           // C. Shop / Butcher Portal Query
           if (isShop) {
+            const reqShopId = url.searchParams.get('shop_id') || url.searchParams.get('shopId');
             let shopQuery = `
               SELECT * FROM orders 
               WHERE status IN ('pending', 'preparing', 'packed', 'scheduled') 
               AND datetime(created_at) >= datetime('now', '-12 hours')
             `;
             let params = [];
-            if (zone) {
+            if (reqShopId && reqShopId !== 'all') {
+              shopQuery += ` AND (shop_id = ? OR (shop_id IS NULL AND ? = 'shop_primary_hub'))`;
+              params.push(reqShopId, reqShopId);
+            } else if (zone && zone !== 'all') {
               shopQuery += ` AND delivery_zone = ?`;
               params.push(zone);
             }
