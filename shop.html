@@ -711,32 +711,123 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 </header>
 
-<!-- MERCHANT AUTHENTICATION OVERLAY (0 SMS BILLS) -->
+<!-- MERCHANT AUTHENTICATION OVERLAY (TWO-TIER AUTH: QUICK PIN + MASTER PASSWORD) -->
 <div id="merchantLoginModal" style="display:none; position:fixed; inset:0; background:rgba(10,14,13,0.94); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:#151D1A; border:1.5px solid #283932; border-radius:18px; width:100%; max-width:420px; padding:30px 24px; box-shadow:0 16px 40px rgba(0,0,0,0.6); text-align:center;">
-    <div style="font-size:2.4rem; margin-bottom:10px;">🏪</div>
-    <h2 style="font-family:'Playfair Display', serif; font-size:1.5rem; color:#fff; margin-bottom:6px;">Merchant Partner Station</h2>
-    <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:20px;">
-      Enter your shop email and 6-digit passcode to access your live order queue and stock control.
-    </p>
-
+  <div style="background:#151D1A; border:1.5px solid #283932; border-radius:18px; width:100%; max-width:440px; padding:30px 24px; box-shadow:0 16px 40px rgba(0,0,0,0.6); text-align:center;">
+    
     <div id="merchantLoginAlert" style="display:none; background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.4); color:#FFA39E; padding:10px; border-radius:8px; font-size:0.82rem; font-weight:600; margin-bottom:16px; text-align:left;"></div>
+    <div id="merchantSuccessAlert" style="display:none; background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.4); color:var(--accent-green); padding:10px; border-radius:8px; font-size:0.82rem; font-weight:600; margin-bottom:16px; text-align:left;"></div>
 
-    <form onsubmit="handleMerchantLogin(event)" style="text-align:left;">
-      <div style="margin-bottom:14px;">
-        <label style="display:block; font-size:0.8rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Shop Login Email</label>
-        <input type="email" id="mLoginEmail" placeholder="e.g. balaji@higroces.com" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+    <!-- VIEW 1: QUICK 6-DIGIT COUNTER PASSCODE UNLOCK (DEFAULT / SHIFT LOGIN) -->
+    <div id="authViewPasscode">
+      <div style="font-size:2.4rem; margin-bottom:8px;">⚡</div>
+      <h2 style="font-family:'Playfair Display', serif; font-size:1.45rem; color:#fff; margin-bottom:6px;">Merchant Station Unlock</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:18px;">
+        Quick daily counter PIN unlock. Shopkeepers never forget their 6-digit PIN.
+      </p>
+
+      <form onsubmit="handleMerchantLogin(event, 'passcode')" style="text-align:left;">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Store Login Email</label>
+          <input type="email" id="mLoginEmail" placeholder="e.g. balaji@higroces.com" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Daily 6-Digit Counter Passcode</label>
+          <input type="password" id="mLoginPasscode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="•••••• (e.g. 123456)" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:1.1rem; font-family:'DM Mono', monospace; letter-spacing:4px; text-align:center; outline:none;" />
+        </div>
+
+        <button type="submit" id="btnMerchantLogin" style="width:100%; background:linear-gradient(135deg, #0C513F, #1CA37F); color:white; border:none; padding:13px; border-radius:9px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>⚡</span> Unlock Terminal
+        </button>
+      </form>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <button type="button" onclick="switchMerchantAuthMode('password')" style="background:none; border:none; color:var(--accent-gold); font-size:0.8rem; font-weight:700; cursor:pointer; text-decoration:underline;">
+          Use Master Password instead 🔑
+        </button>
+        <button type="button" onclick="switchMerchantAuthMode('forgot')" style="background:none; border:none; color:var(--text-muted); font-size:0.8rem; cursor:pointer;">
+          Forgot Password?
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 2: MASTER ACCOUNT PASSWORD LOGIN -->
+    <div id="authViewPassword" style="display:none;">
+      <div style="font-size:2.4rem; margin-bottom:8px;">🔑</div>
+      <h2 style="font-family:'Playfair Display', serif; font-size:1.45rem; color:#fff; margin-bottom:6px;">Master Account Login</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:18px;">
+        Sign in with your full store master password.
+      </p>
+
+      <form onsubmit="handleMerchantLogin(event, 'password')" style="text-align:left;">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Store Login Email</label>
+          <input type="email" id="mLoginEmailMaster" placeholder="e.g. balaji@higroces.com" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Master Password</label>
+          <input type="password" id="mLoginPasswordMaster" placeholder="Enter master password" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+        </div>
+
+        <button type="submit" id="btnMerchantLoginMaster" style="width:100%; background:linear-gradient(135deg, #1A4436, #0C513F); color:white; border:1px solid #1CA37F; padding:13px; border-radius:9px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>🔓</span> Sign In with Password
+        </button>
+      </form>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <button type="button" onclick="switchMerchantAuthMode('passcode')" style="background:none; border:none; color:var(--accent-green); font-size:0.8rem; font-weight:700; cursor:pointer;">
+          ← Back to Quick 6-Digit PIN ⚡
+        </button>
+        <button type="button" onclick="switchMerchantAuthMode('forgot')" style="background:none; border:none; color:var(--text-muted); font-size:0.8rem; cursor:pointer;">
+          Forgot Password?
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 3: FORGOT PASSWORD RECOVERY FLOW -->
+    <div id="authViewForgot" style="display:none;">
+      <div style="font-size:2.4rem; margin-bottom:8px;">✉️</div>
+      <h2 style="font-family:'Playfair Display', serif; font-size:1.45rem; color:#fff; margin-bottom:6px;">Reset Master Password</h2>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:18px;">
+        Enter your store email to receive a password reset verification code.
+      </p>
+
+      <div id="forgotStep1">
+        <form onsubmit="handleRequestResetCode(event)" style="text-align:left;">
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">Registered Store Email</label>
+            <input type="email" id="mForgotEmail" placeholder="e.g. balaji@higroces.com" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+          </div>
+          <button type="submit" id="btnSendResetCode" style="width:100%; background:#0C513F; color:white; border:1px solid #1CA37F; padding:13px; border-radius:9px; font-size:0.92rem; font-weight:800; cursor:pointer;">
+            Send Reset Code ✉️
+          </button>
+        </form>
       </div>
 
-      <div style="margin-bottom:18px;">
-        <label style="display:block; font-size:0.8rem; font-weight:700; color:#D3DDD8; margin-bottom:6px;">6-Digit Secret Passcode / PIN</label>
-        <input type="password" id="mLoginPasscode" placeholder="Enter your 6-digit passcode" minlength="4" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:11px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+      <div id="forgotStep2" style="display:none; text-align:left;">
+        <form onsubmit="handleSubmitNewPassword(event)">
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:4px;">6-Digit Reset Code (From Email / Dev)</label>
+            <input type="text" id="mResetCode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="••••••" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:10px 14px; font-size:1.05rem; font-family:'DM Mono', monospace; text-align:center; letter-spacing:3px; outline:none;" />
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:#D3DDD8; margin-bottom:4px;">New Master Account Password</label>
+            <input type="password" id="mNewPassword" minlength="6" placeholder="Minimum 6 characters" required style="width:100%; background:#1C2622; border:1px solid #283932; border-radius:8px; color:white; padding:10px 14px; font-size:0.92rem; font-family:inherit; outline:none;" />
+          </div>
+          <button type="submit" id="btnSubmitNewPass" style="width:100%; background:linear-gradient(135deg, #0C513F, #2ECC71); color:white; border:none; padding:13px; border-radius:9px; font-size:0.92rem; font-weight:800; cursor:pointer;">
+            Set New Password 🚀
+          </button>
+        </form>
       </div>
 
-      <button type="submit" id="btnMerchantLogin" style="width:100%; background:linear-gradient(135deg, #0C513F, #1CA37F); color:white; border:none; padding:13px; border-radius:9px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-        <span>🔐</span> Sign In to My Shop
-      </button>
-    </form>
+      <div style="margin-top:16px; text-align:center;">
+        <button type="button" onclick="switchMerchantAuthMode('passcode')" style="background:none; border:none; color:var(--text-muted); font-size:0.8rem; cursor:pointer;">
+          ← Return to Quick Terminal PIN Login
+        </button>
+      </div>
+    </div>
 
     <div style="margin-top:20px; font-size:0.8rem; color:var(--text-muted); border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
       Want to list your shop on HiGroces? <br>
@@ -1048,43 +1139,170 @@ function showMerchantLoginModal() {
   const badge = document.getElementById('merchantIdentityBadge');
   if (modal) modal.style.display = 'flex';
   if (badge) badge.style.display = 'none';
+  switchMerchantAuthMode('passcode');
 }
 
-async function handleMerchantLogin(e) {
+function switchMerchantAuthMode(mode) {
+  const vPasscode = document.getElementById('authViewPasscode');
+  const vPassword = document.getElementById('authViewPassword');
+  const vForgot = document.getElementById('authViewForgot');
+  const alertEl = document.getElementById('merchantLoginAlert');
+  const succEl = document.getElementById('merchantSuccessAlert');
+  if (alertEl) alertEl.style.display = 'none';
+  if (succEl) succEl.style.display = 'none';
+
+  if (vPasscode) vPasscode.style.display = mode === 'passcode' ? 'block' : 'none';
+  if (vPassword) vPassword.style.display = mode === 'password' ? 'block' : 'none';
+  if (vForgot) vForgot.style.display = mode === 'forgot' ? 'block' : 'none';
+
+  if (mode === 'forgot') {
+    document.getElementById('forgotStep1').style.display = 'block';
+    document.getElementById('forgotStep2').style.display = 'none';
+    const emailFromOther = document.getElementById('mLoginEmail').value || document.getElementById('mLoginEmailMaster').value;
+    if (emailFromOther) document.getElementById('mForgotEmail').value = emailFromOther;
+  }
+}
+
+async function handleMerchantLogin(e, mode = 'passcode') {
   e.preventDefault();
   const alertEl = document.getElementById('merchantLoginAlert');
-  const btn = document.getElementById('btnMerchantLogin');
-  alertEl.style.display = 'none';
+  const succEl = document.getElementById('merchantSuccessAlert');
+  if (alertEl) alertEl.style.display = 'none';
+  if (succEl) succEl.style.display = 'none';
 
-  const email = document.getElementById('mLoginEmail').value.trim();
-  const passcode = document.getElementById('mLoginPasscode').value.trim();
+  let email = '';
+  let passcode = '';
+  let password = '';
+  let btn = null;
 
-  btn.disabled = true;
-  btn.innerHTML = '<span>⏳</span> Verifying...';
+  if (mode === 'passcode') {
+    email = document.getElementById('mLoginEmail').value.trim();
+    passcode = document.getElementById('mLoginPasscode').value.trim();
+    btn = document.getElementById('btnMerchantLogin');
+  } else {
+    email = document.getElementById('mLoginEmailMaster').value.trim();
+    password = document.getElementById('mLoginPasswordMaster').value.trim();
+    btn = document.getElementById('btnMerchantLoginMaster');
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Verifying...';
+  }
 
   try {
+    const payload = mode === 'passcode' ? { email, passcode } : { email, password };
     const res = await fetch('/api/shop/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, passcode })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Login failed');
+      throw new Error(data.error || 'Authentication failed');
     }
 
     if (data.token) {
       localStorage.setItem('amorelot_shop_token', data.token);
     }
     currentMerchant = data.shop;
-    btn.disabled = false;
-    btn.innerHTML = '<span>🔐</span> Sign In to My Shop';
     onMerchantAuthenticated();
   } catch(err) {
-    btn.disabled = false;
-    btn.innerHTML = '<span>🔐</span> Sign In to My Shop';
-    alertEl.textContent = err.message;
+    if (alertEl) {
+      alertEl.textContent = err.message;
+      alertEl.style.display = 'block';
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = mode === 'passcode' ? '<span>⚡</span> Unlock Terminal' : '<span>🔓</span> Sign In with Password';
+    }
+  }
+}
+
+let pendingResetEmail = '';
+
+async function handleRequestResetCode(e) {
+  e.preventDefault();
+  const email = document.getElementById('mForgotEmail').value.trim();
+  const alertEl = document.getElementById('merchantLoginAlert');
+  const succEl = document.getElementById('merchantSuccessAlert');
+  const btn = document.getElementById('btnSendResetCode');
+
+  if (!email) return;
+  alertEl.style.display = 'none';
+  succEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Sending Code... ⌛';
+
+  try {
+    const res = await fetch('/api/shop/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to request reset code.');
+    }
+
+    pendingResetEmail = email;
+    document.getElementById('forgotStep1').style.display = 'none';
+    document.getElementById('forgotStep2').style.display = 'block';
+
+    if (data.devCode) {
+      document.getElementById('mResetCode').value = data.devCode;
+    }
+
+    succEl.style.display = 'block';
+    succEl.textContent = data.message || "Reset code sent! Check your email.";
+  } catch(err) {
     alertEl.style.display = 'block';
+    alertEl.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Code ✉️';
+  }
+}
+
+async function handleSubmitNewPassword(e) {
+  e.preventDefault();
+  const code = document.getElementById('mResetCode').value.trim();
+  const new_password = document.getElementById('mNewPassword').value.trim();
+  const alertEl = document.getElementById('merchantLoginAlert');
+  const succEl = document.getElementById('merchantSuccessAlert');
+  const btn = document.getElementById('btnSubmitNewPass');
+
+  if (!code || !new_password) return;
+  alertEl.style.display = 'none';
+  succEl.style.display = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Saving Password... ⌛';
+
+  try {
+    const res = await fetch('/api/shop/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingResetEmail, code, new_password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to reset password.');
+    }
+
+    succEl.style.display = 'block';
+    succEl.textContent = "🎉 Password reset successfully! You can now log in with your new password or 6-digit PIN.";
+    setTimeout(() => {
+      switchMerchantAuthMode('password');
+      document.getElementById('mLoginEmailMaster').value = pendingResetEmail;
+    }, 1500);
+  } catch(err) {
+    alertEl.style.display = 'block';
+    alertEl.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Set New Password 🚀';
   }
 }
 

@@ -1231,16 +1231,23 @@ input:checked + .toggle-slider:before {
       </div>
 
       <!-- MERCHANT TERMINAL LOGIN CREDENTIALS -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#121B17; border:1px solid #233B31; border-radius:10px; padding:12px; margin-bottom:12px;">
-        <div class="auth-field" style="margin-bottom:0;">
+      <div style="background:#121B17; border:1px solid #233B31; border-radius:10px; padding:12px; margin-bottom:12px;">
+        <div class="auth-field" style="margin-bottom:10px;">
           <label style="color:var(--gold); font-size:0.78rem;">🔐 Merchant Login Email *</label>
           <input type="email" id="shopModalEmail" placeholder="merchant@higroces.com" required style="font-size:0.85rem;" />
           <small style="color:var(--text-muted); font-size:0.7rem; margin-top:2px; display:block;">Used by shopkeeper to log in at /shop</small>
         </div>
-        <div class="auth-field" style="margin-bottom:0;">
-          <label style="color:var(--gold); font-size:0.78rem;">🔢 6-Digit Merchant Passcode</label>
-          <input type="password" id="shopModalPasscode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="6-digit passcode (e.g. 123456)" style="font-size:0.85rem;" />
-          <small id="shopPasscodeHint" style="color:var(--text-muted); font-size:0.7rem; margin-top:2px; display:block;">Leave blank when editing to keep unchanged</small>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="auth-field" style="margin-bottom:0;">
+            <label style="color:var(--gold); font-size:0.78rem;">🔑 Master Account Password</label>
+            <input type="password" id="shopModalPassword" placeholder="Min 6 characters" minlength="6" style="font-size:0.85rem;" />
+            <small id="shopPasswordHint" style="color:var(--text-muted); font-size:0.7rem; margin-top:2px; display:block;">Leave blank when editing to keep current</small>
+          </div>
+          <div class="auth-field" style="margin-bottom:0;">
+            <label style="color:var(--gold); font-size:0.78rem;">🔢 Daily 6-Digit PIN Passcode</label>
+            <input type="password" id="shopModalPasscode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="6-digit PIN (e.g. 123456)" style="font-size:0.85rem;" />
+            <small id="shopPasscodeHint" style="color:var(--text-muted); font-size:0.7rem; margin-top:2px; display:block;">Leave blank when editing to keep current</small>
+          </div>
         </div>
       </div>
 
@@ -2404,8 +2411,10 @@ function openShopModal(shopId = null) {
       document.getElementById('shopModalOwner').value = shop.owner_name || '';
       document.getElementById('shopModalPhone').value = shop.phone || '';
       document.getElementById('shopModalEmail').value = shop.email || '';
+      document.getElementById('shopModalPassword').value = '';
+      document.getElementById('shopPasswordHint').textContent = '(Leave blank to keep existing password)';
       document.getElementById('shopModalPasscode').value = '';
-      document.getElementById('shopPasscodeHint').textContent = '(Leave blank to keep existing passcode)';
+      document.getElementById('shopPasscodeHint').textContent = '(Leave blank to keep existing PIN)';
       document.getElementById('shopModalPasscode').required = false;
       document.getElementById('shopModalAddress').value = shop.address || '';
       document.getElementById('shopModalRadius').value = shop.delivery_radius_km || 10;
@@ -2422,6 +2431,8 @@ function openShopModal(shopId = null) {
     document.getElementById('shopModalOwner').value = '';
     document.getElementById('shopModalPhone').value = '';
     document.getElementById('shopModalEmail').value = '';
+    document.getElementById('shopModalPassword').value = '';
+    document.getElementById('shopPasswordHint').textContent = 'Set master password (min 6 characters)';
     document.getElementById('shopModalPasscode').value = '';
     document.getElementById('shopPasscodeHint').textContent = 'Set 6-digit numeric PIN for shop login';
     document.getElementById('shopModalPasscode').required = true;
@@ -2455,6 +2466,7 @@ async function saveShopModal() {
   const owner_name = document.getElementById('shopModalOwner').value.trim();
   const phone = document.getElementById('shopModalPhone').value.trim();
   const email = document.getElementById('shopModalEmail').value.trim();
+  const password = document.getElementById('shopModalPassword').value.trim();
   const passcode = document.getElementById('shopModalPasscode').value.trim();
   const address = document.getElementById('shopModalAddress').value.trim();
   const delivery_radius_km = parseFloat(document.getElementById('shopModalRadius').value) || 10;
@@ -2492,6 +2504,15 @@ async function saveShopModal() {
     return;
   }
 
+  if (password && password.length < 6) {
+    if (alertEl) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = 'Master password must be at least 6 characters.';
+    }
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Saving Shop... ⌛';
 
@@ -2499,8 +2520,8 @@ async function saveShopModal() {
     const isEdit = !!id;
     const method = isEdit ? 'PATCH' : 'POST';
     const payload = isEdit
-      ? { id, name, owner_name, phone, email, passcode: passcode || undefined, address, delivery_radius_km, category, latitude, longitude, is_active }
-      : { name, owner_name, phone, email, passcode, address, delivery_radius_km, category, latitude, longitude, is_active };
+      ? { id, name, owner_name, phone, email, password: password || undefined, passcode: passcode || undefined, address, delivery_radius_km, category, latitude, longitude, is_active }
+      : { name, owner_name, phone, email, password: password || undefined, passcode, address, delivery_radius_km, category, latitude, longitude, is_active };
 
     const res = await fetch(SHOPS_BASE, {
       method,

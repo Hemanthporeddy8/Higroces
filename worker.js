@@ -369,6 +369,10 @@ async function ensureAllSchemas(db) {
   try { await db.prepare("ALTER TABLE shops ADD COLUMN email TEXT").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE shops ADD COLUMN passcode_hash TEXT").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE shops ADD COLUMN salt TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN password_hash TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN password_salt TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN reset_token TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN reset_expires INTEGER").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE shops ADD COLUMN approval_status TEXT DEFAULT 'approved'").run(); } catch(e) {}
 
   // Shop Sessions Table (Merchant Login Sessions)
@@ -401,19 +405,31 @@ async function ensureAllSchemas(db) {
     await db.prepare("UPDATE shops SET approval_status = 'approved' WHERE approval_status IS NULL").run();
   } catch(e) {}
 
-  // Auto-seed initial 6-digit merchant passcodes ('123456') for existing shops if unassigned
+  // Auto-seed initial 6-digit merchant passcodes ('123456') and Master Passwords for existing shops if unassigned
   try {
-    const s1 = await db.prepare("SELECT passcode_hash FROM shops WHERE id = 'shop_primary_hub'").first();
-    if (!s1 || !s1.passcode_hash) {
+    const s1 = await db.prepare("SELECT passcode_hash, password_hash FROM shops WHERE id = 'shop_primary_hub'").first();
+    if (!s1 || !s1.passcode_hash || !s1.password_hash) {
       const salt1 = generateSalt();
+      const pSalt1 = generateSalt();
       const hash1 = await hashPassword('123456', salt1);
-      await db.prepare("UPDATE shops SET email = 'hub@amorelot.com', passcode_hash = ?, salt = ?, approval_status = 'approved' WHERE id = 'shop_primary_hub'").bind(hash1, salt1).run();
+      const pHash1 = await hashPassword('Hub@123456', pSalt1);
+      await db.prepare(`
+        UPDATE shops 
+        SET email = 'hub@amorelot.com', passcode_hash = ?, salt = ?, password_hash = ?, password_salt = ?, approval_status = 'approved' 
+        WHERE id = 'shop_primary_hub'
+      `).bind(hash1, salt1, pHash1, pSalt1).run();
     }
-    const s2 = await db.prepare("SELECT passcode_hash FROM shops WHERE id = 'shop_84917e65'").first();
-    if (!s2 || !s2.passcode_hash) {
+    const s2 = await db.prepare("SELECT passcode_hash, password_hash FROM shops WHERE id = 'shop_84917e65'").first();
+    if (!s2 || !s2.passcode_hash || !s2.password_hash) {
       const salt2 = generateSalt();
+      const pSalt2 = generateSalt();
       const hash2 = await hashPassword('123456', salt2);
-      await db.prepare("UPDATE shops SET email = 'balaji@higroces.com', passcode_hash = ?, salt = ?, approval_status = 'approved' WHERE id = 'shop_84917e65'").bind(hash2, salt2).run();
+      const pHash2 = await hashPassword('Balaji@123456', pSalt2);
+      await db.prepare(`
+        UPDATE shops 
+        SET email = 'balaji@higroces.com', passcode_hash = ?, salt = ?, password_hash = ?, password_salt = ?, approval_status = 'approved' 
+        WHERE id = 'shop_84917e65'
+      `).bind(hash2, salt2, pHash2, pSalt2).run();
     }
   } catch(e) {}
 
@@ -1024,7 +1040,7 @@ export default {
           }
 
           const body = await request.json();
-          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode } = body;
+          const { name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode, password } = body;
 
           if (!name || latitude === undefined || longitude === undefined) {
             return new Response(JSON.stringify({ error: "Shop Name, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
@@ -1045,10 +1061,21 @@ export default {
             hash = await hashPassword(String(passcode).trim(), salt);
           }
 
+          let pHash = null;
+          let pSalt = null;
+          if (password && String(password).trim()) {
+            pSalt = generateSalt();
+            pHash = await hashPassword(String(password).trim(), pSalt);
+          }
+
           await env.DB.prepare(`
-            INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode_hash, salt, approval_status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
-          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active, cat, emailVal, hash, salt).run();
+            INSERT INTO shops (
+              id, name, owner_name, phone, address, latitude, longitude, 
+              delivery_radius_km, is_active, category, email, passcode_hash, salt, 
+              password_hash, password_salt, approval_status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
+          `).bind(id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), (address || '').trim(), lat, lng, radius, active, cat, emailVal, hash, salt, pHash, pSalt).run();
 
           return new Response(JSON.stringify({
             success: true,
@@ -1068,7 +1095,7 @@ export default {
           }
 
           const body = await request.json();
-          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode, action } = body;
+          const { id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, passcode, password, action } = body;
 
           if (!id) {
             return new Response(JSON.stringify({ error: "Shop ID is required for update." }), { status: 400, headers: corsHeaders() });
@@ -1101,11 +1128,18 @@ export default {
             WHERE id = ?
           `).bind(newName, newOwner, newPhone, newAddress, newLat, newLng, newRadius, newActive, newCategory, newEmail, id).run();
 
-          // If admin resets or updates merchant passcode
+          // If admin resets or updates merchant daily counter passcode
           if (passcode && String(passcode).trim()) {
             const salt = generateSalt();
             const hash = await hashPassword(String(passcode).trim(), salt);
             await env.DB.prepare("UPDATE shops SET passcode_hash = ?, salt = ? WHERE id = ?").bind(hash, salt, id).run();
+          }
+
+          // If admin resets or updates merchant master password
+          if (password && String(password).trim()) {
+            const pSalt = generateSalt();
+            const pHash = await hashPassword(String(password).trim(), pSalt);
+            await env.DB.prepare("UPDATE shops SET password_hash = ?, password_salt = ? WHERE id = ?").bind(pHash, pSalt, id).run();
           }
 
           return new Response(JSON.stringify({
@@ -1140,18 +1174,19 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // API: /api/shop/auth/* (Merchant Email + Passcode Authentication)
+    // API: /api/shop/auth/* (Two-Tier Merchant Authentication)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/shop/auth/login" && request.method === "POST") {
       try {
         const body = await request.json();
-        const { email, passcode } = body;
-        if (!email || !passcode) {
-          return new Response(JSON.stringify({ error: "Email and Passcode are required." }), { status: 400, headers: corsHeaders() });
+        const { email, passcode, password } = body;
+        if (!email || (!passcode && !password)) {
+          return new Response(JSON.stringify({ error: "Email and either Passcode or Password are required." }), { status: 400, headers: corsHeaders() });
         }
 
-        const shop = await env.DB.prepare("SELECT * FROM shops WHERE LOWER(email) = LOWER(?)").bind(email.trim()).first();
-        if (!shop || !shop.passcode_hash || !shop.salt) {
+        const cleanEmail = email.toLowerCase().trim();
+        const shop = await env.DB.prepare("SELECT * FROM shops WHERE LOWER(email) = ?").bind(cleanEmail).first();
+        if (!shop) {
           return new Response(JSON.stringify({ error: "Invalid merchant credentials." }), { status: 401, headers: corsHeaders() });
         }
 
@@ -1163,9 +1198,33 @@ export default {
           return new Response(JSON.stringify({ error: "This merchant account is currently inactive." }), { status: 403, headers: corsHeaders() });
         }
 
-        const computed = await hashPassword(String(passcode).trim(), shop.salt);
-        if (computed !== shop.passcode_hash) {
-          return new Response(JSON.stringify({ error: "Invalid merchant credentials." }), { status: 401, headers: corsHeaders() });
+        let authenticated = false;
+        let authMethod = 'passcode';
+
+        // 1. Daily 6-digit counter passcode verification
+        if (passcode && shop.passcode_hash && shop.salt) {
+          const computedPasscode = await hashPassword(String(passcode).trim(), shop.salt);
+          if (computedPasscode === shop.passcode_hash) {
+            authenticated = true;
+            authMethod = 'passcode';
+          }
+        }
+
+        // 2. Master account password verification
+        if (!authenticated && password) {
+          const saltToUse = shop.password_salt || shop.salt;
+          const hashToCompare = shop.password_hash || shop.passcode_hash;
+          if (saltToUse && hashToCompare) {
+            const computedPassword = await hashPassword(String(password).trim(), saltToUse);
+            if (computedPassword === hashToCompare) {
+              authenticated = true;
+              authMethod = 'password';
+            }
+          }
+        }
+
+        if (!authenticated) {
+          return new Response(JSON.stringify({ error: passcode ? "Incorrect 6-digit passcode." : "Incorrect password." }), { status: 401, headers: corsHeaders() });
         }
 
         const token = crypto.randomUUID();
@@ -1178,6 +1237,7 @@ export default {
         return new Response(JSON.stringify({
           success: true,
           token,
+          authMethod,
           shop: {
             id: shop.id,
             name: shop.name,
@@ -1188,6 +1248,84 @@ export default {
             address: shop.address
           }
         }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    // Forgot Password Endpoint
+    if (url.pathname === "/api/shop/auth/forgot-password" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const { email } = body;
+        if (!email) {
+          return new Response(JSON.stringify({ error: "Email is required." }), { status: 400, headers: corsHeaders() });
+        }
+        const cleanEmail = email.toLowerCase().trim();
+        const shop = await env.DB.prepare("SELECT id, name, email FROM shops WHERE LOWER(email) = ?").bind(cleanEmail).first();
+        if (!shop) {
+          return new Response(JSON.stringify({ success: true, message: "If a registered shop matches this email, a reset code has been sent." }), { headers: corsHeaders() });
+        }
+
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = Date.now() + (15 * 60 * 1000); // 15 mins
+
+        await env.DB.prepare("UPDATE shops SET reset_token = ?, reset_expires = ? WHERE id = ?").bind(resetCode, expiresAt, shop.id).run();
+
+        if (env.RESEND_API_KEY) {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "HiGroces Security <security@amorelot.com>",
+              to: [cleanEmail],
+              subject: "HiGroces Password Reset Code",
+              html: `<div style="font-family:sans-serif; padding:20px; color:#111;">
+                <h2>HiGroces Merchant Security</h2>
+                <p>Your password reset code for store <strong>${shop.name}</strong> is:</p>
+                <div style="font-size:2rem; font-weight:bold; letter-spacing:4px; color:#0C513F; margin:16px 0;">${resetCode}</div>
+                <p>This code expires in 15 minutes. Note: Your daily counter 6-digit passcode remains unchanged.</p>
+              </div>`
+            })
+          }).catch(err => console.warn("Resend email error:", err));
+        }
+        console.log(`[MERCHANT-DEV] Password Reset Code for ${cleanEmail}: ${resetCode}`);
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: `Verification code sent to ${cleanEmail}. Enter the code and choose a new password.`,
+          devCode: (!env.RESEND_API_KEY) ? resetCode : undefined
+        }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    // Reset Password Endpoint
+    if (url.pathname === "/api/shop/auth/reset-password" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const { email, code, new_password } = body;
+        if (!email || !code || !new_password) {
+          return new Response(JSON.stringify({ error: "Email, reset code, and new password are required." }), { status: 400, headers: corsHeaders() });
+        }
+        if (String(new_password).trim().length < 6) {
+          return new Response(JSON.stringify({ error: "New password must be at least 6 characters." }), { status: 400, headers: corsHeaders() });
+        }
+        const cleanEmail = email.toLowerCase().trim();
+        const shop = await env.DB.prepare("SELECT id, reset_token, reset_expires FROM shops WHERE LOWER(email) = ?").bind(cleanEmail).first();
+        if (!shop || !shop.reset_token || shop.reset_token !== String(code).trim()) {
+          return new Response(JSON.stringify({ error: "Invalid or expired reset code." }), { status: 400, headers: corsHeaders() });
+        }
+        if (shop.reset_expires && Date.now() > shop.reset_expires) {
+          return new Response(JSON.stringify({ error: "Reset code has expired. Please request a new code." }), { status: 400, headers: corsHeaders() });
+        }
+
+        const pSalt = generateSalt();
+        const pHash = await hashPassword(String(new_password).trim(), pSalt);
+        await env.DB.prepare("UPDATE shops SET password_hash = ?, password_salt = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?").bind(pHash, pSalt, shop.id).run();
+
+        return new Response(JSON.stringify({ success: true, message: "Master Account Password updated successfully! You can now log in." }), { headers: corsHeaders() });
       } catch(err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
       }
@@ -1242,14 +1380,20 @@ export default {
     if (url.pathname === "/api/partner/apply" && request.method === "POST") {
       try {
         const body = await request.json();
-        const { name, owner_name, phone, email, passcode, category, address, latitude, longitude, delivery_radius_km } = body;
+        const { name, owner_name, phone, email, password, passcode, category, address, latitude, longitude, delivery_radius_km } = body;
 
-        if (!name || !email || !passcode || latitude === undefined || longitude === undefined) {
-          return new Response(JSON.stringify({ error: "Shop Name, Email, Passcode, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
+        if (!name || !email || (!passcode && !password) || latitude === undefined || longitude === undefined) {
+          return new Response(JSON.stringify({ error: "Shop Name, Email, Password, Passcode, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
         }
 
-        if (String(passcode).trim().length < 4) {
-          return new Response(JSON.stringify({ error: "Passcode must be at least 4 digits or characters." }), { status: 400, headers: corsHeaders() });
+        const passcodeStr = String(passcode || '').trim();
+        if (passcodeStr && !/^\d{6}$/.test(passcodeStr)) {
+          return new Response(JSON.stringify({ error: "Daily counter passcode must be exactly 6 numeric digits." }), { status: 400, headers: corsHeaders() });
+        }
+
+        const passwordStr = String(password || '').trim();
+        if (passwordStr && passwordStr.length < 6) {
+          return new Response(JSON.stringify({ error: "Master account password must be at least 6 characters." }), { status: 400, headers: corsHeaders() });
         }
 
         const existing = await env.DB.prepare("SELECT id FROM shops WHERE LOWER(email) = LOWER(?)").bind(email.trim()).first();
@@ -1257,8 +1401,14 @@ export default {
           return new Response(JSON.stringify({ error: "A partner shop with this login email is already registered." }), { status: 400, headers: corsHeaders() });
         }
 
+        // Salt and hash 6-digit daily passcode
         const salt = generateSalt();
-        const hash = await hashPassword(String(passcode).trim(), salt);
+        const hash = passcodeStr ? await hashPassword(passcodeStr, salt) : null;
+
+        // Salt and hash master account password
+        const pSalt = generateSalt();
+        const pHash = passwordStr ? await hashPassword(passwordStr, pSalt) : null;
+
         const id = 'shop_' + crypto.randomUUID().slice(0, 8);
         const lat = Number(latitude);
         const lng = Number(longitude);
@@ -1268,18 +1418,18 @@ export default {
         await env.DB.prepare(`
           INSERT INTO shops (
             id, name, owner_name, phone, email, passcode_hash, salt, 
-            category, address, latitude, longitude, delivery_radius_km, 
-            is_active, approval_status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))
+            password_hash, password_salt, category, address, latitude, 
+            longitude, delivery_radius_km, is_active, approval_status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))
         `).bind(
           id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), 
-          email.toLowerCase().trim(), hash, salt, cat, (address || '').trim(), 
-          lat, lng, radius
+          email.toLowerCase().trim(), hash, salt, pHash, pSalt, cat, 
+          (address || '').trim(), lat, lng, radius
         ).run();
 
         return new Response(JSON.stringify({
           success: true,
-          message: "🎉 Partner application submitted successfully! Your shop is under review by our team and will be activated shortly. Once approved, you can log in to your merchant portal at /shop."
+          message: "🎉 Partner application submitted successfully! Your shop profile has been placed in the Admin Verification Queue. Once approved, you can log in to your merchant portal at /shop."
         }), { status: 201, headers: corsHeaders() });
       } catch(err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });

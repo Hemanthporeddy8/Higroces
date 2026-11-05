@@ -327,21 +327,33 @@ header {
         </div>
       </div>
 
-      <!-- 2. LOGIN & PASSCODE (0 SMS BILLS) -->
+      <!-- 2. LOGIN & PASSCODE (TWO-TIER AUTH) -->
       <div class="form-section-title">
-        <span>🔑</span> Secure Merchant Login (No SMS OTP Required)
+        <span>🔐</span> Merchant Account Credentials &amp; Terminal Access
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Store Login Email Address *</label>
+        <input type="email" id="pEmail" placeholder="e.g. ramesh.kiranam@gmail.com" required />
+        <small>Official email used for store management and password recovery.</small>
       </div>
 
       <div class="form-grid-2">
         <div class="form-group">
-          <label>Login Email Address *</label>
-          <input type="email" id="pEmail" placeholder="e.g. ramesh.store@gmail.com" required />
-          <small>You will use this email to log in to your merchant dashboard.</small>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>Master Account Password *</label>
+            <button type="button" onclick="togglePassVisibility('pPassword', this)" style="background:none; border:none; color:var(--accent-gold); font-size:0.75rem; cursor:pointer;">👁️ Show</button>
+          </div>
+          <input type="password" id="pPassword" placeholder="Minimum 6 characters" minlength="6" required />
+          <small>For administrative control. Can be reset via email if forgotten.</small>
         </div>
         <div class="form-group">
-          <label>Choose 6-Digit Passcode / PIN *</label>
-          <input type="password" id="pPasscode" placeholder="e.g. 6-digit PIN (123456)" minlength="4" maxlength="20" required />
-          <small>Keep this safe. Used to unlock your store terminal.</small>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>Daily Counter Passcode / PIN *</label>
+            <button type="button" onclick="togglePassVisibility('pPasscode', this)" style="background:none; border:none; color:var(--accent-gold); font-size:0.75rem; cursor:pointer;">👁️ Show</button>
+          </div>
+          <input type="password" id="pPasscode" placeholder="6-digit numeric PIN (e.g. 123456)" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required />
+          <small>Quick 6-digit PIN used at shop counter to unlock the terminal each shift. Never forgotten.</small>
         </div>
       </div>
 
@@ -408,10 +420,11 @@ header {
       Our team will review and approve your store profile shortly.
     </p>
 
-    <div style="background:#1B2521; border:1px solid var(--border-card); border-radius:12px; padding:18px; max-width:440px; margin:0 auto 24px; text-align:left;">
-      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">Your Merchant Login Credentials:</div>
+    <div style="background:#1B2521; border:1px solid var(--border-card); border-radius:12px; padding:18px; max-width:480px; margin:0 auto 24px; text-align:left;">
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; font-weight:700;">Your Registered Store Credentials:</div>
       <div style="font-size:0.92rem; font-weight:700; color:white; margin-bottom:4px;">Email: <span id="sEmailDisplay" style="color:var(--accent-gold);">--</span></div>
-      <div style="font-size:0.78rem; color:#A3D9C9;">Use your 6-digit passcode to log in once your store is activated.</div>
+      <div style="font-size:0.85rem; color:#A0B2AA; margin-bottom:4px;">Master Password: <span style="font-family:'DM Mono'; color:white;">••••••••</span> <span style="font-size:0.75rem; color:var(--accent-gold);">(Can be reset via email)</span></div>
+      <div style="font-size:0.85rem; color:#A0B2AA;">Daily Shift Passcode: <span id="sPasscodeDisplay" style="font-family:'DM Mono'; color:var(--accent-green); font-weight:700;">••••••</span> <span style="font-size:0.75rem; color:var(--accent-green);">(Instant counter unlock)</span></div>
     </div>
 
     <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
@@ -430,6 +443,18 @@ header {
 let partnerMap = null;
 let partnerMarker = null;
 
+function togglePassVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🔒 Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️ Show';
+  }
+}
+
 function updateCoordinates(lat, lng) {
   document.getElementById('pLat').value = Number(lat).toFixed(6);
   document.getElementById('pLng').value = Number(lng).toFixed(6);
@@ -440,14 +465,41 @@ function initPartnerMap(initialLat = 17.987000, initialLng = 79.535900) {
   const container = document.getElementById('partnerMap');
   if (!container) return;
 
+  // Reliable OpenStreetMap raster tiles fallback (Guarantees map is NEVER blank)
+  const fallbackStyle = {
+    version: 8,
+    sources: {
+      'osm-tiles': {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: ''
+      }
+    },
+    layers: [
+      {
+        id: 'osm-tiles-layer',
+        type: 'raster',
+        source: 'osm-tiles',
+        minzoom: 0,
+        maxzoom: 19
+      }
+    ]
+  };
+
   try {
     const protocol = new pmtiles.Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
 
     const PMTILES_URL = 'https://rydealot-supermaps-api.rydealotmaps.workers.dev/api/v1/pmtiles/india.pmtiles';
-    const flavor = (typeof basemaps !== 'undefined' && basemaps.namedFlavor) 
-      ? basemaps.namedFlavor('light') 
-      : (basemaps.LIGHT || null);
+    let flavor = null;
+    if (typeof basemaps !== 'undefined') {
+      if (typeof basemaps.namedFlavor === 'function') {
+        flavor = basemaps.namedFlavor('light');
+      } else if (basemaps.LIGHT) {
+        flavor = basemaps.LIGHT;
+      }
+    }
 
     let mapLayers = [];
     if (typeof basemaps !== 'undefined' && typeof basemaps.layers === 'function') {
@@ -456,30 +508,33 @@ function initPartnerMap(initialLat = 17.987000, initialLng = 79.535900) {
 
     const rydealotStyle = {
       version: 8,
+      glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+      sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
       sources: {
         protomaps: {
           type: 'vector',
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: mapLayers
+      layers: mapLayers.length > 0 ? mapLayers : fallbackStyle.layers
     };
 
     partnerMap = new maplibregl.Map({
       container: 'partnerMap',
       style: rydealotStyle,
       center: [initialLng, initialLat],
-      zoom: 13,
+      zoom: 14,
       maxZoom: 18,
-      minZoom: 4
+      minZoom: 4,
+      attributionControl: false // Hides MapLibre logo badge
     });
 
     partnerMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
     const pinEl = document.createElement('div');
     pinEl.style.cssText = `
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       background: #FF5E2B;
       border: 3px solid #FFFFFF;
       border-radius: 50% 50% 50% 0;
@@ -502,10 +557,45 @@ function initPartnerMap(initialLat = 17.987000, initialLng = 79.535900) {
       updateCoordinates(e.lngLat.lat, e.lngLat.lng);
     });
 
-    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 300);
+    // Fallback: If vector tiles fail to stream, seamlessly fallback to OSM raster tiles
+    partnerMap.on('error', (e) => {
+      console.warn("Rydealot vector tile error, applying instant raster fallback:", e);
+      if (partnerMap && !partnerMap._fallbackActive) {
+        partnerMap._fallbackActive = true;
+        partnerMap.setStyle(fallbackStyle);
+      }
+    });
+
+    // Multi-phase container resize to guarantee 100% visible tiles
+    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 60);
+    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 200);
+    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 600);
+    setTimeout(() => { if (partnerMap) partnerMap.resize(); }, 1200);
 
   } catch(e) {
-    console.warn("RydealotMaps init notice:", e);
+    console.warn("RydealotMaps init notice, using fallback:", e);
+    try {
+      partnerMap = new maplibregl.Map({
+        container: 'partnerMap',
+        style: fallbackStyle,
+        center: [initialLng, initialLat],
+        zoom: 14,
+        attributionControl: false
+      });
+      partnerMarker = new maplibregl.Marker({ color: '#FF5E2B', draggable: true })
+        .setLngLat([initialLng, initialLat])
+        .addTo(partnerMap);
+      partnerMarker.on('dragend', () => {
+        const lngLat = partnerMarker.getLngLat();
+        updateCoordinates(lngLat.lat, lngLat.lng);
+      });
+      partnerMap.on('click', (e) => {
+        partnerMarker.setLngLat(e.lngLat);
+        updateCoordinates(e.lngLat.lat, e.lngLat.lng);
+      });
+    } catch(err2) {
+      console.error("Critical map init error:", err2);
+    }
   }
 }
 
@@ -544,29 +634,37 @@ async function handlePartnerSubmit(e) {
   const phone = document.getElementById('pPhone').value.trim();
   const category = document.getElementById('pCategory').value;
   const email = document.getElementById('pEmail').value.trim();
+  const password = document.getElementById('pPassword').value.trim();
   const passcode = document.getElementById('pPasscode').value.trim();
   const address = document.getElementById('pAddress').value.trim();
   const delivery_radius_km = parseFloat(document.getElementById('pRadius').value) || 10;
   const latitude = parseFloat(document.getElementById('pLat').value);
   const longitude = parseFloat(document.getElementById('pLng').value);
 
-  if (!name || !owner_name || !phone || !email || !passcode || !address) {
+  if (!name || !owner_name || !phone || !email || !password || !passcode || !address) {
     alertEl.className = 'alert-box alert-danger';
     alertEl.textContent = 'Please fill out all required fields.';
     alertEl.style.display = 'block';
     return;
   }
 
-  if (phone.length !== 10) {
+  if (phone.length !== 10 || !/^\d{10}$/.test(phone)) {
     alertEl.className = 'alert-box alert-danger';
     alertEl.textContent = 'Please enter a valid 10-digit mobile number.';
     alertEl.style.display = 'block';
     return;
   }
 
-  if (passcode.length < 4) {
+  if (password.length < 6) {
     alertEl.className = 'alert-box alert-danger';
-    alertEl.textContent = 'Passcode must be at least 4 digits or characters.';
+    alertEl.textContent = 'Master Account Password must be at least 6 characters.';
+    alertEl.style.display = 'block';
+    return;
+  }
+
+  if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+    alertEl.className = 'alert-box alert-danger';
+    alertEl.textContent = 'Daily Counter Passcode must be exactly 6 numeric digits (e.g. 123456).';
     alertEl.style.display = 'block';
     return;
   }
@@ -583,6 +681,7 @@ async function handlePartnerSubmit(e) {
         owner_name,
         phone,
         email,
+        password,
         passcode,
         category,
         address,
@@ -600,6 +699,8 @@ async function handlePartnerSubmit(e) {
     // Success transition
     document.getElementById('applyCard').style.display = 'none';
     document.getElementById('sEmailDisplay').textContent = email;
+    const pDisplay = document.getElementById('sPasscodeDisplay');
+    if (pDisplay) pDisplay.textContent = passcode;
     document.getElementById('successCard').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
