@@ -2056,7 +2056,7 @@ async function loadPendingApplications() {
       return;
     }
     const data = await res.json();
-    const pendingList = data.shops || [];
+    const pendingList = data.pendingShops || data.shops || [];
 
     updatePendingBadge(pendingList.length);
 
