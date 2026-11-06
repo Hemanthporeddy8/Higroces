@@ -1,7 +1,7 @@
 // HiGroces Service Worker (sw.js)
 // Provides offline capability & caches product assets on device memory (Zepto-style client caching)
 
-const CACHE_NAME = 'higroces-cache-v3';
+const CACHE_NAME = 'higroces-cache-v4';
 const CORE_ASSETS = [
   '/',
   '/index.html',

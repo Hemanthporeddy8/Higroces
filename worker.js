@@ -1894,7 +1894,20 @@ export default {
 
     // 3. Static Assets: Serve index.html, custom.html, rider.html, shop.html, admin.html, PWA, CSS
     if (env.ASSETS) {
-      return env.ASSETS.fetch(request);
+      const response = await env.ASSETS.fetch(request);
+      const pathname = url.pathname;
+      if (pathname.endsWith('.html') || pathname === '/' || pathname === '/admin' || pathname === '/partner' || pathname === '/shop' || pathname === '/rider') {
+        const newHeaders = new Headers(response.headers);
+        newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        newHeaders.set('Pragma', 'no-cache');
+        newHeaders.set('Expires', '0');
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders
+        });
+      }
+      return response;
     }
 
     return new Response("Not found", { status: 404 });

@@ -2046,6 +2046,8 @@ function switchShopSubTab(tab) {
   }
 }
 
+let pendingApplicationsList = [];
+
 async function loadPendingApplications() {
   const tbody = document.getElementById('pendingShopsTbody');
   if (!tbody) return;
@@ -2057,6 +2059,7 @@ async function loadPendingApplications() {
     }
     const data = await res.json();
     const pendingList = data.pendingShops || data.shops || [];
+    pendingApplicationsList = pendingList;
 
     updatePendingBadge(pendingList.length);
 
@@ -2101,10 +2104,10 @@ async function loadPendingApplications() {
           </td>
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn-action-select" onclick="approveShop('${s.id}', '${s.name}')" style="background:#0C513F; color:white; border-color:#1CA37F; font-size:0.78rem; padding:6px 12px;" title="Approve and activate merchant">
+              <button class="btn-action-select" onclick="approveShop('${s.id}')" style="background:#0C513F; color:white; border-color:#1CA37F; font-size:0.78rem; padding:6px 12px;" title="Approve and activate merchant">
                 ✅ Approve &amp; Activate
               </button>
-              <button class="btn-action-select" onclick="rejectShop('${s.id}', '${s.name}')" style="color:var(--red); border-color:rgba(231,76,60,0.4); font-size:0.78rem;" title="Reject merchant application">
+              <button class="btn-action-select" onclick="rejectShop('${s.id}')" style="color:var(--red); border-color:rgba(231,76,60,0.4); font-size:0.78rem;" title="Reject merchant application">
                 ❌ Reject
               </button>
             </div>
@@ -2133,7 +2136,9 @@ function updatePendingBadge(count) {
   }
 }
 
-async function approveShop(shopId, name) {
+async function approveShop(shopId, maybeName) {
+  const shop = (pendingApplicationsList || []).find(s => s.id === shopId);
+  const name = maybeName || (shop ? shop.name : shopId);
   if (!confirm(`Approve partner shop "${name}" and activate their account for live orders?`)) return;
   try {
     const res = await fetch(SHOPS_BASE, {
@@ -2154,7 +2159,9 @@ async function approveShop(shopId, name) {
   }
 }
 
-async function rejectShop(shopId, name) {
+async function rejectShop(shopId, maybeName) {
+  const shop = (pendingApplicationsList || []).find(s => s.id === shopId);
+  const name = maybeName || (shop ? shop.name : shopId);
   if (!confirm(`Reject and delete application for "${name}"? This cannot be undone.`)) return;
   try {
     const res = await fetch(`${SHOPS_BASE}?id=${encodeURIComponent(shopId)}`, {
