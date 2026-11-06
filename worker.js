@@ -986,7 +986,11 @@ export default {
               return new Response(JSON.stringify({ error: "Unauthorized: Admin session required" }), { status: 401, headers: corsHeaders() });
             }
             const res = await env.DB.prepare("SELECT * FROM shops WHERE approval_status = 'pending' ORDER BY datetime(created_at) DESC").all();
-            return new Response(JSON.stringify({ shops: res.results || [], pendingShops: res.results || [] }), { headers: corsHeaders() });
+            return new Response(JSON.stringify({ 
+              shops: res.results || [], 
+              pendingShops: res.results || [],
+              count: (res.results || []).length
+            }), { headers: corsHeaders() });
           }
 
           const withReports = url.searchParams.get('reports') === 'true';
