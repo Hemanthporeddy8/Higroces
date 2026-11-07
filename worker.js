@@ -1939,7 +1939,7 @@ export default {
     if (env.ASSETS) {
       const response = await env.ASSETS.fetch(request);
       const pathname = url.pathname;
-      if (pathname.endsWith('.html') || pathname === '/' || pathname === '/admin' || pathname === '/partner' || pathname === '/shop' || pathname === '/rider') {
+      if (pathname.endsWith('.html') || pathname === '/' || pathname === '/admin' || pathname === '/partner' || pathname === '/shop' || pathname === '/rider' || pathname === '/track') {
         const newHeaders = new Headers(response.headers);
         newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         newHeaders.set('Pragma', 'no-cache');
