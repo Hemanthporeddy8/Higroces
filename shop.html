@@ -1131,6 +1131,30 @@ function onMerchantAuthenticated() {
     catEl.textContent = (currentMerchant.category || 'ALL').toUpperCase() + ' STATION';
   }
 
+  // Smart Category-Adaptive Station UI
+  const merchantCat = (currentMerchant.category || 'all').toLowerCase();
+  const tabButcher = document.getElementById('tabButcher');
+  const tabGrocery = document.getElementById('tabGrocery');
+  const tabAll = document.getElementById('tabAll');
+
+  if (merchantCat === 'grocery') {
+    if (tabButcher) tabButcher.style.display = 'none';
+    if (tabAll) tabAll.style.display = 'none';
+    if (tabGrocery) tabGrocery.style.display = 'inline-flex';
+    switchStation('grocery');
+  } else if (merchantCat === 'meat') {
+    if (tabGrocery) tabGrocery.style.display = 'none';
+    if (tabAll) tabAll.style.display = 'none';
+    if (tabButcher) tabButcher.style.display = 'inline-flex';
+    switchStation('butcher');
+  } else {
+    // All-in-one Central Hub
+    if (tabButcher) tabButcher.style.display = 'inline-flex';
+    if (tabGrocery) tabGrocery.style.display = 'inline-flex';
+    if (tabAll) tabAll.style.display = 'inline-flex';
+    switchStation('all');
+  }
+
   fetchShopOrders();
 }
 

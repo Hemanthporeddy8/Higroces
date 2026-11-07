@@ -1467,7 +1467,10 @@ input:checked + .toggle-slider:before {
     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; flex-wrap:wrap; gap:10px;">
       <button type="button" class="btn-auth" style="background:#20312B; max-width:120px;" onclick="closeApplicationModal()">Close</button>
       
-      <div style="display:flex; gap:10px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn-action-select" onclick="if(activeApplicationModalShopId) notifyActiveShop(activeApplicationModalShopId)" style="color:#5dade2; border-color:rgba(52,152,219,0.4); padding:10px 16px; font-size:0.85rem;" title="Open pre-filled Gmail or WhatsApp message">
+          ✉️ Email / WhatsApp
+        </button>
         <button type="button" class="btn-action-select" id="btnModalReject" onclick="rejectShopFromModal()" style="color:var(--red); border-color:rgba(231,76,60,0.4); padding:10px 18px; font-size:0.85rem;" title="Reject merchant application">
           ❌ Reject Application
         </button>
@@ -1479,6 +1482,38 @@ input:checked + .toggle-slider:before {
 
   </div>
 </div>
+
+<!-- STORE APPROVAL NOTIFICATION MODAL (One-click Gmail & WhatsApp) -->
+<div class="order-modal-bg" id="approvalNotifyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:3500; align-items:center; justify-content:center; padding:20px;">
+  <div class="auth-card" style="max-width:540px; width:100%; text-align:center; padding:28px;">
+    <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+    <h2 style="font-size:1.45rem; color:white; margin-bottom:6px;">Store Approved &amp; Activated!</h2>
+    <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5; margin-bottom:18px;">
+      <strong id="notifyModalShopName" style="color:white;">--</strong> is now active to receive customer orders.<br>
+      Notify <span id="notifyModalOwner" style="color:var(--gold); font-weight:700;">--</span> (<span id="notifyModalEmail" style="color:white; font-family:'DM Mono'; font-size:0.85rem;">--</span>):
+    </p>
+
+    <!-- ACTION BUTTONS -->
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <button type="button" id="btnNotifyGmail" class="btn-auth" style="background:#EA4335; border:1px solid #ff7b6f; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; padding:12px; cursor:pointer;">
+        <span>✉️</span> Open Pre-filled in Gmail
+      </button>
+      <button type="button" id="btnNotifyWa" class="btn-auth" style="background:#25D366; color:#0b2612; border:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; padding:12px; cursor:pointer;">
+        <span>💬</span> Send via WhatsApp
+      </button>
+      <button type="button" id="btnNotifyMailto" class="btn-auth" style="background:rgba(255,255,255,0.06); border:1px solid var(--border-card); color:#cbd5e1; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.85rem; padding:10px; cursor:pointer;">
+        <span>📧</span> Or Open in Default Mail App (Outlook / Apple)
+      </button>
+    </div>
+
+    <div>
+      <button type="button" onclick="closeApprovalNotifyModal()" class="btn-action-select" style="background:#131B17; border-color:var(--border-card); color:var(--text-muted); padding:8px 24px; font-size:0.85rem; cursor:pointer;">
+        Done
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="order-modal-bg" id="addAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); z-index:3000; align-items:center; justify-content:center; padding:20px;">
   <div class="auth-card" style="max-width:440px; text-align:left;">
     <div style="font-size:2.2rem; margin-bottom:8px; text-align:center;">👥</div>
@@ -2223,6 +2258,7 @@ async function loadShops() {
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
               <button class="btn-action-select" onclick="editShop('${s.id}')" style="color:var(--gold); border-color:rgba(255,183,77,0.3);">✏️ Edit</button>
+              <button class="btn-action-select" onclick="notifyActiveShop('${s.id}')" style="color:#5dade2; border-color:rgba(52,152,219,0.3);" title="Open pre-filled Gmail or WhatsApp with login instructions">✉️ Notify</button>
               ${s.id !== 'shop_primary_hub' ? `<button class="btn-action-select" onclick="deleteShop('${s.id}', '${s.name}')" style="color:var(--red); border-color:rgba(231,76,60,0.3);">🗑️</button>` : ''}
             </div>
           </td>
@@ -2356,9 +2392,9 @@ async function approveShop(shopId, maybeName) {
     });
     const data = await res.json();
     if (res.ok) {
-      alert(`🎉 Shop "${name}" approved and activated! The merchant can now log into /shop with their email and passcode.`);
       loadPendingApplications();
       loadShops();
+      showApprovalNotifyModal(shop || { id: shopId, name: name });
     } else {
       alert(data.error || 'Failed to approve shop.');
     }
@@ -2472,6 +2508,73 @@ function rejectShopFromModal() {
   const id = activeApplicationModalShopId;
   closeApplicationModal();
   rejectShop(id);
+}
+
+function showApprovalNotifyModal(shop) {
+  if (!shop) return;
+  const owner = shop.owner_name || 'Partner';
+  const shopName = shop.name || 'Your Store';
+  const email = shop.email || '';
+  const phone = shop.phone || '';
+
+  const nameEl = document.getElementById('notifyModalShopName');
+  const ownerEl = document.getElementById('notifyModalOwner');
+  const emailEl = document.getElementById('notifyModalEmail');
+  if (nameEl) nameEl.textContent = shopName;
+  if (ownerEl) ownerEl.textContent = owner;
+  if (emailEl) emailEl.textContent = email || 'No email registered';
+
+  const subject = `🎉 Store Approved: Welcome to HiGroces Partner Network!`;
+  const bodyText = `🎉 Congratulations ${owner}! Your store '${shopName}' is now officially approved and active on HiGroces.\n\nTo start receiving orders:\n1. Open the HiGroces Partner App / Website on your phone or counter computer.\n2. Click 'Partner Login' at the top right.\n3. Enter your store email (${email}) and your 6-digit Daily Counter PIN.\n\nWelcome to the HiGroces Partner Network! 🚀`;
+
+  const btnGmail = document.getElementById('btnNotifyGmail');
+  if (btnGmail) {
+    if (email) {
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+      btnGmail.onclick = () => window.open(gmailUrl, '_blank');
+      btnGmail.style.display = 'inline-flex';
+    } else {
+      btnGmail.style.display = 'none';
+    }
+  }
+
+  const btnMailto = document.getElementById('btnNotifyMailto');
+  if (btnMailto) {
+    if (email) {
+      const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+      btnMailto.onclick = () => { window.location.href = mailtoUrl; };
+      btnMailto.style.display = 'inline-flex';
+    } else {
+      btnMailto.style.display = 'none';
+    }
+  }
+
+  const btnWa = document.getElementById('btnNotifyWa');
+  if (btnWa) {
+    if (phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '');
+      const fullPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+      const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(bodyText)}`;
+      btnWa.onclick = () => window.open(waUrl, '_blank');
+      btnWa.style.display = 'inline-flex';
+    } else {
+      btnWa.style.display = 'none';
+    }
+  }
+
+  const modal = document.getElementById('approvalNotifyModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeApprovalNotifyModal() {
+  const modal = document.getElementById('approvalNotifyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function notifyActiveShop(shopId) {
+  const shop = (registeredShops || []).find(s => s.id === shopId) || (pendingApplicationsList || []).find(s => s.id === shopId);
+  if (!shop) return;
+  showApprovalNotifyModal(shop);
 }
 
 function updateShopFilterDropdown(shops) {
