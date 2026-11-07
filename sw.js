@@ -1,7 +1,7 @@
-// HiGroces Service Worker (sw.js)
+// Amorelot Service Worker (sw.js)
 // Provides offline capability & caches product assets on device memory (Zepto-style client caching)
 
-const CACHE_NAME = 'higroces-cache-v4';
+const CACHE_NAME = 'amorelot-cache-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   '/rider.html',
   '/admin.html',
   '/shop.html',
+  '/partner.html',
   '/track.html',
   '/manifest.json'
 ];

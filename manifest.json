@@ -1,7 +1,7 @@
 {
-  "name": "HiGroces — Fresh Meat & Daily Essentials",
-  "short_name": "HiGroces",
-  "description": "Hyperlocal farm-fresh meat, poultry, fish and daily groceries delivered fast.",
+  "name": "Amorelot — Fresh Meat, Eggs & Groceries",
+  "short_name": "Amorelot",
+  "description": "Hyperlocal farm-fresh meat, poultry, fish and daily groceries delivered fast in 15 minutes.",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

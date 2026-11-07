@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HiGroces — Fresh Meat, Eggs & Groceries | Delivered Fast</title>
+<title>Amorelot — Fresh Meat, Eggs &amp; Groceries | Delivered Fast</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0C513F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="HiGroces">
+<meta name="apple-mobile-web-app-title" content="Amorelot">
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -1211,11 +1211,9 @@ header {
   }
 }
 @media screen and (max-width: 480px) {
-  .btn-install-app .install-text {
-    display: none;
-  }
   .btn-install-app {
-    padding: 8px 10px;
+    padding: 6px 10px;
+    font-size: 0.76rem;
   }
 }
 
@@ -1506,6 +1504,184 @@ header {
   cursor: pointer;
   font-family: 'Outfit';
 }
+
+/* ── FULL DEVICE-ADAPTIVE RESPONSIVE SYSTEM ── */
+@media screen and (max-width: 768px) {
+  header {
+    padding: 10px 14px;
+  }
+  .header-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-left-cluster {
+    order: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-title {
+    font-size: 1.35rem;
+  }
+  .header-actions {
+    order: 2;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .delivery-badge {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    border-radius: 10px;
+  }
+  .search-bar-container {
+    order: 4;
+    width: 100%;
+    max-width: 100%;
+  }
+  .search-bar {
+    padding: 10px 14px 10px 38px;
+    font-size: 0.88rem;
+    border-radius: 10px;
+  }
+  .cart-widget {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    gap: 6px;
+  }
+  .btn-install-app {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    display: inline-flex !important;
+  }
+  .storefront {
+    padding: 0 14px;
+    margin: 14px auto;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .storefront {
+    padding: 0 10px;
+    margin: 10px auto;
+  }
+  .hero-banner {
+    padding: 22px 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .hero-text {
+    max-width: 100%;
+  }
+  .hero-text h1 {
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .hero-text p {
+    font-size: 0.84rem;
+    line-height: 1.45;
+    margin-bottom: 14px;
+  }
+  .hero-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+  .hero-action {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    justify-content: center;
+  }
+  .butcher-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 14px;
+    gap: 12px;
+  }
+  .btn-enter-butcher {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  .category-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .category-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 32px;
+  }
+  .product-card {
+    padding: 10px !important;
+    border-radius: 12px !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .product-img {
+    font-size: 2.6rem !important;
+    height: 80px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .product-title {
+    font-size: 0.84rem !important;
+    line-height: 1.25 !important;
+    min-height: 32px !important;
+    margin-bottom: 4px;
+  }
+  .product-unit {
+    font-size: 0.72rem !important;
+    margin-bottom: 6px !important;
+  }
+  .product-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .product-price {
+    font-size: 0.92rem !important;
+  }
+  .btn-add {
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media screen and (min-width: 601px) and (max-width: 960px) {
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px;
+  }
+}
 </style>
 </head>
 <body>
@@ -1738,8 +1914,17 @@ header {
     <button class="nav-drawer-close" onclick="closeNavDrawer()" aria-label="Close navigation">&times;</button>
   </div>
 
-  <div class="nav-drawer-section-title">Field Portals (Mobile Optimized)</div>
+  <div class="nav-drawer-section-title">Amorelot Portals &amp; Apps</div>
   <div class="nav-drawer-links">
+    <!-- 1-Click Install App Tile for Mobile -->
+    <a href="javascript:void(0)" onclick="closeNavDrawer(); triggerPwaInstall();" class="nav-drawer-link" style="background:rgba(255,183,77,0.12); border-color:rgba(255,183,77,0.4);">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">📲</span>
+        <span style="color:#FFB74D; font-weight:700;">Install Amorelot App</span>
+      </div>
+      <span class="nav-drawer-badge" style="background:#FFB74D; color:#1a1005;">1-Tap</span>
+    </a>
+
     <a href="/index.html" class="nav-drawer-link active">
       <div class="nav-drawer-link-left">
         <span class="drawer-emoji">🛒</span>
@@ -1748,12 +1933,20 @@ header {
       <span class="nav-drawer-badge">Active</span>
     </a>
 
+    <a href="/partner.html" class="nav-drawer-link">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji">🏪</span>
+        <span>Partner With Us (Register Shop)</span>
+      </div>
+      <span class="nav-drawer-badge">Earn</span>
+    </a>
+
     <a href="/shop.html" class="nav-drawer-link">
       <div class="nav-drawer-link-left">
         <span class="drawer-emoji">🔪</span>
-        <span>Butcher &amp; Dark Store Hub</span>
+        <span>Merchant &amp; Counter Station</span>
       </div>
-      <span class="nav-drawer-badge">KDS 120s</span>
+      <span class="nav-drawer-badge">Store</span>
     </a>
 
     <a href="/rider.html" class="nav-drawer-link">
@@ -1761,13 +1954,26 @@ header {
         <span class="drawer-emoji">🛵</span>
         <span>Rider Delivery App</span>
       </div>
-      <span class="nav-drawer-badge">OTP Ready</span>
+      <span class="nav-drawer-badge">Rider</span>
     </a>
   </div>
 
-  <div class="nav-drawer-note">
-    🔒 <strong>Security Policy:</strong><br>
-    The Executive Admin Console (<code>admin.html</code>) is restricted to authorized Desktop PC workstations only.
+  <!-- Customer Support & Assistance (Clean, friendly replacement for internal security note) -->
+  <div class="nav-drawer-note" style="border-color:rgba(46,204,113,0.3); background:rgba(10,36,27,0.85); color:#A2D9CE;">
+    <div style="font-weight:700; color:#2ECC71; margin-bottom:4px; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+      <span>💬</span> 24/7 Customer Help &amp; Support
+    </div>
+    <div style="font-size:0.78rem; line-height:1.45; color:#cbd5e1; margin-bottom:8px;">
+      Questions about your order or cuts? Contact our support desk anytime:
+    </div>
+    <a href="https://wa.me/919999999999?text=Hi%20Amorelot%2C%20I%20have%20a%20question%20about%20my%20order" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#25D366; color:#0b2612; padding:6px 14px; border-radius:6px; font-weight:800; font-size:0.76rem; text-decoration:none;">
+      <span>💬</span> Chat on WhatsApp
+    </a>
+  </div>
+
+  <div style="padding:14px 18px 22px; font-size:0.75rem; color:#60736B; text-align:center;">
+    Amorelot • Farm Fresh 15-Min Delivery<br>
+    <span style="opacity:0.7;">Zero Cold Storage • Local Mandi</span>
   </div>
 </div>
 
@@ -1775,8 +1981,8 @@ header {
 <div class="ios-install-modal-bg" id="iosInstallModal" onclick="if(event.target===this) closeIosModal()">
   <div class="ios-install-card">
     <div style="font-size:2.8rem; margin-bottom:10px;">📲</div>
-    <h3>Install HiGroces on iPhone</h3>
-    <p style="font-size:0.82rem; color:#A0B2AA;">Add HiGroces to your home screen for instant 15-minute ordering without browser bars:</p>
+    <h3>Install Amorelot on iPhone</h3>
+    <p style="font-size:0.82rem; color:#A0B2AA;">Add Amorelot to your home screen for instant 15-minute ordering without browser bars:</p>
     <div class="ios-install-steps">
       <div>1. Tap the <strong>Share button (⎋)</strong> at the bottom of Safari.</div>
       <div style="margin-top:8px;">2. Scroll down and tap <strong>"Add to Home Screen" (➕)</strong>.</div>
@@ -1796,7 +2002,7 @@ header {
       <a href="/index.html" class="logo">
         <span class="logo-icon">🥬</span>
         <div>
-          <span class="logo-title">HiGroces</span>
+          <span class="logo-title">Amorelot</span>
           <span class="logo-badge">Fresh &amp; Fast</span>
         </div>
       </a>
@@ -1822,7 +2028,7 @@ header {
 
     <div class="header-actions">
       <!-- 📲 Native PWA Install button (Auto-hides in standalone installed app) -->
-      <button class="btn-install-app" id="btnInstallApp" onclick="triggerPwaInstall()" style="display:none;" title="Install HiGroces directly to your phone">
+      <button class="btn-install-app" id="btnInstallApp" onclick="triggerPwaInstall()" title="Install Amorelot directly to your phone">
         <span>📲</span> <span class="install-text">Install App</span>
       </button>
 
@@ -1867,6 +2073,8 @@ header {
         <button class="hero-action butcher" onclick="enterButcherMode()">🔪 Butcher Mode</button>
       </div>
     </div>
+  </div>
+
   <!-- ZOMATO-STYLE STORE CLOSED BANNER -->
   <div id="storeOfflineBanner" style="display:none; background:linear-gradient(90deg, #381510, #220F0C); border:1.5px solid #E74C3C; border-radius:12px; padding:16px 20px; margin-bottom:20px; box-shadow:0 6px 20px rgba(231,76,60,0.25);">
     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -3510,7 +3718,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 window.addEventListener('appinstalled', () => {
-  console.log('HiGroces PWA installed to device successfully');
+  console.log('Amorelot PWA installed to device successfully');
   deferredInstallPrompt = null;
   const btn = document.getElementById('btnInstallApp');
   if (btn) btn.style.display = 'none';
@@ -3537,7 +3745,7 @@ async function triggerPwaInstall() {
   }
 
   // Fallback for browsers that already consumed or don't support beforeinstallprompt
-  alert("📲 Install HiGroces App:\n\n1. Tap your browser menu (⋮ in Chrome/Firefox or ⎋ in Safari)\n2. Tap 'Add to Home screen' or 'Install App'\n3. Open HiGroces directly from your phone app drawer without browser address bars!");
+  alert("📲 Install Amorelot App:\n\n1. Tap your browser menu (⋮ in Chrome/Firefox or ⎋ in Safari)\n2. Tap 'Add to Home screen' or 'Install App'\n3. Open Amorelot directly from your phone app drawer without browser address bars!");
 }
 
 function closeIosModal() {
@@ -3719,7 +3927,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Register PWA Service Worker for local phone caching & force update
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then(reg => {
-      console.log('HiGroces PWA Service Worker registered successfully');
+      console.log('Amorelot PWA Service Worker registered successfully');
       reg.update();
     }).catch(err => {
       console.warn('PWA Service Worker registration failed:', err);
@@ -3730,7 +3938,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if ('caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k === 'higroces-cache-v1' || k === 'higroces-cache-v2') caches.delete(k);
+        if (k.startsWith('higroces-cache-')) caches.delete(k);
       });
     });
   }
