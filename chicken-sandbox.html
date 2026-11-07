@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amorelot — Chicken Butchery Sandbox (6 Interactive Variations)</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #0C513F;
+  --primary-light: #157960;
+  --accent: #FF5E2B;
+  --accent-gold: #FFB74D;
+  --bg-main: #F4F6F5;
+  --paper-cream: #FAF4EC;
+  --paper-dark: #ECE5DA;
+  --border: #D8CEBE;
+  --ink: #1C2220;
+  --ink-muted: #606C66;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-main);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  background: #0C513F;
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-badge {
+  background: #FF5E2B;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-nav-return {
+  background: rgba(255,255,255,0.14);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-nav-return:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── VARIATION TABS BAR ── */
+.sandbox-tabs-bar {
+  background: #14201C;
+  border-bottom: 2px solid #233A31;
+  padding: 10px 20px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sandbox-tabs-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #A2D9CE;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+.tab-btn.active {
+  background: #0C513F;
+  border-color: #2ECC71;
+  color: white;
+  box-shadow: 0 4px 14px rgba(46, 204, 113, 0.25);
+}
+
+/* ── MAIN SANDBOX CONTAINER ── */
+.sandbox-container {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 0 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Variation Stage Card */
+.variation-card {
+  display: none;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+.variation-card.active {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.25s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.var-header {
+  border-bottom: 1px solid #ECEEEF;
+  padding-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.var-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.45rem;
+  color: #1C2220;
+}
+.var-desc {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-top: 4px;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+/* Layout Grid for Variations */
+.stage-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .stage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Canvas Box */
+.canvas-box {
+  background: var(--paper-cream);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 480px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Control Panel Sidebar */
+.sidebar-box {
+  background: #FAF8F5;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Interactive SVG Elements */
+.clickable-part {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.clickable-part:hover {
+  filter: drop-shadow(0 0 8px rgba(255, 94, 43, 0.6));
+  transform: scale(1.02);
+}
+.clickable-part.harvested {
+  opacity: 0.18;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
+/* Digital Scale HUD */
+.mini-scale {
+  background: #141A18;
+  border: 2px solid #283832;
+  border-radius: 10px;
+  padding: 14px;
+  color: #FFB74D;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+}
+.mini-scale-val {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #FF5E2B;
+}
+.mini-scale-sub {
+  font-size: 0.72rem;
+  color: #A2D9CE;
+  margin-top: 4px;
+}
+
+/* Notes callout */
+.dev-notes {
+  background: #E8F8F5;
+  border-left: 4px solid #0C513F;
+  border-radius: 4px;
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #0A3D2F;
+}
+.dev-notes strong { color: #0C513F; }
+
+/* Cut Matrix Pill Cards */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.matrix-pill {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.matrix-pill:hover, .matrix-pill.selected {
+  border-color: #0C513F;
+  background: #E8F8F5;
+  transform: translateY(-2px);
+}
+.matrix-pill.selected {
+  box-shadow: 0 4px 12px rgba(12, 81, 63, 0.2);
+}
+.matrix-name { font-weight: 800; font-size: 0.9rem; color: #1C2220; }
+.matrix-sub { font-size: 0.75rem; color: var(--ink-muted); margin-top: 3px; }
+
+/* Action Buttons */
+.btn-action {
+  background: #0C513F;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-action:hover { background: #157960; }
+.btn-action.secondary {
+  background: white;
+  border: 1.5px solid var(--border);
+  color: var(--ink);
+}
+.btn-action.secondary:hover { background: #ECE5DA; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="brand-title">
+      <span>🍗</span> Amorelot Custom Butchery Lab
+      <span class="brand-badge">Sandbox Engine v2.4</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/custom.html" class="btn-nav-return">
+      <span>🔪</span> Back to Main Butcher Mode
+    </a>
+    <a href="/index.html" class="btn-nav-return">
+      <span>🛒</span> Storefront
+    </a>
+  </div>
+</header>
+
+<!-- TABS SELECTOR (6 VARIATIONS) -->
+<div class="sandbox-tabs-bar">
+  <button class="tab-btn active" onclick="switchVariation(1, this)">
+    <span>1️⃣</span> Quick-Tap Mobile Anatomy
+  </button>
+  <button class="tab-btn" onclick="switchVariation(2, this)">
+    <span>2️⃣</span> Leg Joint Slicer (Whole vs 2-Piece)
+  </button>
+  <button class="tab-btn" onclick="switchVariation(3, this)">
+    <span>3️⃣</span> Mandi Curry Cut Matrix (4/8/12/16)
+  </button>
+  <button class="tab-btn" onclick="switchVariation(4, this)">
+    <span>4️⃣</span> 3-Layer Visualizer (Skin/Meat/Bone)
+  </button>
+  <button class="tab-btn" onclick="switchVariation(5, this)">
+    <span>5️⃣</span> Chef &amp; Gourmet Wing Specialty
+  </button>
+  <button class="tab-btn" onclick="switchVariation(6, this)">
+    <span>6️⃣</span> Gesture Swipe-to-Carve
+  </button>
+</div>
+
+<div class="sandbox-container">
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 1: MODERN QUICK-TAP (MOBILE-OPTIMIZED)
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card active" id="var-1">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 1: The Modern Quick-Tap Butcher (Mobile-First)</h2>
+        <p class="var-desc">
+          Designed specifically for phone screens. Bold, finger-friendly hitboxes make it easy to tap Breast, Leg, Wings, or Back. Instant visual feedback with auto-scaling weights.
+        </p>
+      </div>
+      <button class="btn-action secondary" onclick="resetVar1()">🔄 Reset Carcass</button>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box">
+        <svg viewBox="0 0 400 480" width="100%" height="440" style="max-width:380px;">
+          <defs>
+            <radialGradient id="v1Meat" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="#FFAD8A"/>
+              <stop offset="85%" stop-color="#E86E45"/>
+              <stop offset="100%" stop-color="#BF4824"/>
+            </radialGradient>
+            <radialGradient id="v1Bone" cx="40%" cy="40%" r="50%">
+              <stop offset="0%" stop-color="#FFFDF7"/>
+              <stop offset="100%" stop-color="#D9CCBA"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Chicken Neck -->
+          <g class="clickable-part" id="v1-neck" onclick="harvestV1('neck', 'Chicken Neck', 115, 60)">
+            <ellipse cx="200" cy="55" rx="22" ry="34" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <text x="200" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">NECK</text>
+          </g>
+
+          <!-- Breast Left & Right -->
+          <g class="clickable-part" id="v1-breast-l" onclick="harvestV1('breast-l', 'Breast (Left)', 255, 240)">
+            <path d="M200 85 C145 85 110 130 115 200 C120 250 170 270 200 280 Z" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <text x="155" y="185" text-anchor="middle" font-size="11" font-weight="800" fill="#FFF">BREAST (L)</text>
+          </g>
+          <g class="clickable-part" id="v1-breast-r" onclick="harvestV1('breast-r', 'Breast (Right)', 255, 240)">
+            <path d="M200 85 C255 85 290 130 285 200 C280 250 230 270 200 280 Z" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <text x="245" y="185" text-anchor="middle" font-size="11" font-weight="800" fill="#FFF">BREAST (R)</text>
+          </g>
+
+          <!-- Wings -->
+          <g class="clickable-part" id="v1-wing-l" onclick="harvestV1('wing-l', 'Wing (Left)', 95, 90)">
+            <ellipse cx="75" cy="150" rx="34" ry="20" transform="rotate(-25 75 150)" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <text x="75" y="154" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">WING</text>
+          </g>
+          <g class="clickable-part" id="v1-wing-r" onclick="harvestV1('wing-r', 'Wing (Right)', 95, 90)">
+            <ellipse cx="325" cy="150" rx="34" ry="20" transform="rotate(25 325 150)" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <text x="325" y="154" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">WING</text>
+          </g>
+
+          <!-- Whole Legs (Left & Right) -->
+          <g class="clickable-part" id="v1-leg-l" onclick="harvestV1('leg-l', 'Whole Leg (Left)', 320, 290)">
+            <path d="M150 270 C110 275 95 320 110 370 C120 405 155 425 175 380 C190 340 185 285 150 270 Z" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <circle cx="160" cy="405" r="8" fill="url(#v1Bone)"/>
+            <text x="145" y="340" text-anchor="middle" font-size="11" font-weight="800" fill="#FFF">WHOLE LEG (L)</text>
+          </g>
+          <g class="clickable-part" id="v1-leg-r" onclick="harvestV1('leg-r', 'Whole Leg (Right)', 320, 290)">
+            <path d="M250 270 C290 275 305 320 290 370 C280 405 245 425 225 380 C210 340 215 285 250 270 Z" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="2"/>
+            <circle cx="240" cy="405" r="8" fill="url(#v1Bone)"/>
+            <text x="255" y="340" text-anchor="middle" font-size="11" font-weight="800" fill="#FFF">WHOLE LEG (R)</text>
+          </g>
+
+          <!-- Back / Soup Frame -->
+          <g class="clickable-part" id="v1-back" onclick="harvestV1('back', 'Curry Back & Ribs', 240, 95)">
+            <ellipse cx="200" cy="300" rx="25" ry="30" fill="url(#v1Meat)" stroke="#8C2C10" stroke-width="1.5" stroke-dasharray="3,3"/>
+            <text x="200" y="304" text-anchor="middle" font-size="9" font-weight="700" fill="#FFF">BACK</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="sidebar-box">
+        <div class="mini-scale">
+          <div style="font-size:0.75rem; color:#A2D9CE;">LIVE MEAT SCALE</div>
+          <div class="mini-scale-val" id="v1-scale-weight">0g</div>
+          <div class="mini-scale-sub" id="v1-scale-price">₹0 • 0 pieces cut</div>
+        </div>
+
+        <div style="font-size:0.85rem; font-weight:700;">Harvested Cuts List:</div>
+        <div id="v1-cuts-list" style="max-height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:0.78rem; color:#888; font-style:italic;">Tap any part on the chicken to carve!</div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>Mobile UX Principle:</strong> Hitboxes are 48px+ for touch compliance. No knife drag required—single finger tap carves and syncs weight instantly.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 2: LEG JOINT SLICER (WHOLE VS 2-PIECE)
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card" id="var-2">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 2: Two-Piece vs Whole Leg Joint Slicer</h2>
+        <p class="var-desc">
+          Addresses your exact requirement: Gives customers the clear visual choice between <strong>🍗 Whole Leg (Drumstick + Thigh intact for Tandoori/Biryani)</strong> and <strong>🔪 Two Pieces (Knee joint split for Curry &amp; Fry)</strong>.
+        </p>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-action" onclick="setV2Mode('whole')">🍗 Whole Leg Mode</button>
+        <button class="btn-action secondary" onclick="setV2Mode('split')">🔪 Two-Piece Joint Cut</button>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box">
+        <svg viewBox="0 0 360 440" width="100%" height="420" style="max-width:320px;">
+          <!-- Thigh (Upper Joint) -->
+          <g id="v2-thigh" style="transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <path d="M120 100 C80 120 70 180 90 220 C120 250 180 230 190 180 C200 130 160 80 120 100 Z" fill="#E86E45" stroke="#8C2C10" stroke-width="2.5"/>
+            <circle cx="140" cy="120" r="14" fill="#FFFDF7" stroke="#8C2C10" stroke-width="1.5"/>
+            <text x="135" y="180" font-size="13" font-weight="800" fill="#FFF">THIGH (~165g)</text>
+          </g>
+
+          <!-- Animated Knee Joint Blade Guide -->
+          <line id="v2-cutline" x1="60" y1="230" x2="220" y2="230" stroke="#FF5E2B" stroke-width="3" stroke-dasharray="6,4"/>
+
+          <!-- Drumstick (Lower Joint) -->
+          <g id="v2-drumstick" style="transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <path d="M100 235 C85 270 105 350 130 380 C155 385 175 350 165 290 C160 255 170 235 100 235 Z" fill="#E86E45" stroke="#8C2C10" stroke-width="2.5"/>
+            <circle cx="142" cy="385" r="10" fill="#FFFDF7" stroke="#8C2C10" stroke-width="1.5"/>
+            <text x="135" y="310" font-size="12" font-weight="800" fill="#FFF">DRUMSTICK (~155g)</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="sidebar-box">
+        <div style="font-weight:800; font-size:1.05rem;" id="v2-status-title">🍗 Whole Leg Intact (Tandoori / Biryani)</div>
+        <div style="font-size:0.85rem; color:var(--ink-muted);" id="v2-status-desc">
+          Total Weight: <strong>320g</strong>. Thigh and drumstick stay connected along the knee cartilage for slow-cooked roasting.
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+          <div style="background:#FFF; border:1px solid var(--border); border-radius:8px; padding:10px;">
+            <div style="font-weight:700; font-size:0.85rem;">Option 1: Whole Leg</div>
+            <div style="font-size:0.75rem; color:#666;">• 1 Big piece per leg • Perfect for Tandoor &amp; Dum Biryani</div>
+          </div>
+          <div style="background:#FFF; border:1px solid var(--border); border-radius:8px; padding:10px;">
+            <div style="font-weight:700; font-size:0.85rem;">Option 2: Two Pieces</div>
+            <div style="font-size:0.75rem; color:#666;">• Split at knee joint • 1 Drumstick + 1 Juicy Thigh for Curries</div>
+          </div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>Butcher Precision:</strong> Customer choice is saved as <code>leg_whole</code> or <code>[leg_drumstick, leg_thigh]</code> with zero ambiguity for the shop counter.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 3: MANDI CURRY CUT MATRIX (4/8/12/16)
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card" id="var-3">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 3: The Traditional Mandi / Market Curry Cut Matrix</h2>
+        <p class="var-desc">
+          Matches Indian wholesale chicken stalls. Customers select standard commercial cuts with 1 tap: <strong>4-Piece Quarter</strong>, <strong>8-Piece Biryani</strong>, <strong>12-Piece Classic Curry</strong>, or <strong>16-Piece Sukka Fry</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box">
+        <div style="font-weight:800; font-size:1.1rem; color:#0C513F; margin-bottom:12px;" id="v3-matrix-title">
+          12-Piece Classic Curry Cut Selected
+        </div>
+        
+        <!-- Interactive Grid Visualizer -->
+        <div id="v3-pieces-display" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; max-width:360px; width:100%;">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <div class="sidebar-box">
+        <div style="font-weight:800; font-size:0.95rem;">Select Cut Style:</div>
+        <div class="matrix-grid">
+          <div class="matrix-pill" onclick="selectMatrix(4, this)">
+            <div class="matrix-name">4-Piece</div>
+            <div class="matrix-sub">Quarter cuts (Roast/Grill)</div>
+          </div>
+          <div class="matrix-pill" onclick="selectMatrix(8, this)">
+            <div class="matrix-name">8-Piece</div>
+            <div class="matrix-sub">Biryani large cuts</div>
+          </div>
+          <div class="matrix-pill selected" onclick="selectMatrix(12, this)">
+            <div class="matrix-name">12-Piece</div>
+            <div class="matrix-sub">Classic homestyle curry</div>
+          </div>
+          <div class="matrix-pill" onclick="selectMatrix(16, this)">
+            <div class="matrix-name">16-Piece</div>
+            <div class="matrix-sub">Small fry &amp; Sukka pieces</div>
+          </div>
+        </div>
+
+        <div class="mini-scale">
+          <div style="font-size:0.75rem; color:#A2D9CE;">ESTIMATED CARCASS WEIGHT</div>
+          <div class="mini-scale-val" id="v3-weight">1,000g</div>
+          <div class="mini-scale-sub" id="v3-subtext">Avg 83g per piece • 12 cuts</div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>Commercial Advantage:</strong> Eliminates phone calls from merchants asking *"How small should I cut the curry pieces?"*
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 4: 3-LAYER VISUALIZER (SKIN / MEAT / BONE)
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card" id="var-4">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 4: 3-Layer Anatomical Visualizer (Skin / Meat / Bone)</h2>
+        <p class="var-desc">
+          Allows customers to toggle between <strong>Layer 1 (Skin-On)</strong>, <strong>Layer 2 (Skinless Muscle)</strong>, and <strong>Layer 3 (Skeleton Bones)</strong> so they clearly see the fat and bone reduction before ordering.
+        </p>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-action secondary" id="btn-layer-1" onclick="setLayer(1)">🍗 Skin-On</button>
+        <button class="btn-action" id="btn-layer-2" onclick="setLayer(2)">🥩 Skinless (-5%)</button>
+        <button class="btn-action secondary" id="btn-layer-3" onclick="setLayer(3)">🦴 Skeleton (-25%)</button>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box">
+        <svg viewBox="0 0 320 380" width="100%" height="340" style="max-width:300px;">
+          <!-- Layer 1: Skin -->
+          <ellipse id="v4-layer-skin" cx="160" cy="190" rx="95" ry="135" fill="#E8B878" stroke="#A87030" stroke-width="4" opacity="0.95" style="transition: opacity 0.3s;"/>
+          
+          <!-- Layer 2: Meat Fibers -->
+          <ellipse id="v4-layer-meat" cx="160" cy="190" rx="85" ry="120" fill="#E06848" stroke="#9E3A1C" stroke-width="3" opacity="0.95" style="transition: opacity 0.3s;"/>
+          
+          <!-- Layer 3: Skeleton Bones -->
+          <g id="v4-layer-bone" opacity="0.2" style="transition: opacity 0.3s;">
+            <line x1="160" y1="80" x2="160" y2="300" stroke="#FFFDF7" stroke-width="12" stroke-linecap="round"/>
+            <path d="M110 160 Q160 190 210 160" stroke="#FFFDF7" stroke-width="8" fill="none"/>
+            <path d="M120 200 Q160 230 200 200" stroke="#FFFDF7" stroke-width="8" fill="none"/>
+            <path d="M130 240 Q160 265 190 240" stroke="#FFFDF7" stroke-width="8" fill="none"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="sidebar-box">
+        <div style="font-weight:800; font-size:1.05rem;" id="v4-layer-title">Layer 2: Fresh Pink Meat (Skinless)</div>
+        <div style="font-size:0.85rem; color:var(--ink-muted);" id="v4-layer-desc">
+          Skin layer is peeled off. Clean lean protein with 5% weight loss from outer skin and fat trimming.
+        </div>
+
+        <div class="mini-scale">
+          <div style="font-size:0.75rem; color:#A2D9CE;">NET EDIBLE WEIGHT</div>
+          <div class="mini-scale-val" id="v4-scale-val">950g</div>
+          <div class="mini-scale-sub" id="v4-scale-yield">95% Edible Yield (Skinless)</div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>Transparency:</strong> Educates customers on why skinless or boneless chicken weighs less than a whole live chicken, preventing weight dispute complaints.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 5: GOURMET & PARTY WINGS
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card" id="var-5">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 5: Chef &amp; Gourmet Wing Specialty Cuts</h2>
+        <p class="var-desc">
+          Upsell restaurant-style cuts: Split whole wings into <strong>Party Drumettes</strong>, <strong>Flat Wingettes</strong>, or <strong>French-Trimmed Chicken Lollipops</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box">
+        <div style="display:flex; gap:20px; align-items:center; justify-content:center; flex-wrap:wrap;">
+          <!-- Cut 1: Drumette -->
+          <div style="background:white; border:2px solid var(--border); border-radius:12px; padding:16px; text-align:center; width:130px; cursor:pointer;" onclick="selectGourmet('Drumette • ₹160', 180)">
+            <div style="font-size:2.5rem;">🍗</div>
+            <div style="font-weight:800; font-size:0.85rem; margin-top:6px;">Wing Drumette</div>
+            <div style="font-size:0.75rem; color:#888;">Mini drumstick</div>
+          </div>
+
+          <!-- Cut 2: Wingette / Flat -->
+          <div style="background:white; border:2px solid var(--border); border-radius:12px; padding:16px; text-align:center; width:130px; cursor:pointer;" onclick="selectGourmet('Flat / Wingette • ₹150', 160)">
+            <div style="font-size:2.5rem;">🍖</div>
+            <div style="font-weight:800; font-size:0.85rem; margin-top:6px;">Wing Flat</div>
+            <div style="font-size:0.75rem; color:#888;">Crispy 2-bone flat</div>
+          </div>
+
+          <!-- Cut 3: Lollipop -->
+          <div style="background:white; border:2px solid #FF5E2B; border-radius:12px; padding:16px; text-align:center; width:130px; cursor:pointer;" onclick="selectGourmet('French Lollipop • ₹190', 140)">
+            <div style="font-size:2.5rem;">🍭</div>
+            <div style="font-weight:800; font-size:0.85rem; margin-top:6px; color:#FF5E2B;">Lollipop Cut</div>
+            <div style="font-size:0.75rem; color:#888;">French trimmed</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-box">
+        <div style="font-weight:800; font-size:1rem;">Selected Wing Cut:</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#0C513F;" id="v5-selected-name">French Lollipop • ₹190</div>
+        
+        <div class="mini-scale">
+          <div style="font-size:0.75rem; color:#A2D9CE;">PORTION WEIGHT</div>
+          <div class="mini-scale-val" id="v5-selected-wt">140g</div>
+          <div class="mini-scale-sub">Chef Trimming Included</div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>High Margin:</strong> Chicken Lollipops and Wingettes carry 35% higher profit margins than basic whole chicken cuts.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       VARIATION 6: GESTURE SWIPE-TO-CARVE
+       ═══════════════════════════════════════════════ -->
+  <div class="variation-card" id="var-6">
+    <div class="var-header">
+      <div>
+        <h2 class="var-title">Variation 6: Gesture Swipe-to-Carve Engine</h2>
+        <p class="var-desc">
+          Drag your mouse or swipe your finger across the chicken below to simulate slicing through muscle and joints with animated cutting sparks.
+        </p>
+      </div>
+      <button class="btn-action secondary" onclick="resetV6()">🔄 Reset Canvas</button>
+    </div>
+
+    <div class="stage-grid">
+      <div class="canvas-box" id="v6-canvas-container" style="user-select:none; cursor:crosshair;">
+        <canvas id="v6Canvas" width="400" height="380" style="max-width:100%; border-radius:10px;"></canvas>
+        <div style="position:absolute; bottom:14px; font-size:0.78rem; color:#7A6E60; font-weight:700;">
+          ✂️ Swipe finger or drag mouse across the chicken to slice!
+        </div>
+      </div>
+
+      <div class="sidebar-box">
+        <div style="font-weight:800; font-size:1rem;">Slices Executed:</div>
+        <div class="mini-scale">
+          <div style="font-size:0.75rem; color:#A2D9CE;">CUTS RECORDED</div>
+          <div class="mini-scale-val" id="v6-slash-count">0 Slices</div>
+          <div class="mini-scale-sub" id="v6-slash-sub">Drag across carcass to butcher</div>
+        </div>
+
+        <div class="dev-notes">
+          <strong>Gamified Engagement:</strong> Creates a fun, interactive slicing experience that customers love to share with friends.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── VARIATION TAB SWITCHER ──
+function switchVariation(varNum, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.variation-card').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const target = document.getElementById(`var-${varNum}`);
+  if (target) target.classList.add('active');
+
+  if (varNum === 3) renderMatrixPieces(12);
+  if (varNum === 6) initV6Canvas();
+}
+
+// ── VARIATION 1 SCRIPT ──
+let v1Weight = 0;
+let v1Price = 0;
+let v1Count = 0;
+
+function harvestV1(id, name, wt, pr) {
+  const el = document.getElementById(`v1-${id}`);
+  if (!el || el.classList.contains('harvested')) return;
+  el.classList.add('harvested');
+
+  v1Weight += wt;
+  v1Price += pr;
+  v1Count++;
+
+  document.getElementById('v1-scale-weight').textContent = `${v1Weight}g`;
+  document.getElementById('v1-scale-price').textContent = `₹${v1Price} • ${v1Count} pieces cut`;
+
+  const list = document.getElementById('v1-cuts-list');
+  if (v1Count === 1) list.innerHTML = '';
+  const item = document.createElement('div');
+  item.style.cssText = 'display:flex; justify-content:space-between; padding:4px 8px; background:white; border:1px solid #ddd; border-radius:4px; font-size:0.78rem; font-weight:600;';
+  item.innerHTML = `<span>🍗 ${name}</span><span style="font-family:'DM Mono'; color:#FF5E2B;">${wt}g • ₹${pr}</span>`;
+  list.appendChild(item);
+}
+
+function resetV1() {
+  v1Weight = 0;
+  v1Price = 0;
+  v1Count = 0;
+  document.querySelectorAll('#var-1 .clickable-part').forEach(p => p.classList.remove('harvested'));
+  document.getElementById('v1-scale-weight').textContent = '0g';
+  document.getElementById('v1-scale-price').textContent = '₹0 • 0 pieces cut';
+  document.getElementById('v1-cuts-list').innerHTML = '<div style="font-size:0.78rem; color:#888; font-style:italic;">Tap any part on the chicken to carve!</div>';
+}
+
+// ── VARIATION 2 SCRIPT ──
+function setV2Mode(mode) {
+  const thigh = document.getElementById('v2-thigh');
+  const drum = document.getElementById('v2-drumstick');
+  const line = document.getElementById('v2-cutline');
+  const title = document.getElementById('v2-status-title');
+  const desc = document.getElementById('v2-status-desc');
+
+  if (mode === 'split') {
+    thigh.style.transform = 'translate(-20px, -24px) rotate(-8deg)';
+    drum.style.transform = 'translate(20px, 34px) rotate(8deg)';
+    line.style.opacity = '1';
+    title.textContent = '🔪 Two Pieces (Split at Joint: Drumstick + Thigh)';
+    desc.innerHTML = 'Knee joint severed cleanly. Yields <strong>1 Drumstick (155g)</strong> and <strong>1 Thigh (165g)</strong> for delicious curries and gravies.';
+  } else {
+    thigh.style.transform = 'translate(0, 0) rotate(0deg)';
+    drum.style.transform = 'translate(0, 0) rotate(0deg)';
+    line.style.opacity = '0.3';
+    title.textContent = '🍗 Whole Leg Intact (Tandoori / Biryani)';
+    desc.innerHTML = 'Total Weight: <strong>320g</strong>. Thigh and drumstick stay connected along the knee cartilage for slow-cooked roasting.';
+  }
+}
+
+// ── VARIATION 3 SCRIPT ──
+function selectMatrix(count, btn) {
+  document.querySelectorAll('.matrix-pill').forEach(p => p.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+  renderMatrixPieces(count);
+}
+
+function renderMatrixPieces(count) {
+  const container = document.getElementById('v3-pieces-display');
+  const title = document.getElementById('v3-matrix-title');
+  const subtext = document.getElementById('v3-subtext');
+  if (!container) return;
+
+  const avgGrams = Math.round(1000 / count);
+  title.textContent = `${count}-Piece Commercial Curry Cut Selected`;
+  subtext.textContent = `Avg ${avgGrams}g per piece • ${count} pieces total`;
+
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    html += `
+      <div style="background:white; border:1.5px solid #2ECC71; border-radius:8px; padding:10px; text-align:center;">
+        <div style="font-size:1.3rem;">🍗</div>
+        <div style="font-size:0.75rem; font-weight:800; margin-top:2px;">Piece #${i}</div>
+        <div style="font-size:0.68rem; font-family:'DM Mono'; color:#666;">~${avgGrams}g</div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+// ── VARIATION 4 SCRIPT ──
+function setLayer(layer) {
+  const skin = document.getElementById('v4-layer-skin');
+  const meat = document.getElementById('v4-layer-meat');
+  const bone = document.getElementById('v4-layer-bone');
+  const title = document.getElementById('v4-layer-title');
+  const desc = document.getElementById('v4-layer-desc');
+  const val = document.getElementById('v4-scale-val');
+  const yieldEl = document.getElementById('v4-scale-yield');
+
+  document.querySelectorAll('[id^="btn-layer-"]').forEach(b => {
+    b.className = 'btn-action secondary';
+  });
+  const activeBtn = document.getElementById(`btn-layer-${layer}`);
+  if (activeBtn) activeBtn.className = 'btn-action';
+
+  if (layer === 1) {
+    skin.style.opacity = '1';
+    meat.style.opacity = '0.3';
+    bone.style.opacity = '0.1';
+    title.textContent = 'Layer 1: Traditional Skin-On Chicken';
+    desc.textContent = 'Golden skin intact for authentic crispy roast, frying, and retaining natural chicken fat juices.';
+    val.textContent = '1,000g';
+    yieldEl.textContent = '100% Full Carcass (Skin-On)';
+  } else if (layer === 2) {
+    skin.style.opacity = '0.08';
+    meat.style.opacity = '1';
+    bone.style.opacity = '0.25';
+    title.textContent = 'Layer 2: Fresh Pink Meat (Skinless)';
+    desc.textContent = 'Skin layer is peeled off. Clean lean protein with 5% weight loss from outer skin and fat trimming.';
+    val.textContent = '950g';
+    yieldEl.textContent = '95% Edible Yield (Skinless)';
+  } else {
+    skin.style.opacity = '0.04';
+    meat.style.opacity = '0.15';
+    bone.style.opacity = '1';
+    title.textContent = 'Layer 3: Skeleton Bones & Rib Cage';
+    desc.textContent = 'All meat harvested for boneless cuts. Rich marrow soup bones left behind for bone broth and stock.';
+    val.textContent = '750g Meat / 250g Bone';
+    yieldEl.textContent = '75% Boneless Meat Yield';
+  }
+}
+
+// ── VARIATION 5 SCRIPT ──
+function selectGourmet(name, wt) {
+  document.getElementById('v5-selected-name').textContent = name;
+  document.getElementById('v5-selected-wt').textContent = `${wt}g`;
+}
+
+// ── VARIATION 6 SCRIPT ──
+let v6Canvas, v6Ctx;
+let isDrawing = false;
+let v6Slices = 0;
+
+function initV6Canvas() {
+  v6Canvas = document.getElementById('v6Canvas');
+  if (!v6Canvas) return;
+  v6Ctx = v6Canvas.getContext('2d');
+  drawV6Chicken();
+
+  v6Canvas.onmousedown = (e) => { isDrawing = true; v6Ctx.beginPath(); v6Ctx.moveTo(e.offsetX, e.offsetY); };
+  v6Canvas.onmousemove = (e) => {
+    if (!isDrawing) return;
+    v6Ctx.strokeStyle = '#FF5E2B';
+    v6Ctx.lineWidth = 4;
+    v6Ctx.lineCap = 'round';
+    v6Ctx.lineTo(e.offsetX, e.offsetY);
+    v6Ctx.stroke();
+  };
+  v6Canvas.onmouseup = () => {
+    if (isDrawing) {
+      isDrawing = false;
+      v6Slices++;
+      document.getElementById('v6-slash-count').textContent = `${v6Slices} Slices`;
+      document.getElementById('v6-slash-sub').textContent = `Carving active • Cut recorded!`;
+    }
+  };
+
+  // Touch Support
+  v6Canvas.ontouchstart = (e) => {
+    const rect = v6Canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    isDrawing = true;
+    v6Ctx.beginPath();
+    v6Ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+  };
+  v6Canvas.ontouchmove = (e) => {
+    if (!isDrawing) return;
+    const rect = v6Canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    v6Ctx.strokeStyle = '#FF5E2B';
+    v6Ctx.lineWidth = 4;
+    v6Ctx.lineCap = 'round';
+    v6Ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    v6Ctx.stroke();
+  };
+  v6Canvas.ontouchend = () => {
+    if (isDrawing) {
+      isDrawing = false;
+      v6Slices++;
+      document.getElementById('v6-slash-count').textContent = `${v6Slices} Slices`;
+    }
+  };
+}
+
+function drawV6Chicken() {
+  if (!v6Ctx) return;
+  v6Ctx.clearRect(0, 0, v6Canvas.width, v6Canvas.height);
+  v6Ctx.fillStyle = '#FAF4EC';
+  v6Ctx.fillRect(0, 0, v6Canvas.width, v6Canvas.height);
+
+  // Stylized Chicken Outline on Canvas
+  v6Ctx.fillStyle = '#E86E45';
+  v6Ctx.strokeStyle = '#8C2C10';
+  v6Ctx.lineWidth = 3;
+
+  // Body
+  v6Ctx.beginPath();
+  v6Ctx.ellipse(200, 190, 80, 110, 0, 0, Math.PI * 2);
+  v6Ctx.fill();
+  v6Ctx.stroke();
+
+  // Head/Neck
+  v6Ctx.beginPath();
+  v6Ctx.ellipse(200, 60, 25, 35, 0, 0, Math.PI * 2);
+  v6Ctx.fill();
+  v6Ctx.stroke();
+
+  // Drumsticks
+  v6Ctx.beginPath();
+  v6Ctx.ellipse(140, 310, 25, 45, -0.2, 0, Math.PI * 2);
+  v6Ctx.ellipse(260, 310, 25, 45, 0.2, 0, Math.PI * 2);
+  v6Ctx.fill();
+  v6Ctx.stroke();
+
+  // Label
+  v6Ctx.fillStyle = '#FFF';
+  v6Ctx.font = 'bold 14px Outfit';
+  v6Ctx.textAlign = 'center';
+  v6Ctx.fillText('AMORELOT CHICKEN', 200, 195);
+}
+
+function resetV6() {
+  v6Slices = 0;
+  document.getElementById('v6-slash-count').textContent = '0 Slices';
+  document.getElementById('v6-slash-sub').textContent = 'Drag across carcass to butcher';
+  drawV6Chicken();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderMatrixPieces(12);
+});
+</script>
+
+</body>
+</html>
