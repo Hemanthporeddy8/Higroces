@@ -1588,7 +1588,7 @@ export default {
     // API: /api/orders
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/orders") {
-      // Auto-expire instant orders (pending > 30m, or uncompleted stuck orders > 4 hours)
+      // Auto-expire instant orders (pending > 30m, or uncompleted stuck orders > 45 minutes)
       try {
         await env.DB.prepare(`
           UPDATE orders 
@@ -1597,7 +1597,7 @@ export default {
           AND (
             (status = 'pending' AND datetime(created_at) < datetime('now', '-30 minutes'))
             OR
-            (status IN ('preparing', 'packed', 'accepted') AND datetime(created_at) < datetime('now', '-4 hours'))
+            (status IN ('preparing', 'packed', 'accepted') AND datetime(created_at) < datetime('now', '-45 minutes'))
           )
         `).run();
       } catch(e) {}

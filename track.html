@@ -643,18 +643,36 @@
       } else if (status === 'delivered') {
         emojiEl.textContent = '✅';
         titleEl.textContent = 'Delivered!';
-        subEl.textContent = 'Handover verified. Fresh cuts delivered to your kitchen!';
+        subEl.textContent = 'Handover verified. Fresh items delivered to your kitchen!';
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else if (status === 'cancelled') {
         emojiEl.textContent = '❌';
         titleEl.textContent = 'Order Cancelled';
         subEl.textContent = 'This order has been cancelled.';
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      } else if (status === 'expired') {
+        emojiEl.textContent = '⏰';
+        titleEl.textContent = 'Order Expired';
+        subEl.textContent = 'This delivery window has expired. Please contact support or place a new order.';
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      }
+
+      // Automatically purge from local home screen tracker if terminal status
+      if (status === 'delivered' || status === 'cancelled' || status === 'expired') {
+        try {
+          const raw = localStorage.getItem('amorelot_last_order');
+          if (raw) {
+            const o = JSON.parse(raw);
+            if (o && o.id === order.id) {
+              localStorage.removeItem('amorelot_last_order');
+            }
+          }
+        } catch(e) {}
       }
 
       // Handover PIN
       const pin = order.delivery_otp;
-      if (pin && status !== 'delivered' && status !== 'cancelled') {
+      if (pin && status !== 'delivered' && status !== 'cancelled' && status !== 'expired') {
         document.getElementById('floatingOtpValue').textContent = pin;
         document.getElementById('floatingOtpPill').style.display = 'flex';
         document.getElementById('handoverOtpBadge').textContent = pin;

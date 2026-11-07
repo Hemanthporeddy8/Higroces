@@ -1445,6 +1445,29 @@ header {
   white-space: nowrap;
   font-family: 'Outfit', sans-serif;
 }
+.contextual-tracker-close {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #E2E8F0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+.contextual-tracker-close:hover {
+  background: rgba(231, 76, 60, 0.85);
+  border-color: #E74C3C;
+  color: #ffffff;
+  transform: scale(1.08);
+}
 
 /* ── IOS PWA INSTALL GUIDANCE MODAL ── */
 .ios-install-modal-bg {
@@ -1815,7 +1838,7 @@ header {
 <div class="storefront">
 
   <!-- CONTEXTUAL ACTIVE ORDER LIVE ROAD TRACKER BAR (HIDDEN UNTIL AN ORDER IS ACTIVE) -->
-  <div class="contextual-tracker-strip" id="contextualTrackerStrip" style="display:none;">
+  <div class="contextual-tracker-strip" id="contextualTrackerStrip" style="display:none;" onclick="goToActiveOrderTrack(event)">
     <div class="contextual-tracker-left">
       <span class="contextual-tracker-icon">🛵</span>
       <div>
@@ -1823,9 +1846,14 @@ header {
         <div class="contextual-tracker-sub" id="contextualOrderEta">⚡ Rider dispatching on live map with 15-min ETA</div>
       </div>
     </div>
-    <button class="contextual-tracker-btn" type="button">
-      Track Live ➔
-    </button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="contextual-tracker-btn" type="button" onclick="goToActiveOrderTrack(event)">
+        Track Live ➔
+      </button>
+      <button class="contextual-tracker-close" type="button" onclick="dismissActiveOrderBanner(event)" title="Dismiss tracker">
+        ✕
+      </button>
+    </div>
   </div>
 
   <!-- HERO BANNER -->
@@ -3111,6 +3139,7 @@ async function submitDirectOrder() {
 
     // Save last order ID & Navigate directly to dedicated live tracking page
     try {
+      createdOrder._saved_at = Date.now();
       localStorage.setItem('amorelot_last_order', JSON.stringify(createdOrder));
     } catch(e) {}
 
@@ -3517,22 +3546,68 @@ function closeIosModal() {
 }
 
 // ═══════════════════════════════════════════════
-// CONTEXTUAL ACTIVE ORDER TRACKER
+// CONTEXTUAL ACTIVE ORDER TRACKER (ZEPTO-STYLE SLA & SYNC)
 // ═══════════════════════════════════════════════
-function checkActiveOrderBanner() {
+let activeOrderTrackId = null;
+
+function dismissActiveOrderBanner(event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  try {
+    localStorage.removeItem('amorelot_last_order');
+  } catch(e) {}
+  const banner = document.getElementById('contextualTrackerStrip');
+  if (banner) banner.style.display = 'none';
+}
+
+function goToActiveOrderTrack(event) {
+  if (event) event.stopPropagation();
+  if (activeOrderTrackId) {
+    window.location.href = `/track.html?orderId=${encodeURIComponent(activeOrderTrackId)}`;
+  }
+}
+
+async function checkActiveOrderBanner() {
   try {
     const raw = localStorage.getItem('amorelot_last_order');
     if (!raw) return;
     const order = JSON.parse(raw);
-    if (!order || !order.id) return;
+    if (!order || !order.id) {
+      localStorage.removeItem('amorelot_last_order');
+      return;
+    }
 
-    // Check age (less than 4 hours)
-    const orderTime = new Date(order.created_at || Date.now()).getTime();
-    const fourHours = 4 * 60 * 60 * 1000;
-    if (Date.now() - orderTime > fourHours) return;
+    activeOrderTrackId = order.id;
 
-    // Hide if delivered or cancelled
-    if (order.status === 'delivered' || order.status === 'cancelled') return;
+    // Strict Quick-Commerce SLA Expiry:
+    // Scheduled fresh_tmrw: up to 18 hours (morning harvest).
+    // Instant delivery (15 min SLA): auto-expire banner after 30 minutes!
+    const isScheduled = (order.order_type === 'fresh_tmrw');
+    const maxAgeMs = isScheduled ? (18 * 60 * 60 * 1000) : (30 * 60 * 1000);
+
+    // Parse created timestamp safely
+    let orderTime = order.created_at ? new Date(order.created_at).getTime() : 0;
+    if (isNaN(orderTime) || orderTime <= 0) {
+      orderTime = Number(order._saved_at) || 0;
+    }
+
+    // If order has already exceeded SLA, auto-purge and hide immediately
+    if (orderTime > 0 && (Date.now() - orderTime > maxAgeMs)) {
+      localStorage.removeItem('amorelot_last_order');
+      const banner = document.getElementById('contextualTrackerStrip');
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+
+    // Hide if cached status is already terminal
+    if (order.status === 'delivered' || order.status === 'cancelled' || order.status === 'expired') {
+      localStorage.removeItem('amorelot_last_order');
+      const banner = document.getElementById('contextualTrackerStrip');
+      if (banner) banner.style.display = 'none';
+      return;
+    }
 
     const banner = document.getElementById('contextualTrackerStrip');
     const orderNum = document.getElementById('contextualOrderNum');
@@ -3541,14 +3616,55 @@ function checkActiveOrderBanner() {
     if (banner && orderNum) {
       orderNum.textContent = '#' + order.id.substring(0, 8);
       if (orderEta) {
-        orderEta.textContent = (order.order_type === 'fresh_tmrw')
+        orderEta.textContent = isScheduled
           ? '🌱 Scheduled Fresh Delivery for Tomorrow Morning'
           : '⚡ Order live in transit • Tap for turn-by-turn road tracking';
       }
       banner.style.display = 'flex';
-      banner.onclick = () => {
-        window.location.href = `/track.html?orderId=${encodeURIComponent(order.id)}`;
-      };
+    }
+
+    // LIVE SERVER CHECK: Verify real status with D1 backend in background
+    try {
+      const res = await fetch(`/api/orders?orderId=${encodeURIComponent(order.id)}&t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        const liveOrder = data && data.order;
+        if (liveOrder && liveOrder.id) {
+          if (liveOrder.status === 'delivered' || liveOrder.status === 'cancelled' || liveOrder.status === 'expired') {
+            // Reached terminal state on server! Purge from localStorage and hide
+            localStorage.removeItem('amorelot_last_order');
+            if (banner) banner.style.display = 'none';
+            return;
+          }
+
+          // Check server-side creation timestamp against SLA
+          if (liveOrder.created_at) {
+            const serverTime = new Date(liveOrder.created_at).getTime();
+            if (!isNaN(serverTime) && (Date.now() - serverTime > maxAgeMs)) {
+              localStorage.removeItem('amorelot_last_order');
+              if (banner) banner.style.display = 'none';
+              return;
+            }
+          }
+
+          // Update subtext dynamically based on live stage
+          if (orderEta) {
+            if (liveOrder.status === 'accepted') {
+              orderEta.textContent = '🛵 Rider on the way to your doorstep!';
+            } else if (liveOrder.status === 'preparing') {
+              orderEta.textContent = '🔪 Store is preparing & packing your items';
+            } else if (liveOrder.status === 'packed') {
+              orderEta.textContent = '📦 Packed & sealed • Awaiting rider pickup';
+            }
+          }
+        }
+      } else if (res.status === 404) {
+        // Order deleted or non-existent in backend
+        localStorage.removeItem('amorelot_last_order');
+        if (banner) banner.style.display = 'none';
+      }
+    } catch (netErr) {
+      // Network hiccup, keep temporary display if under SLA
     }
   } catch(e) {
     console.warn('checkActiveOrderBanner error:', e);
