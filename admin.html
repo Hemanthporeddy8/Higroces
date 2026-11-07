@@ -742,6 +742,32 @@ input:checked + .toggle-slider:before {
     </div>
   </div>
 
+  <!-- 5. CONSOLE LOCK SCREEN (Password required every refresh) -->
+  <div class="auth-card auth-step" id="authCardLock" style="text-align:center;">
+    <div style="font-size:2.8rem; margin-bottom:10px;">🔒</div>
+    <h2>Admin Console Locked</h2>
+    <p>Welcome back, <strong id="lockAdminName" style="color:white;">Admin</strong>.<br>Enter your admin password to resume session.</p>
+
+    <div id="lockAlert" class="auth-alert" style="display:none;"></div>
+
+    <form onsubmit="event.preventDefault(); submitUnlockConsole();">
+      <div class="auth-field" style="text-align:left;">
+        <label>Admin Password</label>
+        <div style="position:relative;">
+          <input type="password" id="lockPasswordInput" placeholder="Enter password to unlock..." required autofocus autocomplete="current-password" />
+          <button type="button" onclick="togglePasswordVisibility('lockPasswordInput', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem;">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-auth" id="btnUnlockConsole" style="background:#0C513F; border:1px solid #1CA37F; margin-top:12px;">
+        <span>🔓</span> Unlock Console
+      </button>
+    </form>
+
+    <div style="margin-top:16px;">
+      <button type="button" class="auth-link-btn" onclick="logoutAdmin()">Sign in as different admin / Full Login →</button>
+    </div>
+  </div>
+
 </div>
 
 <header>
@@ -1328,7 +1354,131 @@ input:checked + .toggle-slider:before {
   </div>
 </div>
 
-<!-- ADD ADMIN MODAL -->
+<!-- APPLICATION DOSSIER MODAL (Full details & verification) -->
+<div class="order-modal-bg" id="viewApplicationModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:3000; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+  <div class="auth-card" style="max-width:760px; width:100%; text-align:left; max-height:92vh; overflow-y:auto; padding:24px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:1.6rem;">🏪</span>
+          <h2 style="font-size:1.35rem; margin:0; color:white;" id="vAppShopName">Partner Shop</h2>
+          <span id="vAppCategoryBadge"></span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); font-family:'DM Mono'; margin-top:4px;">
+          Application ID: <span id="vAppShopId" style="color:var(--gold);">--</span> • Applied: <span id="vAppCreated">--</span>
+        </div>
+      </div>
+      <button type="button" onclick="closeApplicationModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.6rem; cursor:pointer; line-height:1;">&times;</button>
+    </div>
+
+    <!-- 2 COLUMN GRID DOSSIER -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      
+      <!-- COLUMN 1: MERCHANT & COMPLIANCE -->
+      <div style="background:#131B17; border:1px solid var(--border-card); border-radius:10px; padding:16px;">
+        <div style="font-size:0.8rem; font-weight:700; color:var(--gold); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+          👤 Merchant &amp; Business Details
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Owner Name</div>
+          <div style="font-size:0.92rem; font-weight:700; color:white;" id="vAppOwner">--</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Phone Number</div>
+            <div style="font-size:0.85rem; font-family:'DM Mono'; font-weight:600; color:var(--primary-light);" id="vAppPhone">--</div>
+            <a id="vAppWaLink" href="#" target="_blank" style="font-size:0.7rem; color:#25D366; text-decoration:none; display:inline-block; margin-top:2px;">💬 Chat on WhatsApp</a>
+          </div>
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Store Email</div>
+            <div style="font-size:0.82rem; font-family:'DM Mono'; color:var(--gold); word-break:break-all;" id="vAppEmail">--</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:10px; margin-top:10px;">
+          <div style="font-size:0.8rem; font-weight:700; color:#5dade2; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+            📄 Legal Proof &amp; Payouts
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">UPI ID for Order Payouts</div>
+            <div style="font-size:0.88rem; font-family:'DM Mono'; font-weight:700; color:var(--green);" id="vAppUpi">--</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+            <div>
+              <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">FSSAI License #</div>
+              <div style="font-size:0.8rem; font-family:'DM Mono'; color:white;" id="vAppFssai">--</div>
+            </div>
+            <div>
+              <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">GSTIN</div>
+              <div style="font-size:0.8rem; font-family:'DM Mono'; color:white;" id="vAppGstin">--</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Owner ID Proof</div>
+            <div style="font-size:0.8rem; font-family:'DM Mono'; color:var(--text-muted);" id="vAppOwnerProof">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: STOREFRONT PHOTO & DISPATCH LOCATION -->
+      <div style="background:#131B17; border:1px solid var(--border-card); border-radius:10px; padding:16px;">
+        <div style="font-size:0.8rem; font-weight:700; color:var(--gold); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+          📍 Dispatch Shutter &amp; Coverage
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Physical Address</div>
+          <div style="font-size:0.85rem; color:#e0e0e0; line-height:1.4;" id="vAppAddress">--</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Delivery Radius</div>
+            <div style="font-size:0.88rem; font-weight:700; color:var(--gold);" id="vAppRadius">--</div>
+          </div>
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">GPS Pin</div>
+            <div style="font-size:0.8rem; font-family:'DM Mono'; color:white;" id="vAppCoords">--</div>
+          </div>
+          <a id="vAppGmapsLink" href="#" target="_blank" style="font-size:0.75rem; color:var(--green); text-decoration:none; background:rgba(46,204,113,0.12); padding:4px 8px; border-radius:4px; border:1px solid rgba(46,204,113,0.3);">
+            🗺️ Google Maps
+          </a>
+        </div>
+
+        <!-- STOREFRONT PHOTO PREVIEW -->
+        <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:10px; margin-top:10px;">
+          <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Store Signboard Photo</div>
+          <div id="vAppPhotoBox" style="text-align:center; background:#0B120E; border-radius:8px; padding:8px; border:1px dashed var(--border-card); min-height:100px; display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:0.78rem; color:var(--text-muted);" id="vAppPhotoEmptyText">📷 No signboard photo uploaded</span>
+            <img id="vAppPhotoImg" src="" alt="Signboard" style="display:none; max-width:100%; max-height:140px; border-radius:6px; object-fit:cover;" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MODAL FOOTER ACTIONS -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; flex-wrap:wrap; gap:10px;">
+      <button type="button" class="btn-auth" style="background:#20312B; max-width:120px;" onclick="closeApplicationModal()">Close</button>
+      
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-action-select" id="btnModalReject" onclick="rejectShopFromModal()" style="color:var(--red); border-color:rgba(231,76,60,0.4); padding:10px 18px; font-size:0.85rem;" title="Reject merchant application">
+          ❌ Reject Application
+        </button>
+        <button type="button" class="btn-action-select" id="btnModalApprove" onclick="approveShopFromModal()" style="background:#0C513F; color:white; border-color:#1CA37F; padding:10px 20px; font-size:0.88rem; font-weight:700;" title="Approve and activate merchant">
+          ✅ Approve &amp; Activate Shop
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
 <div class="order-modal-bg" id="addAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); z-index:3000; align-items:center; justify-content:center; padding:20px;">
   <div class="auth-card" style="max-width:440px; text-align:left;">
     <div style="font-size:2.2rem; margin-bottom:8px; text-align:center;">👥</div>
@@ -1464,7 +1614,7 @@ const STORE_CATALOG = [
 
 // ── MULTI-STEP AUTHENTICATION CONTROLLER ──
 function showAuthStep(step) {
-  ['Setup', 'Login', 'Otp', 'Emergency'].forEach(s => {
+  ['Setup', 'Login', 'Otp', 'Emergency', 'Lock'].forEach(s => {
     const el = document.getElementById('authCard' + s);
     if (el) el.classList.remove('active');
   });
@@ -1497,7 +1647,7 @@ async function checkAuth() {
       }
     }
 
-    // 2. Check active session token
+    // 2. Check active session token - Require password verification on refresh
     const token = getAdminToken();
     if (token) {
       const verifyRes = await fetch(`${AUTH_BASE}/verify-session`, {
@@ -1508,7 +1658,16 @@ async function checkAuth() {
         const verifyData = await verifyRes.json();
         adminUser = verifyData.user || {};
         masterKey = token;
-        onAuthSuccess();
+
+        // Prompt for password on refresh to prevent unauthorized dashboard viewing
+        document.getElementById('authOverlay').style.display = 'flex';
+        const nameEl = document.getElementById('lockAdminName');
+        if (nameEl) nameEl.textContent = adminUser.full_name || adminUser.email;
+        showAuthStep('lock');
+        setTimeout(() => {
+          const passInp = document.getElementById('lockPasswordInput');
+          if (passInp) { passInp.value = ''; passInp.focus(); }
+        }, 120);
         return;
       }
     }
@@ -1520,6 +1679,52 @@ async function checkAuth() {
     console.error("checkAuth error:", e);
     document.getElementById('authOverlay').style.display = 'flex';
     showAuthStep('login');
+  }
+}
+
+async function submitUnlockConsole() {
+  const passwordInp = document.getElementById('lockPasswordInput');
+  const password = passwordInp ? passwordInp.value : '';
+  const alertEl = document.getElementById('lockAlert');
+  const btn = document.getElementById('btnUnlockConsole');
+  if (!password) return;
+
+  btn.disabled = true;
+  btn.innerHTML = `<span>⏳</span> Unlocking...`;
+  alertEl.style.display = 'none';
+
+  try {
+    const token = getAdminToken();
+    const res = await fetch(`${AUTH_BASE}/unlock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'X-Admin-Key': token
+      },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.style.display = 'block';
+      alertEl.className = 'auth-alert';
+      alertEl.textContent = data.error || "Incorrect password.";
+      btn.disabled = false;
+      btn.innerHTML = `<span>🔓</span> Unlock Console`;
+      if (passwordInp) { passwordInp.value = ''; passwordInp.focus(); }
+      return;
+    }
+
+    // Successfully unlocked!
+    if (passwordInp) passwordInp.value = '';
+    onAuthSuccess();
+  } catch(e) {
+    alertEl.style.display = 'block';
+    alertEl.className = 'auth-alert';
+    alertEl.textContent = "Error: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<span>🔓</span> Unlock Console`;
   }
 }
 
@@ -2104,6 +2309,9 @@ async function loadPendingApplications() {
           </td>
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn-action-select" onclick="openApplicationModal('${s.id}')" style="background:rgba(52,152,219,0.18); color:#5dade2; border-color:rgba(52,152,219,0.4); font-size:0.78rem; padding:6px 10px;" title="View complete application profile &amp; proof">
+                👁️ View Details
+              </button>
               <button class="btn-action-select" onclick="approveShop('${s.id}')" style="background:#0C513F; color:white; border-color:#1CA37F; font-size:0.78rem; padding:6px 12px;" title="Approve and activate merchant">
                 ✅ Approve &amp; Activate
               </button>
@@ -2179,6 +2387,91 @@ async function rejectShop(shopId, maybeName) {
   } catch(e) {
     alert('Connection error: ' + e.message);
   }
+}
+
+let activeApplicationModalShopId = null;
+
+function openApplicationModal(shopId) {
+  const shop = (pendingApplicationsList || []).find(s => s.id === shopId);
+  if (!shop) return;
+  activeApplicationModalShopId = shopId;
+
+  document.getElementById('vAppShopName').textContent = shop.name || 'Partner Shop';
+  document.getElementById('vAppShopId').textContent = shop.id || '--';
+  document.getElementById('vAppCreated').textContent = shop.created_at ? new Date(shop.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '--';
+
+  const catBadgeEl = document.getElementById('vAppCategoryBadge');
+  if (catBadgeEl) {
+    catBadgeEl.innerHTML = shop.category === 'grocery'
+      ? `<span style="font-size:0.68rem; background:rgba(46,204,113,0.18); color:var(--green); border:1px solid rgba(46,204,113,0.4); padding:2px 7px; border-radius:4px; font-weight:700;">🛒 KIRANAM / GROCERY</span>`
+      : (shop.category === 'meat'
+        ? `<span style="font-size:0.68rem; background:rgba(255,94,43,0.18); color:#FF7A50; border:1px solid rgba(255,94,43,0.4); padding:2px 7px; border-radius:4px; font-weight:700;">🥩 BUTCHER / MEAT</span>`
+        : `<span style="font-size:0.68rem; background:rgba(52,152,219,0.18); color:#5dade2; border:1px solid rgba(52,152,219,0.4); padding:2px 7px; border-radius:4px; font-weight:700;">🏢 ALL-IN-ONE HUB</span>`);
+  }
+
+  document.getElementById('vAppOwner').textContent = shop.owner_name || 'Store Manager';
+  document.getElementById('vAppPhone').textContent = shop.phone || '--';
+  document.getElementById('vAppEmail').textContent = shop.email || '--';
+
+  const waLink = document.getElementById('vAppWaLink');
+  if (waLink) {
+    if (shop.phone) {
+      const cleanPhone = String(shop.phone).replace(/\D/g, '');
+      const fullPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+      waLink.href = `https://wa.me/${fullPhone}?text=Hi%20${encodeURIComponent(shop.owner_name || shop.name)}%2C%20welcome%20to%20HiGroces!%20We%20received%20your%20partner%20store%20application.`;
+      waLink.style.display = 'inline-block';
+    } else {
+      waLink.style.display = 'none';
+    }
+  }
+
+  document.getElementById('vAppUpi').textContent = shop.upi_id || 'Not specified (Collect during onboarding)';
+  document.getElementById('vAppFssai').textContent = shop.fssai_number || 'Not provided (Basic registration)';
+  document.getElementById('vAppGstin').textContent = shop.gstin || 'Exempt / Not registered (< ₹40L)';
+  document.getElementById('vAppOwnerProof').textContent = shop.owner_id_proof || 'Not provided';
+
+  document.getElementById('vAppAddress').textContent = shop.address || 'Address not listed';
+  document.getElementById('vAppRadius').textContent = `${shop.delivery_radius_km || 10} km`;
+  document.getElementById('vAppCoords').textContent = `${Number(shop.latitude).toFixed(4)}, ${Number(shop.longitude).toFixed(4)}`;
+
+  const gmapsLink = document.getElementById('vAppGmapsLink');
+  if (gmapsLink) {
+    gmapsLink.href = `https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`;
+  }
+
+  const photoImg = document.getElementById('vAppPhotoImg');
+  const emptyText = document.getElementById('vAppPhotoEmptyText');
+  if (shop.storefront_image && shop.storefront_image.startsWith('data:image')) {
+    photoImg.src = shop.storefront_image;
+    photoImg.style.display = 'block';
+    emptyText.style.display = 'none';
+  } else {
+    photoImg.style.display = 'none';
+    emptyText.style.display = 'block';
+  }
+
+  const modal = document.getElementById('viewApplicationModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeApplicationModal() {
+  const modal = document.getElementById('viewApplicationModal');
+  if (modal) modal.style.display = 'none';
+  activeApplicationModalShopId = null;
+}
+
+function approveShopFromModal() {
+  if (!activeApplicationModalShopId) return;
+  const id = activeApplicationModalShopId;
+  closeApplicationModal();
+  approveShop(id);
+}
+
+function rejectShopFromModal() {
+  if (!activeApplicationModalShopId) return;
+  const id = activeApplicationModalShopId;
+  closeApplicationModal();
+  rejectShop(id);
 }
 
 function updateShopFilterDropdown(shops) {

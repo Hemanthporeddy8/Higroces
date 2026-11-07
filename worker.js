@@ -374,6 +374,11 @@ async function ensureAllSchemas(db) {
   try { await db.prepare("ALTER TABLE shops ADD COLUMN reset_token TEXT").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE shops ADD COLUMN reset_expires INTEGER").run(); } catch(e) {}
   try { await db.prepare("ALTER TABLE shops ADD COLUMN approval_status TEXT DEFAULT 'approved'").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN fssai_number TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN upi_id TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN gstin TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN storefront_image TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE shops ADD COLUMN owner_id_proof TEXT").run(); } catch(e) {}
 
   // Shop Sessions Table (Merchant Login Sessions)
   try {
@@ -712,6 +717,38 @@ export default {
           return new Response(JSON.stringify({ valid: false }), { status: 401, headers: corsHeaders() });
         }
         return new Response(JSON.stringify({ valid: true, user: adminAuth }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+      }
+    }
+
+    // Console Lock Screen Unlock (Password Verification on Refresh)
+    if (url.pathname === "/api/admin/auth/unlock" && request.method === "POST") {
+      try {
+        const adminAuth = await verifyAdminAuth(request, env);
+        if (!adminAuth) {
+          return new Response(JSON.stringify({ error: "Session expired or invalid. Please sign in again." }), { status: 401, headers: corsHeaders() });
+        }
+        const body = await request.json();
+        const { password } = body;
+        if (!password) {
+          return new Response(JSON.stringify({ error: "Password is required to unlock." }), { status: 400, headers: corsHeaders() });
+        }
+        if (adminAuth.id === 'master') {
+          if (password === ADMIN_SECRET_KEY) {
+            return new Response(JSON.stringify({ success: true, user: adminAuth }), { headers: corsHeaders() });
+          }
+          return new Response(JSON.stringify({ error: "Incorrect password." }), { status: 401, headers: corsHeaders() });
+        }
+        const user = await env.DB.prepare("SELECT * FROM admin_users WHERE id = ?").bind(adminAuth.id).first();
+        if (!user) {
+          return new Response(JSON.stringify({ error: "Admin user not found." }), { status: 404, headers: corsHeaders() });
+        }
+        const testHash = await hashPassword(password, user.salt);
+        if (testHash !== user.password_hash) {
+          return new Response(JSON.stringify({ error: "Incorrect password." }), { status: 401, headers: corsHeaders() });
+        }
+        return new Response(JSON.stringify({ success: true, user: adminAuth }), { headers: corsHeaders() });
       } catch(err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
       }
@@ -1384,7 +1421,11 @@ export default {
     if (url.pathname === "/api/partner/apply" && request.method === "POST") {
       try {
         const body = await request.json();
-        const { name, owner_name, phone, email, password, passcode, category, address, latitude, longitude, delivery_radius_km } = body;
+        const { 
+          name, owner_name, phone, email, password, passcode, category, address, 
+          latitude, longitude, delivery_radius_km,
+          fssai_number, upi_id, gstin, storefront_image, owner_id_proof 
+        } = body;
 
         if (!name || !email || (!passcode && !password) || latitude === undefined || longitude === undefined) {
           return new Response(JSON.stringify({ error: "Shop Name, Email, Password, Passcode, Latitude, and Longitude are required." }), { status: 400, headers: corsHeaders() });
@@ -1423,12 +1464,14 @@ export default {
           INSERT INTO shops (
             id, name, owner_name, phone, email, passcode_hash, salt, 
             password_hash, password_salt, category, address, latitude, 
-            longitude, delivery_radius_km, is_active, approval_status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))
+            longitude, delivery_radius_km, is_active, approval_status, created_at,
+            fssai_number, upi_id, gstin, storefront_image, owner_id_proof
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'), ?, ?, ?, ?, ?)
         `).bind(
           id, name.trim(), (owner_name || '').trim(), (phone || '').trim(), 
           email.toLowerCase().trim(), hash, salt, pHash, pSalt, cat, 
-          (address || '').trim(), lat, lng, radius
+          (address || '').trim(), lat, lng, radius,
+          (fssai_number || '').trim(), (upi_id || '').trim(), (gstin || '').trim().toUpperCase(), (storefront_image || ''), (owner_id_proof || '').trim()
         ).run();
 
         return new Response(JSON.stringify({
