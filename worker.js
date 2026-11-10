@@ -438,16 +438,30 @@ async function ensureAllSchemas(db) {
     }
   } catch(e) {}
 
-  // Product Inventory Table (In-Stock / Out-of-Stock toggles)
+  // Product Inventory Table (Stock, Merchant Custom Pricing & Discounts)
   try {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS product_inventory (
         product_id TEXT PRIMARY KEY,
         is_in_stock INTEGER DEFAULT 1,
+        custom_price REAL,
+        discount_percent REAL DEFAULT 0,
+        discount_price REAL,
+        is_discount_active INTEGER DEFAULT 0,
+        auto_clearance_enabled INTEGER DEFAULT 0,
+        max_clearance_qty INTEGER,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
   } catch(e) {}
+
+  // Safe schema migrations for existing database
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN custom_price REAL").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN discount_percent REAL DEFAULT 0").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN discount_price REAL").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN is_discount_active INTEGER DEFAULT 0").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN auto_clearance_enabled INTEGER DEFAULT 0").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE product_inventory ADD COLUMN max_clearance_qty INTEGER").run(); } catch(e) {}
 
   // ── ENTERPRISE ADMIN AUTH TABLES ──
   try {
@@ -970,39 +984,102 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // API: /api/inventory (Real-time Stock Toggling for Butcher & Shop)
+    // API: /api/inventory (Real-time Stock, Price & Discount Management)
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/inventory") {
-      // GET: Returns map of { [productId]: boolean }
+      // GET: Returns map of { [productId]: boolean } AND rich items object
       if (request.method === "GET") {
         try {
-          const rows = await env.DB.prepare("SELECT product_id, is_in_stock FROM product_inventory").all();
+          const rows = await env.DB.prepare(`
+            SELECT product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty 
+            FROM product_inventory
+          `).all();
           const inventory = {};
+          const items = {};
           (rows.results || []).forEach(r => {
             inventory[r.product_id] = r.is_in_stock === 1;
+            items[r.product_id] = {
+              product_id: r.product_id,
+              is_in_stock: r.is_in_stock === 1,
+              custom_price: (r.custom_price !== null && r.custom_price !== undefined) ? Number(r.custom_price) : null,
+              discount_percent: Number(r.discount_percent || 0),
+              discount_price: (r.discount_price !== null && r.discount_price !== undefined) ? Number(r.discount_price) : null,
+              is_discount_active: r.is_discount_active === 1,
+              auto_clearance_enabled: r.auto_clearance_enabled === 1,
+              max_clearance_qty: r.max_clearance_qty ? Number(r.max_clearance_qty) : null
+            };
           });
-          return new Response(JSON.stringify({ inventory }), { headers: corsHeaders() });
+          return new Response(JSON.stringify({ inventory, items }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
       }
 
-      // POST: Shopkeeper or Admin updates item stock status
+      // POST: Shopkeeper or Admin updates item stock, retail price & discounts
       if (request.method === "POST") {
         try {
           const body = await request.json();
-          const { product_id, is_in_stock } = body;
+          const { product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty } = body;
           if (!product_id) {
             return new Response(JSON.stringify({ error: "product_id is required" }), { status: 400, headers: corsHeaders() });
           }
-          const stockVal = (is_in_stock === false || is_in_stock === 0 || is_in_stock === '0') ? 0 : 1;
-          await env.DB.prepare(`
-            INSERT INTO product_inventory (product_id, is_in_stock, updated_at)
-            VALUES (?, ?, datetime('now'))
-            ON CONFLICT(product_id) DO UPDATE SET is_in_stock = excluded.is_in_stock, updated_at = datetime('now')
-          `).bind(product_id, stockVal).run();
 
-          return new Response(JSON.stringify({ success: true, product_id, is_in_stock: stockVal === 1 }), { headers: corsHeaders() });
+          // Fetch current row if present to retain unedited values
+          const existing = await env.DB.prepare("SELECT * FROM product_inventory WHERE product_id = ?").bind(product_id).first();
+
+          const stockVal = is_in_stock !== undefined 
+            ? ((is_in_stock === false || is_in_stock === 0 || is_in_stock === '0') ? 0 : 1)
+            : (existing ? existing.is_in_stock : 1);
+
+          const priceVal = custom_price !== undefined 
+            ? (custom_price !== null && custom_price !== '' ? Number(custom_price) : null) 
+            : (existing ? existing.custom_price : null);
+
+          const discPctVal = discount_percent !== undefined 
+            ? Number(discount_percent || 0) 
+            : (existing ? existing.discount_percent : 0);
+
+          const discPriceVal = discount_price !== undefined 
+            ? (discount_price !== null && discount_price !== '' ? Number(discount_price) : null) 
+            : (existing ? existing.discount_price : null);
+
+          const isDiscActiveVal = is_discount_active !== undefined 
+            ? (is_discount_active ? 1 : 0) 
+            : (existing ? existing.is_discount_active : 0);
+
+          const autoClearanceVal = auto_clearance_enabled !== undefined 
+            ? (auto_clearance_enabled ? 1 : 0) 
+            : (existing ? existing.auto_clearance_enabled : 0);
+
+          const maxQtyVal = max_clearance_qty !== undefined 
+            ? (max_clearance_qty ? Number(max_clearance_qty) : null) 
+            : (existing ? existing.max_clearance_qty : null);
+
+          await env.DB.prepare(`
+            INSERT INTO product_inventory (product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(product_id) DO UPDATE SET 
+              is_in_stock = excluded.is_in_stock,
+              custom_price = excluded.custom_price,
+              discount_percent = excluded.discount_percent,
+              discount_price = excluded.discount_price,
+              is_discount_active = excluded.is_discount_active,
+              auto_clearance_enabled = excluded.auto_clearance_enabled,
+              max_clearance_qty = excluded.max_clearance_qty,
+              updated_at = datetime('now')
+          `).bind(product_id, stockVal, priceVal, discPctVal, discPriceVal, isDiscActiveVal, autoClearanceVal, maxQtyVal).run();
+
+          return new Response(JSON.stringify({ 
+            success: true, 
+            product_id, 
+            is_in_stock: stockVal === 1,
+            custom_price: priceVal,
+            discount_percent: discPctVal,
+            discount_price: discPriceVal,
+            is_discount_active: isDiscActiveVal === 1,
+            auto_clearance_enabled: autoClearanceVal === 1,
+            max_clearance_qty: maxQtyVal
+          }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
@@ -1939,7 +2016,7 @@ export default {
     if (env.ASSETS) {
       const response = await env.ASSETS.fetch(request);
       const pathname = url.pathname;
-      if (pathname.endsWith('.html') || pathname === '/' || pathname === '/admin' || pathname === '/partner' || pathname === '/shop' || pathname === '/rider' || pathname === '/track' || pathname === '/chicken-sandbox') {
+      if (pathname.endsWith('.html') || pathname === '/' || pathname === '/admin' || pathname === '/partner' || pathname === '/shop' || pathname === '/rider' || pathname === '/track') {
         const newHeaders = new Headers(response.headers);
         newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         newHeaders.set('Pragma', 'no-cache');

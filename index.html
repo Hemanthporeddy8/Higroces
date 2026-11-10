@@ -2725,11 +2725,22 @@ function getCartItem(id) { return cart.find(i => i.id === id); }
 function addToCart(id) {
   const product = PRODUCTS.find(p => p.id === id);
   if (!product) return;
+  const pricing = getProductPricing(product);
   const existing = getCartItem(id);
   if (existing) {
     existing.qty++;
+    existing.price = pricing.finalPrice;
+    existing.basePrice = pricing.basePrice;
+    existing.isDiscounted = pricing.isDiscounted;
   } else {
-    cart.push({ ...product, qty: 1 });
+    cart.push({ 
+      ...product, 
+      price: pricing.finalPrice, 
+      basePrice: pricing.basePrice, 
+      isDiscounted: pricing.isDiscounted, 
+      discountBadge: pricing.discountBadge,
+      qty: 1 
+    });
   }
   updateCartBadge();
   renderProductGrid(currentCategory);
@@ -2760,11 +2771,63 @@ function calcSubtotal() {
 }
 
 // ═══════════════════════════════════════════════
-// RENDER PRODUCTS
+// RENDER PRODUCTS (SYNCED WITH LIVE MERCHANT PRICES)
 // ═══════════════════════════════════════════════
 let currentCategory = 'all';
 let currentSearch   = '';
 let liveInventoryMap = {};
+let liveProductMeta  = {};
+
+function getISTHour() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const ist = new Date(utc + (3600000 * 5.5));
+  return ist.getHours();
+}
+
+function getProductPricing(p) {
+  const meta = liveProductMeta[p.id];
+  const basePrice = (meta && meta.custom_price != null && !isNaN(meta.custom_price) && meta.custom_price > 0)
+    ? Number(meta.custom_price)
+    : Number(p.price);
+
+  let finalPrice = basePrice;
+  let isDiscounted = false;
+  let discountBadge = '';
+
+  // 1. Explicit merchant-set discount
+  if (meta && meta.is_discount_active) {
+    if (meta.discount_price != null && meta.discount_price > 0) {
+      finalPrice = Number(meta.discount_price);
+      if (finalPrice < basePrice) {
+        isDiscounted = true;
+        const pct = Math.round(((basePrice - finalPrice) / basePrice) * 100);
+        discountBadge = `${pct}% OFF`;
+      }
+    } else if (meta.discount_percent && meta.discount_percent > 0) {
+      finalPrice = Math.round(basePrice * (1 - meta.discount_percent / 100));
+      isDiscounted = true;
+      discountBadge = `${meta.discount_percent}% OFF`;
+    }
+  }
+
+  // 2. Evening auto-clearance rule for fresh meat only (6:00 PM to 10:00 PM IST)
+  if (!isDiscounted && meta && meta.auto_clearance_enabled && (p.category === 'meat' || p.id.includes('chicken') || p.id.includes('fish'))) {
+    const istHour = getISTHour();
+    if (istHour >= 18 && istHour < 22) {
+      finalPrice = Math.round(basePrice * 0.9); // 10% auto-markdown
+      isDiscounted = true;
+      discountBadge = `⚡ 10% Clearance`;
+    }
+  }
+
+  return {
+    basePrice,
+    finalPrice,
+    isDiscounted,
+    discountBadge
+  };
+}
 
 function renderProductGrid(category = 'all', search = '') {
   currentCategory = category;
@@ -2791,12 +2854,18 @@ function renderProductGrid(category = 'all', search = '') {
     const isInStock = liveInventoryMap[p.id] !== false;
     const cartItem = getCartItem(p.id);
     const qty = cartItem ? cartItem.qty : 0;
-    const mrpHTML = p.mrp ? `<span class="mrp">₹${p.mrp}</span>` : '';
-    
+    const pricing = getProductPricing(p);
+
     let badgeHTML = p.badge ? `<span class="card-badge ${p.badgeClass||''}">${p.badge}</span>` : '';
     if (!isInStock) {
       badgeHTML = `<span class="card-badge" style="background:#E74C3C; color:white;">⛔ Sold Out</span>`;
+    } else if (pricing.isDiscounted) {
+      badgeHTML = `<span class="card-badge" style="background:#FF5E2B; color:white;">${pricing.discountBadge}</span>`;
     }
+
+    const priceHTML = pricing.isDiscounted
+      ? `<span class="product-price">₹${pricing.finalPrice} <span class="mrp" style="text-decoration:line-through; color:var(--text-muted); font-size:0.8rem; margin-left:4px;">₹${pricing.basePrice}</span></span>`
+      : `<span class="product-price">₹${pricing.basePrice}</span>`;
 
     let addBtn = '';
     if (!isInStock) {
@@ -2836,7 +2905,7 @@ function renderProductGrid(category = 'all', search = '') {
           </div>
         </div>
         <div class="product-price-row">
-          <span class="product-price">₹${p.price}${mrpHTML}</span>
+          ${priceHTML}
           ${addBtn}
         </div>
       </div>
@@ -2856,6 +2925,7 @@ async function loadAppSettings() {
     if (invRes.ok) {
       const invData = await invRes.json();
       liveInventoryMap = invData.inventory || {};
+      liveProductMeta  = invData.items || {};
     }
     applyFeatureVisibility();
     renderSmartRecommendations();
@@ -2865,23 +2935,23 @@ async function loadAppSettings() {
   }
 }
 
-// ── CONTEXTUAL FESTIVAL & WEATHER RECOMMENDATIONS ENGINE ──
+// ── CONTEXTUAL RECIPE & PAIRING RECOMMENDATIONS ENGINE ──
 const SMART_THEMES = {
   monsoon: {
-    badge: '🌧️ Monsoon Special',
+    badge: '🌧️ Monsoon Comfort Pairings',
     title: 'Hot Pepper Soup & Crispy Evening Cravings',
-    sub: 'Pouring outside? Warm up with rich bone broth chicken cuts and quick crispy evening snacks delivered in 15 mins.',
+    sub: 'Pouring outside? Pair fresh bone-in chicken cuts with hot soup essentials and crispy snacks delivered in 15 mins.',
     items: [
-      { id: 'chicken_500', tag: '🔥 Perfect for Hot Pepper Broth' },
-      { id: 'whole_chicken', tag: '🍲 Rich Bone Broth Favorite' },
-      { id: 'maggi', tag: '🍜 2-Min Hot Monsoon Snack' },
+      { id: 'chicken_500', tag: '🍲 Ideal for Hot Pepper Broth' },
+      { id: 'whole_chicken', tag: '🥘 Rich Bone Broth Favorite' },
+      { id: 'maggi', tag: '🍜 2-Min Hot Rainy Snack' },
       { id: 'lays', tag: '🍟 Crispy Tea-Time Munch' }
     ]
   },
   biryani_sunday: {
-    badge: '👑 Sunday Royal Feast',
+    badge: '👑 Sunday Feast Pairings',
     title: 'Sunday Biryani & Family Meat Bonanza',
-    sub: 'Sunday means Biryani! Tender freshly slaughtered chicken cuts, thick curd for raita, and farm eggs ready in 15 mins.',
+    sub: 'Sunday means Biryani! Pair freshly butchered chicken cuts, thick curd for raita, and farm eggs delivered in 15 mins.',
     items: [
       { id: 'chicken_1kg', tag: '🍗 Authentic Biryani Cut' },
       { id: 'whole_chicken', tag: '👨‍👩‍👧‍👦 Family Feast Size' },
@@ -2890,9 +2960,9 @@ const SMART_THEMES = {
     ]
   },
   weekend_bbq: {
-    badge: '🔥 Weekend BBQ & Match Night',
+    badge: '🔥 Weekend BBQ Pairings',
     title: 'Terrace Barbecue & Game Night Munchies',
-    sub: 'Juicy cuts for tandoori tikka, ice-cold Pepsi, and crispy snacks ready for the big cricket match!',
+    sub: 'Juicy cuts for tandoori tikka, ice-cold Pepsi, and crispy snacks ready for match night!',
     items: [
       { id: 'chicken_500', tag: '🍢 Perfect for Tikka & Fry' },
       { id: 'pepsi', tag: '🥤 Ice-Cold Match Companion' },
@@ -2901,7 +2971,7 @@ const SMART_THEMES = {
     ]
   },
   festive: {
-    badge: '🪔 Festive Celebration',
+    badge: '🪔 Festive Celebration Pairings',
     title: 'Diwali & Eid Royal Celebration Specials',
     sub: 'Celebrate togetherness with royal meat curries, pure farm dairy, and fresh kitchen staples delivered to your doorstep.',
     items: [
@@ -2912,7 +2982,7 @@ const SMART_THEMES = {
     ]
   },
   sunny: {
-    badge: '☀️ Summer Refreshers',
+    badge: '☀️ Refreshing Summer Pairings',
     title: 'Chilled Refreshers & Light Protein Cuts',
     sub: 'Beat the heat with cooling set curd, ice-cold beverages, and lean protein cuts for wholesome fresh salads.',
     items: [
@@ -2923,7 +2993,7 @@ const SMART_THEMES = {
     ]
   },
   high_protein: {
-    badge: '💪 Gym Rat Fuel',
+    badge: '💪 High-Protein Essentials',
     title: 'High-Protein Breakfast & Farm Desi Eggs',
     sub: 'Power up your muscle recovery with fresh farm eggs, lean chicken, and whole wheat bread delivered in 15 mins.',
     items: [
@@ -2971,6 +3041,11 @@ function renderSmartRecommendations() {
     const p = PRODUCTS.find(prod => prod.id === rec.id);
     if (!p) return '';
     const isInStock = liveInventoryMap[p.id] !== false;
+    const pricing = getProductPricing(p);
+
+    const priceDisplay = pricing.isDiscounted
+      ? `₹${pricing.finalPrice} <span style="font-size:0.75rem; text-decoration:line-through; opacity:0.65; margin-left:4px;">₹${pricing.basePrice}</span>`
+      : `₹${pricing.basePrice}`;
 
     return `
       <div class="smart-rec-card" style="${!isInStock ? 'opacity:0.65;' : ''}">
@@ -2985,7 +3060,7 @@ function renderSmartRecommendations() {
           <div class="smart-rec-tag">${rec.tag}</div>
         </div>
         <div class="smart-rec-bottom">
-          <span class="smart-rec-price">₹${p.price}</span>
+          <span class="smart-rec-price">${priceDisplay}</span>
           ${isInStock 
             ? `<button class="btn-smart-add" onclick="quickAddSmartProduct('${p.id}')">+ Add</button>`
             : `<button class="btn-smart-add" style="background:#7F8C8D; cursor:not-allowed;" disabled>Sold Out</button>`

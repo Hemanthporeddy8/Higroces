@@ -439,24 +439,110 @@ header {
 }
 .inventory-station-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 16px;
   margin-top: 16px;
 }
 .inv-card {
   background: var(--bg-card);
   border: 1.5px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 16px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+.inv-card:hover {
+  border-color: #384D44;
+}
+.inv-card-top {
+  display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 .inv-info { flex: 1; }
 .inv-name { font-weight: 700; font-size: 0.95rem; color: white; display: flex; align-items: center; gap: 8px; }
 .inv-bin { font-size: 0.72rem; color: var(--accent-gold); margin-top: 4px; }
-.inv-price { font-size: 0.8rem; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+.inv-price-tag { font-size: 0.8rem; color: #A2D9CE; font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+/* Pricing & Promotion Controls Box */
+.inv-controls-box {
+  background: #141C19;
+  border: 1px solid #24352E;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inv-inputs-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 130px;
+}
+.inv-field-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.inv-num-input {
+  background: #1B2622;
+  border: 1.5px solid #2B3D35;
+  color: white;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  outline: none;
+  width: 100%;
+}
+.inv-num-input:focus {
+  border-color: var(--accent-green);
+  background: #202D28;
+}
+.inv-btn-save {
+  background: #0C513F;
+  color: white;
+  border: 1px solid #187D64;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.inv-btn-save:hover {
+  background: #137A60;
+}
+.inv-btn-save.saved {
+  background: #27AE60;
+  border-color: #2ECC71;
+}
+.inv-preview-text {
+  font-size: 0.76rem;
+  color: #FFB74D;
+  font-family: 'DM Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
 /* Switch Toggle */
 .toggle-switch {
@@ -854,7 +940,7 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
       🏢 All Stations (Master Dispatch)
     </button>
     <button class="station-tab" id="tabInventory" onclick="switchStation('inventory')">
-      📦 Stock &amp; Inventory Toggles
+      📦 Stock, Prices &amp; Discounts
     </button>
     <button class="station-tab" id="tabMandi" onclick="switchStation('mandi')">
       🌱 4 AM Mandi Sheet
@@ -889,13 +975,32 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     </div>
   </div>
 
-  <!-- INVENTORY VIEW (SHOPKEEPER / BUTCHER STOCK TOGGLES) -->
+  <!-- INVENTORY VIEW (SHOPKEEPER / BUTCHER STOCK, PRICES & DISCOUNTS) -->
   <div id="kdsInventoryContainer" style="display:none;">
+    <!-- Merchant Authority & Operating Hours Banner -->
+    <div style="background:linear-gradient(90deg, #12211C, #182A24); border:1.5px solid #234739; border-radius:12px; padding:16px 20px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 4px 16px rgba(0,0,0,0.25);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:1.8rem;">🛡️</span>
+        <div>
+          <div style="font-weight:800; color:white; font-size:1rem; display:flex; align-items:center; gap:8px;">
+            100% Merchant Pricing Authority
+            <span style="background:#27AE60; color:white; font-size:0.65rem; padding:2px 8px; border-radius:12px; font-weight:800; text-transform:uppercase;">Verified Active</span>
+          </div>
+          <div style="font-size:0.8rem; color:#A2D9CE; margin-top:3px; max-width:680px; line-height:1.4;">
+            You have full control over your retail selling prices and discounts. Amorelot will never publish unapproved offers or markdowns without your explicit consent.
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; font-size:0.82rem; color:#FFB74D; background:#1C1408; padding:8px 14px; border-radius:8px; border:1px solid #4D3314; font-family:'DM Mono', monospace;">
+        <span>⏰</span> Daily Hours: <strong>7:00 AM – 10:00 PM IST</strong> (Auto-Close)
+      </div>
+    </div>
+
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
       <div>
-        <h2 style="font-size:1.3rem; color:var(--text-main);">📦 Dark Store &amp; Butcher Stock Toggles</h2>
+        <h2 style="font-size:1.3rem; color:var(--text-main);">📦 Stock, Retail Prices &amp; Custom Discounts</h2>
         <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">
-          Toggle items out-of-stock when finished. Updates customer storefront immediately.
+          Update daily mandi rates, toggle items in/out of stock, or run clearance markdowns. Saves immediately to customer storefront.
         </p>
       </div>
       <input type="text" id="shopInvSearch" placeholder="Filter inventory items..." oninput="renderShopInventory()" style="background:#1E2623; border:1.5px solid var(--border-color); color:white; padding:8px 14px; border-radius:8px; font-size:0.88rem; outline:none;" />
@@ -1655,13 +1760,16 @@ function closeSmartPickerModal() {
   activePickerOrderId = null;
 }
 
-// ── REAL-TIME INVENTORY STATION (SHOPKEEPER / BUTCHER TOGGLES) ──
+// ── REAL-TIME INVENTORY STATION (SHOPKEEPER PRICES, DISCOUNTS & STOCK) ──
+let liveInventoryItems = {};
+
 async function loadShopInventory() {
   try {
     const res = await fetch(`${INVENTORY_API}?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       liveInventoryMap = data.inventory || {};
+      liveInventoryItems = data.items || {};
     }
     renderShopInventory();
   } catch(e) {
@@ -1678,27 +1786,207 @@ function renderShopInventory() {
   const filtered = STORE_CATALOG.filter(it => it.name.toLowerCase().includes(search) || it.bin.toLowerCase().includes(search));
 
   grid.innerHTML = filtered.map(item => {
-    const isInStock = liveInventoryMap[item.id] !== false;
+    const meta = liveInventoryItems[item.id] || {};
+    const isInStock = meta.is_in_stock !== undefined ? meta.is_in_stock : (liveInventoryMap[item.id] !== false);
+    const customPrice = meta.custom_price != null ? meta.custom_price : item.price;
+    const isDiscountActive = !!meta.is_discount_active;
+    const discPercent = meta.discount_percent || 0;
+    const discPrice = meta.discount_price != null ? meta.discount_price : '';
+    const autoClearance = !!meta.auto_clearance_enabled;
+    const isMeat = isMeatItem(item);
+
+    // Calculate effective live price for preview
+    let previewPrice = customPrice;
+    if (isDiscountActive) {
+      if (discPrice !== '' && Number(discPrice) > 0) {
+        previewPrice = Number(discPrice);
+      } else if (discPercent > 0) {
+        previewPrice = Math.round(customPrice * (1 - discPercent / 100));
+      }
+    }
+
     return `
-      <div class="inv-card">
-        <div class="inv-info">
-          <div class="inv-name"><span>${item.emoji}</span> <span>${item.name}</span></div>
-          <div class="inv-bin">${item.bin}</div>
-          <div class="inv-price">₹${item.price} / ${item.unit}</div>
+      <div class="inv-card" id="invCard_${item.id}">
+        <!-- Top Row: Name, Bin, and Stock Toggle -->
+        <div class="inv-card-top">
+          <div class="inv-info">
+            <div class="inv-name">
+              <span>${item.emoji}</span> 
+              <span>${item.name}</span>
+            </div>
+            <div class="inv-bin">${item.bin}</div>
+            <div class="inv-price-tag">Standard Catalog: ₹${item.price} / ${item.unit}</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="stockToggle_${item.id}" ${isInStock ? 'checked' : ''} onchange="toggleShopStock('${item.id}', this.checked)" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:0.68rem; font-weight:700; color:${isInStock ? 'var(--accent-green)' : '#E74C3C'};">
+              ${isInStock ? 'IN STOCK' : 'OUT OF STOCK'}
+            </span>
+          </div>
         </div>
-        <div>
-          <label class="toggle-switch">
-            <input type="checkbox" ${isInStock ? 'checked' : ''} onchange="toggleShopStock('${item.id}', this.checked)" />
-            <span class="toggle-slider"></span>
-          </label>
+
+        <!-- Controls Box: Editable Price & Discount -->
+        <div class="inv-controls-box">
+          <div class="inv-inputs-row">
+            <div class="inv-field">
+              <label class="inv-field-label">Selling Price (₹ / ${item.unit})</label>
+              <input type="number" class="inv-num-input" id="priceInput_${item.id}" value="${customPrice}" oninput="updateItemPreview('${item.id}', '${item.unit}')" placeholder="₹${item.price}" />
+            </div>
+
+            <div class="inv-field" style="min-width:140px;">
+              <label class="inv-field-label" style="display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="discActive_${item.id}" ${isDiscountActive ? 'checked' : ''} onchange="toggleDiscountFields('${item.id}', '${item.unit}')" style="cursor:pointer;" />
+                Run Discount / Deal
+              </label>
+              <div id="discInputs_${item.id}" style="display:${isDiscountActive ? 'flex' : 'none'}; gap:6px; align-items:center;">
+                <input type="number" class="inv-num-input" id="discPercent_${item.id}" value="${discPercent > 0 ? discPercent : ''}" oninput="updateItemPreview('${item.id}', '${item.unit}')" placeholder="% off" style="width:70px;" />
+                <span style="font-size:0.75rem; color:var(--text-muted);">or</span>
+                <input type="number" class="inv-num-input" id="discPrice_${item.id}" value="${discPrice}" oninput="updateItemPreview('${item.id}', '${item.unit}')" placeholder="₹ deal" style="flex:1;" />
+              </div>
+            </div>
+          </div>
+
+          ${isMeat ? `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#1C2622; padding:8px 10px; border-radius:6px; border:1px solid #2A3C35;">
+              <div style="font-size:0.75rem; color:#A2D9CE; display:flex; align-items:center; gap:6px;">
+                <span>⚡</span>
+                <span><strong>Auto-Evening Clearance</strong> (10% off after 6 PM IST to sell day's fresh cut)</span>
+              </div>
+              <input type="checkbox" id="autoClearance_${item.id}" ${autoClearance ? 'checked' : ''} onchange="saveProductSettings('${item.id}')" style="cursor:pointer; transform:scale(1.2);" />
+            </div>
+          ` : ''}
+
+          <!-- Live Preview & Save Action -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:2px;">
+            <div class="inv-preview-text" id="previewText_${item.id}">
+              Customer sees: <strong style="color:white; font-size:0.95rem;">₹${previewPrice}</strong>
+              ${isDiscountActive && previewPrice < customPrice ? `<span style="text-decoration:line-through; color:#888; font-size:0.75rem;">₹${customPrice}</span>` : ''}
+            </div>
+            <button class="inv-btn-save" id="btnSave_${item.id}" onclick="saveProductSettings('${item.id}')">
+              <span>💾</span> Save Price
+            </button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
 
+function toggleDiscountFields(productId, unit) {
+  const isChecked = document.getElementById(`discActive_${productId}`)?.checked;
+  const container = document.getElementById(`discInputs_${productId}`);
+  if (container) container.style.display = isChecked ? 'flex' : 'none';
+  updateItemPreview(productId, unit);
+}
+
+function updateItemPreview(productId, unit) {
+  const priceInput = document.getElementById(`priceInput_${productId}`);
+  const discCheck = document.getElementById(`discActive_${productId}`);
+  const pctInput = document.getElementById(`discPercent_${productId}`);
+  const dealPriceInput = document.getElementById(`discPrice_${productId}`);
+  const previewEl = document.getElementById(`previewText_${productId}`);
+
+  if (!priceInput || !previewEl) return;
+
+  const basePrice = Number(priceInput.value) || 0;
+  const isDisc = discCheck ? discCheck.checked : false;
+  const pct = pctInput ? Number(pctInput.value) || 0 : 0;
+  const dealPrice = dealPriceInput && dealPriceInput.value !== '' ? Number(dealPriceInput.value) : null;
+
+  let finalPrice = basePrice;
+  if (isDisc) {
+    if (dealPrice !== null && dealPrice > 0) {
+      finalPrice = dealPrice;
+    } else if (pct > 0) {
+      finalPrice = Math.round(basePrice * (1 - pct / 100));
+    }
+  }
+
+  previewEl.innerHTML = `Customer sees: <strong style="color:white; font-size:0.95rem;">₹${finalPrice}</strong> ${isDisc && finalPrice < basePrice ? `<span style="text-decoration:line-through; color:#888; font-size:0.75rem;">₹${basePrice}</span>` : ''}`;
+}
+
+async function saveProductSettings(productId) {
+  const priceInput = document.getElementById(`priceInput_${productId}`);
+  const discCheck = document.getElementById(`discActive_${productId}`);
+  const pctInput = document.getElementById(`discPercent_${productId}`);
+  const dealPriceInput = document.getElementById(`discPrice_${productId}`);
+  const autoClearanceCheck = document.getElementById(`autoClearance_${productId}`);
+  const stockToggle = document.getElementById(`stockToggle_${productId}`);
+  const saveBtn = document.getElementById(`btnSave_${productId}`);
+
+  const custom_price = priceInput && priceInput.value !== '' ? Number(priceInput.value) : null;
+  const is_discount_active = discCheck ? discCheck.checked : false;
+  const discount_percent = pctInput && pctInput.value !== '' ? Number(pctInput.value) : 0;
+  const discount_price = dealPriceInput && dealPriceInput.value !== '' ? Number(dealPriceInput.value) : null;
+  const auto_clearance_enabled = autoClearanceCheck ? autoClearanceCheck.checked : false;
+  const is_in_stock = stockToggle ? stockToggle.checked : true;
+
+  if (saveBtn) {
+    saveBtn.innerHTML = `<span>⏳</span> Saving...`;
+    saveBtn.disabled = true;
+  }
+
+  try {
+    const res = await fetch(INVENTORY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: productId,
+        is_in_stock,
+        custom_price,
+        discount_percent,
+        discount_price,
+        is_discount_active,
+        auto_clearance_enabled
+      })
+    });
+
+    if (res.ok) {
+      const savedData = await res.json();
+      liveInventoryItems[productId] = {
+        product_id: productId,
+        is_in_stock: savedData.is_in_stock,
+        custom_price: savedData.custom_price,
+        discount_percent: savedData.discount_percent,
+        discount_price: savedData.discount_price,
+        is_discount_active: savedData.is_discount_active,
+        auto_clearance_enabled: savedData.auto_clearance_enabled
+      };
+      liveInventoryMap[productId] = savedData.is_in_stock;
+
+      if (saveBtn) {
+        saveBtn.className = 'inv-btn-save saved';
+        saveBtn.innerHTML = `<span>✓</span> Saved Live`;
+        setTimeout(() => {
+          saveBtn.className = 'inv-btn-save';
+          saveBtn.innerHTML = `<span>💾</span> Save Price`;
+          saveBtn.disabled = false;
+        }, 1800);
+      }
+    } else {
+      alert("Failed to save price changes.");
+      if (saveBtn) {
+        saveBtn.innerHTML = `<span>💾</span> Save Price`;
+        saveBtn.disabled = false;
+      }
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    if (saveBtn) {
+      saveBtn.innerHTML = `<span>💾</span> Save Price`;
+      saveBtn.disabled = false;
+    }
+  }
+}
+
 async function toggleShopStock(productId, isChecked) {
   liveInventoryMap[productId] = isChecked;
+  if (!liveInventoryItems[productId]) liveInventoryItems[productId] = {};
+  liveInventoryItems[productId].is_in_stock = isChecked;
+
   try {
     const res = await fetch(INVENTORY_API, {
       method: 'POST',
@@ -1708,11 +1996,13 @@ async function toggleShopStock(productId, isChecked) {
     if (!res.ok) {
       alert("Failed to update inventory stock");
       liveInventoryMap[productId] = !isChecked;
+      liveInventoryItems[productId].is_in_stock = !isChecked;
       renderShopInventory();
     }
   } catch(e) {
     alert("Connection error: " + e.message);
     liveInventoryMap[productId] = !isChecked;
+    liveInventoryItems[productId].is_in_stock = !isChecked;
     renderShopInventory();
   }
 }
