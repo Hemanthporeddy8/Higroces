@@ -207,7 +207,51 @@ function isFounder(adminAuth) {
   return adminAuth.role === 'founder' || adminAuth.role === 'super_admin';
 }
 
-// ── SHOPKEEPER MERCHANT AUTHENTICATION ENGINE (0 SMS BILLS) ──
+// ── STATELESS ZERO-WRITE MERCHANT AUTHENTICATION ENGINE (HMAC-SHA256) ──
+const SHOP_HMAC_SECRET = "amorelot-merchant-secret-key-2026-v1";
+
+async function signShopToken(shopId, expiresAt) {
+  const data = `${shopId}:${expiresAt}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(SHOP_HMAC_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(data));
+  const sigHex = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `shptkn_${shopId}_${expiresAt}_${sigHex}`;
+}
+
+async function verifyShopToken(token) {
+  if (!token || !token.startsWith("shptkn_")) return null;
+  const parts = token.split('_');
+  if (parts.length !== 4) return null;
+  const shopId = parts[1];
+  const expiresAt = Number(parts[2]);
+  const sigHex = parts[3];
+
+  if (Date.now() > expiresAt) return null; // expired
+
+  const data = `${shopId}:${expiresAt}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(SHOP_HMAC_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+  const matchBytes = sigHex.match(/.{1,2}/g);
+  if (!matchBytes) return null;
+  const sigBuf = new Uint8Array(matchBytes.map(byte => parseInt(byte, 16))).buffer;
+  const valid = await crypto.subtle.verify("HMAC", key, sigBuf, enc.encode(data));
+  if (!valid) return null;
+  return { shopId, expiresAt };
+}
+
 async function verifyShopAuth(request, env) {
   const authHeader = request.headers.get('Authorization') || '';
   let token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
@@ -221,6 +265,22 @@ async function verifyShopAuth(request, env) {
   }
   if (!token) return null;
 
+  // 1. Check stateless cryptographic token (0 D1 writes, instant memory verification)
+  try {
+    const verified = await verifyShopToken(token);
+    if (verified && verified.shopId) {
+      const shop = await env.DB.prepare(`
+        SELECT id, name, owner_name, phone, email, address, category, is_active, approval_status
+        FROM shops WHERE id = ?
+      `).bind(verified.shopId).first();
+      if (shop && shop.is_active == 1 && (shop.approval_status === 'approved' || !shop.approval_status)) {
+        return { token, expires_at: verified.expiresAt, ...shop };
+      }
+      return null;
+    }
+  } catch(e) {}
+
+  // 2. Fallback to legacy database sessions (backward-compatible)
   try {
     const session = await env.DB.prepare(`
       SELECT s.token, s.expires_at, sh.id, sh.name, sh.owner_name, sh.phone, sh.email, sh.address, sh.category, sh.is_active, sh.approval_status
@@ -1055,6 +1115,22 @@ export default {
             ? (max_clearance_qty ? Number(max_clearance_qty) : null) 
             : (existing ? existing.max_clearance_qty : null);
 
+          // In-Engine Dirty Checking: If values are identical to current DB, skip D1 write completely!
+          if (existing &&
+              existing.is_in_stock === stockVal &&
+              Number(existing.custom_price || 0) === Number(priceVal || 0) &&
+              Number(existing.discount_percent || 0) === Number(discPctVal || 0) &&
+              Number(existing.discount_price || 0) === Number(discPriceVal || 0) &&
+              existing.is_discount_active === isDiscActiveVal &&
+              existing.auto_clearance_enabled === autoClearanceVal) {
+            return new Response(JSON.stringify({ 
+              success: true, 
+              product_id, 
+              unchanged: true,
+              d1_writes: 0
+            }), { headers: corsHeaders() });
+          }
+
           await env.DB.prepare(`
             INSERT INTO product_inventory (product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -1078,11 +1154,105 @@ export default {
             discount_price: discPriceVal,
             is_discount_active: isDiscActiveVal === 1,
             auto_clearance_enabled: autoClearanceVal === 1,
-            max_clearance_qty: maxQtyVal
+            max_clearance_qty: maxQtyVal,
+            d1_writes: 1
           }), { headers: corsHeaders() });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
         }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/inventory/batch (1 Atomic D1 Transaction for Unlimited Changes)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/inventory/batch" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const items = body.items || [];
+        if (!Array.isArray(items) || items.length === 0) {
+          return new Response(JSON.stringify({ error: "items array is required" }), { status: 400, headers: corsHeaders() });
+        }
+
+        const existingRows = await env.DB.prepare("SELECT * FROM product_inventory").all();
+        const existingMap = {};
+        (existingRows.results || []).forEach(r => { existingMap[r.product_id] = r; });
+
+        const statements = [];
+        let skippedUnchanged = 0;
+
+        for (const it of items) {
+          const { product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty } = it;
+          if (!product_id) continue;
+
+          const existing = existingMap[product_id];
+
+          const stockVal = is_in_stock !== undefined 
+            ? ((is_in_stock === false || is_in_stock === 0 || is_in_stock === '0') ? 0 : 1)
+            : (existing ? existing.is_in_stock : 1);
+
+          const priceVal = custom_price !== undefined 
+            ? (custom_price !== null && custom_price !== '' ? Number(custom_price) : null) 
+            : (existing ? existing.custom_price : null);
+
+          const discPctVal = discount_percent !== undefined 
+            ? Number(discount_percent || 0) 
+            : (existing ? existing.discount_percent : 0);
+
+          const discPriceVal = discount_price !== undefined 
+            ? (discount_price !== null && discount_price !== '' ? Number(discount_price) : null) 
+            : (existing ? existing.discount_price : null);
+
+          const isDiscActiveVal = is_discount_active !== undefined 
+            ? (is_discount_active ? 1 : 0) 
+            : (existing ? existing.is_discount_active : 0);
+
+          const autoClearanceVal = auto_clearance_enabled !== undefined 
+            ? (auto_clearance_enabled ? 1 : 0) 
+            : (existing ? existing.auto_clearance_enabled : 0);
+
+          const maxQtyVal = max_clearance_qty !== undefined 
+            ? (max_clearance_qty ? Number(max_clearance_qty) : null) 
+            : (existing ? existing.max_clearance_qty : null);
+
+          if (existing &&
+              existing.is_in_stock === stockVal &&
+              Number(existing.custom_price || 0) === Number(priceVal || 0) &&
+              Number(existing.discount_percent || 0) === Number(discPctVal || 0) &&
+              Number(existing.discount_price || 0) === Number(discPriceVal || 0) &&
+              existing.is_discount_active === isDiscActiveVal &&
+              existing.auto_clearance_enabled === autoClearanceVal) {
+            skippedUnchanged++;
+            continue;
+          }
+
+          statements.push(env.DB.prepare(`
+            INSERT INTO product_inventory (product_id, is_in_stock, custom_price, discount_percent, discount_price, is_discount_active, auto_clearance_enabled, max_clearance_qty, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(product_id) DO UPDATE SET 
+              is_in_stock = excluded.is_in_stock,
+              custom_price = excluded.custom_price,
+              discount_percent = excluded.discount_percent,
+              discount_price = excluded.discount_price,
+              is_discount_active = excluded.is_discount_active,
+              auto_clearance_enabled = excluded.auto_clearance_enabled,
+              max_clearance_qty = excluded.max_clearance_qty,
+              updated_at = datetime('now')
+          `).bind(product_id, stockVal, priceVal, discPctVal, discPriceVal, isDiscActiveVal, autoClearanceVal, maxQtyVal));
+        }
+
+        if (statements.length > 0) {
+          await env.DB.batch(statements);
+        }
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          committedItems: statements.length, 
+          skippedUnchanged,
+          d1_transactions: statements.length > 0 ? 1 : 0
+        }), { headers: corsHeaders() });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
       }
     }
 
@@ -1345,9 +1515,9 @@ export default {
           return new Response(JSON.stringify({ error: passcode ? "Incorrect 6-digit passcode." : "Incorrect password." }), { status: 401, headers: corsHeaders() });
         }
 
-        const token = crypto.randomUUID();
         const expires_at = Date.now() + (30 * 24 * 3600 * 1000); // 30 days
-        await env.DB.prepare("INSERT INTO shop_sessions (token, shop_id, expires_at) VALUES (?, ?, ?)").bind(token, shop.id, expires_at).run();
+        const token = await signShopToken(shop.id, expires_at);
+        // Stateless HMAC session token generated in memory (0 D1 writes!)
 
         const headers = corsHeaders();
         headers['Set-Cookie'] = `shop_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`;
@@ -1481,9 +1651,10 @@ export default {
           const match = cookie.match(/shop_session=([a-zA-Z0-9_\-]+)/);
           if (match) token = match[1];
         }
-        if (token) {
-          await env.DB.prepare("DELETE FROM shop_sessions WHERE token = ?").bind(token).run();
+        if (token && !token.startsWith("shptkn_")) {
+          try { await env.DB.prepare("DELETE FROM shop_sessions WHERE token = ?").bind(token).run(); } catch(e) {}
         }
+        // Zero D1 writes on stateless logout!
         const headers = corsHeaders();
         headers['Set-Cookie'] = `shop_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
         return new Response(JSON.stringify({ success: true, message: "Logged out" }), { headers });

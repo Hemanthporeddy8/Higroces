@@ -558,6 +558,156 @@ header {
 input:checked + .toggle-slider { background-color: var(--accent-green); }
 input:checked + .toggle-slider:before { transform: translateX(22px); }
 
+/* ── FLOATING STAGING & BATCH PUBLISH BAR ── */
+.inventory-staging-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 28, 24, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid #2ECC71;
+  border-radius: 14px;
+  padding: 12px 24px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.6), 0 0 20px rgba(46,204,113,0.25);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 680px;
+  width: calc(100% - 40px);
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translate(-50%, 40px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+.btn-staging-publish {
+  background: linear-gradient(135deg, #0C513F, #27AE60);
+  color: white;
+  border: 1px solid #2ECC71;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(46,204,113,0.3);
+  white-space: nowrap;
+}
+.btn-staging-publish:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(46,204,113,0.4);
+}
+.btn-staging-revert {
+  background: transparent;
+  color: #FFA39E;
+  border: 1px solid rgba(231,76,60,0.4);
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-staging-revert:hover {
+  background: rgba(231,76,60,0.15);
+}
+.inv-card.has-draft {
+  border-color: #FFB74D !important;
+  box-shadow: 0 0 14px rgba(255,183,77,0.15);
+}
+.inv-draft-badge {
+  background: #FFB74D;
+  color: #141A18;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ── FLOATING MERCHANT CALCULATOR ── */
+.floating-calc-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #1A2822, #0C513F);
+  border: 1.5px solid #284439;
+  color: #FFB74D;
+  padding: 11px 18px;
+  border-radius: 30px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1400;
+  transition: all 0.2s;
+}
+.floating-calc-btn:hover {
+  transform: translateY(-2px);
+  border-color: #2ECC71;
+  color: white;
+  box-shadow: 0 8px 30px rgba(46,204,113,0.3);
+}
+.calc-modal-overlay {
+  position: fixed;
+  bottom: 76px;
+  right: 24px;
+  z-index: 1600;
+  display: none;
+  width: 320px;
+  background: #141C19;
+  border: 1.5px solid #2E453B;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+  animation: fadeInCalc 0.2s ease-out;
+}
+@keyframes fadeInCalc {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.calc-screen {
+  background: #0A100E;
+  border: 1px solid #1C2B25;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 12px;
+}
+.calc-history { font-size: 0.75rem; color: #8C9E97; min-height: 16px; }
+.calc-display { font-size: 1.6rem; font-weight: 700; color: #2ECC71; overflow-x: auto; scrollbar-width: none; }
+.calc-keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc-btn {
+  background: #1C2723;
+  border: 1px solid #283A33;
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 10px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.calc-btn:hover { background: #2A3B35; }
+.calc-btn.op { background: #0E3B2E; color: #A2D9CE; }
+.calc-btn.op:hover { background: #155543; }
+.calc-btn.eq { background: #27AE60; color: white; border-color: #2ECC71; }
+.calc-btn.clear { background: #3B1B17; color: #FFA39E; }
+.calc-tabs { display: flex; gap: 4px; margin-bottom: 10px; background: #0F1714; padding: 3px; border-radius: 6px; }
+.calc-tab {
+  flex: 1; text-align: center; font-size: 0.72rem; font-weight: 700; padding: 5px;
+  border-radius: 4px; color: var(--text-muted); cursor: pointer; border: none; background: transparent;
+}
+.calc-tab.active { background: #1C2B25; color: #FFB74D; }
+
 /* ── ZEPTO SMART PICKER ASSISTANT MODAL ── */
 .picker-modal-overlay {
   position: fixed; inset: 0; background: rgba(10, 16, 14, 0.96); backdrop-filter: blur(10px);
@@ -1062,6 +1212,121 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
       <button class="btn-complete-pick" id="btnCompletePick" onclick="finishSmartPick()">
         🎉 Pack &amp; Seal Bag (Handover to Rider)
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING STAGING & BATCH PUBLISH BAR -->
+<div id="inventoryStagingBar" class="inventory-staging-bar" style="display:none;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="font-size:1.5rem;">📦</span>
+    <div>
+      <div style="font-weight:800; color:white; font-size:0.92rem;" id="stagingCountText">0 Unpublished Changes</div>
+      <div style="font-size:0.75rem; color:#A2D9CE;">Edited locally with 0 server writes. 1-tap to push all live.</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <button class="btn-staging-revert" onclick="revertStagedInventory()">✕ Discard</button>
+    <button class="btn-staging-publish" id="btnPublishStaged" onclick="publishStagedInventory()">🚀 Publish All Live (1-Tap)</button>
+  </div>
+</div>
+
+<!-- FLOATING MERCHANT CALCULATOR BUTTON -->
+<button class="floating-calc-btn" id="btnToggleCalc" onclick="toggleCalculator()" title="Open Dark Store Mandi & Margin Calculator">
+  <span>🧮</span> Calculator
+</button>
+
+<!-- FLOATING CALCULATOR MODAL -->
+<div class="calc-modal-overlay" id="calcModalOverlay">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <div style="font-size:0.82rem; font-weight:800; color:#FFB74D; display:flex; align-items:center; gap:6px;">
+      <span>🧮</span> Mandi &amp; Margin Calculator
+    </div>
+    <button onclick="toggleCalculator()" style="background:none; border:none; color:#8C9E97; font-size:1.1rem; cursor:pointer;">✕</button>
+  </div>
+
+  <div class="calc-tabs">
+    <button class="calc-tab active" id="calcTabBasic" onclick="switchCalcTab('basic')">Standard</button>
+    <button class="calc-tab" id="calcTabMandi" onclick="switchCalcTab('mandi')">🍗 Mandi Yield</button>
+    <button class="calc-tab" id="calcTabMargin" onclick="switchCalcTab('margin')">📈 Profit %</button>
+  </div>
+
+  <!-- VIEW 1: STANDARD CALCULATOR -->
+  <div id="calcViewBasic">
+    <div class="calc-screen">
+      <div class="calc-history" id="calcHistory"></div>
+      <div class="calc-display" id="calcDisplay">0</div>
+    </div>
+    <div class="calc-keypad">
+      <button class="calc-btn clear" onclick="calcAction('C')">C</button>
+      <button class="calc-btn clear" onclick="calcAction('back')">⌫</button>
+      <button class="calc-btn op" onclick="calcAction('%')">%</button>
+      <button class="calc-btn op" onclick="calcAction('/')">÷</button>
+
+      <button class="calc-btn" onclick="calcAction('7')">7</button>
+      <button class="calc-btn" onclick="calcAction('8')">8</button>
+      <button class="calc-btn" onclick="calcAction('9')">9</button>
+      <button class="calc-btn op" onclick="calcAction('*')">×</button>
+
+      <button class="calc-btn" onclick="calcAction('4')">4</button>
+      <button class="calc-btn" onclick="calcAction('5')">5</button>
+      <button class="calc-btn" onclick="calcAction('6')">6</button>
+      <button class="calc-btn op" onclick="calcAction('-')">−</button>
+
+      <button class="calc-btn" onclick="calcAction('1')">1</button>
+      <button class="calc-btn" onclick="calcAction('2')">2</button>
+      <button class="calc-btn" onclick="calcAction('3')">3</button>
+      <button class="calc-btn op" onclick="calcAction('+')">+</button>
+
+      <button class="calc-btn" onclick="calcAction('0')">0</button>
+      <button class="calc-btn" onclick="calcAction('.')">.</button>
+      <button class="calc-btn eq" onclick="calcAction('=')">=</button>
+      <button class="calc-btn" onclick="copyCalcResult()" title="Copy result to clipboard" style="font-size:0.8rem; background:#0F3025; color:#A2D9CE;">📋</button>
+    </div>
+  </div>
+
+  <!-- VIEW 2: MANDI YIELD HELPER -->
+  <div id="calcViewMandi" style="display:none; flex-direction:column; gap:8px;">
+    <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:4px;">Convert wholesale live poultry rate to dressed meat cost:</div>
+    <div>
+      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">LIVE BIRD RATE (₹/KG):</label>
+      <input type="number" id="calcLiveRate" placeholder="e.g. 130" oninput="calcMandiYield()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+    </div>
+    <div style="background:#0F1714; border:1px solid #1E2D27; border-radius:8px; padding:10px; font-family:'DM Mono'; font-size:0.78rem;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span style="color:#8C9E97;">Dressed Yield:</span>
+        <span style="color:white;">~70%</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span style="color:#8C9E97;">Net Dressed Cost:</span>
+        <span style="color:#FFB74D; font-weight:700;" id="calcDressedCost">₹0.00 / kg</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:#8C9E97;">Rec. Selling (25% margin):</span>
+        <span style="color:#2ECC71; font-weight:800;" id="calcRecRetail">₹0.00 / kg</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: PROFIT MARGIN HELPER -->
+  <div id="calcViewMargin" style="display:none; flex-direction:column; gap:8px;">
+    <div>
+      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">COST / WHOLESALE PRICE (₹):</label>
+      <input type="number" id="calcCostPrice" placeholder="e.g. 190" oninput="calcMargin()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+    </div>
+    <div>
+      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">SELLING PRICE (₹):</label>
+      <input type="number" id="calcSellPrice" placeholder="e.g. 260" oninput="calcMargin()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+    </div>
+    <div style="background:#0F1714; border:1px solid #1E2D27; border-radius:8px; padding:10px; font-family:'DM Mono'; font-size:0.78rem;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span style="color:#8C9E97;">Net Profit:</span>
+        <span style="color:#2ECC71; font-weight:800;" id="calcProfitAmt">₹0.00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:#8C9E97;">Profit Margin %:</span>
+        <span style="color:#FFB74D; font-weight:800;" id="calcMarginPct">0.0%</span>
+      </div>
     </div>
   </div>
 </div>
@@ -1778,6 +2043,151 @@ async function loadShopInventory() {
   }
 }
 
+// ── REAL-TIME INVENTORY STAGING ENGINE (0 D1 WRITES UNTIL 1-TAP PUBLISH) ──
+let stagedInventoryChanges = {};
+
+function stageProductChange(productId) {
+  const priceInput = document.getElementById(`priceInput_${productId}`);
+  const discCheck = document.getElementById(`discActive_${productId}`);
+  const pctInput = document.getElementById(`discPercent_${productId}`);
+  const dealPriceInput = document.getElementById(`discPrice_${productId}`);
+  const autoClearanceCheck = document.getElementById(`autoClearance_${productId}`);
+  const stockToggle = document.getElementById(`stockToggle_${productId}`);
+
+  const itemDef = STORE_CATALOG.find(i => i.id === productId);
+  const origMeta = liveInventoryItems[productId] || {};
+  const origStock = origMeta.is_in_stock !== undefined ? origMeta.is_in_stock : (liveInventoryMap[productId] !== false);
+  const origPrice = origMeta.custom_price != null ? origMeta.custom_price : (itemDef ? itemDef.price : null);
+  const origDiscActive = !!origMeta.is_discount_active;
+  const origDiscPct = origMeta.discount_percent || 0;
+  const origDiscPrice = origMeta.discount_price != null ? origMeta.discount_price : null;
+  const origClearance = !!origMeta.auto_clearance_enabled;
+
+  const newStock = stockToggle ? stockToggle.checked : origStock;
+  const newPrice = priceInput && priceInput.value !== '' ? Number(priceInput.value) : origPrice;
+  const newDiscActive = discCheck ? discCheck.checked : origDiscActive;
+  const newDiscPct = pctInput && pctInput.value !== '' ? Number(pctInput.value) : 0;
+  const newDiscPrice = dealPriceInput && dealPriceInput.value !== '' ? Number(dealPriceInput.value) : null;
+  const newClearance = autoClearanceCheck ? autoClearanceCheck.checked : origClearance;
+
+  const isDirty = (
+    newStock !== origStock ||
+    Number(newPrice || 0) !== Number(origPrice || 0) ||
+    newDiscActive !== origDiscActive ||
+    Number(newDiscPct || 0) !== Number(origDiscPct || 0) ||
+    Number(newDiscPrice || 0) !== Number(origDiscPrice || 0) ||
+    newClearance !== origClearance
+  );
+
+  const card = document.getElementById(`invCard_${productId}`);
+  const draftBadge = document.getElementById(`draftBadge_${productId}`);
+
+  if (isDirty) {
+    stagedInventoryChanges[productId] = {
+      product_id: productId,
+      is_in_stock: newStock,
+      custom_price: newPrice,
+      is_discount_active: newDiscActive,
+      discount_percent: newDiscPct,
+      discount_price: newDiscPrice,
+      auto_clearance_enabled: newClearance
+    };
+    if (card) card.classList.add('has-draft');
+    if (draftBadge) draftBadge.style.display = 'inline-block';
+  } else {
+    delete stagedInventoryChanges[productId];
+    if (card) card.classList.remove('has-draft');
+    if (draftBadge) draftBadge.style.display = 'none';
+  }
+
+  updateStagingBarUI();
+}
+
+function updateStagingBarUI() {
+  const bar = document.getElementById('inventoryStagingBar');
+  const countText = document.getElementById('stagingCountText');
+  const count = Object.keys(stagedInventoryChanges).length;
+  if (!bar) return;
+
+  if (count > 0) {
+    bar.style.display = 'flex';
+    if (countText) countText.textContent = `${count} Unpublished Change${count > 1 ? 's' : ''}`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function publishStagedInventory() {
+  const items = Object.values(stagedInventoryChanges);
+  if (items.length === 0) return;
+
+  const btn = document.getElementById('btnPublishStaged');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span> Publishing ${items.length} items...`;
+  }
+
+  try {
+    const res = await fetch('/api/inventory/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      items.forEach(it => {
+        liveInventoryItems[it.product_id] = {
+          product_id: it.product_id,
+          is_in_stock: it.is_in_stock,
+          custom_price: it.custom_price,
+          discount_percent: it.discount_percent,
+          discount_price: it.discount_price,
+          is_discount_active: it.is_discount_active,
+          auto_clearance_enabled: it.auto_clearance_enabled
+        };
+        liveInventoryMap[it.product_id] = it.is_in_stock;
+      });
+
+      stagedInventoryChanges = {};
+      updateStagingBarUI();
+      renderShopInventory();
+
+      if (btn) {
+        btn.innerHTML = `<span>✓</span> Published Live!`;
+        btn.style.background = '#27AE60';
+        setTimeout(() => {
+          btn.innerHTML = `🚀 Publish All Live (1-Tap)`;
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 1800);
+      }
+    } else {
+      alert("Failed to batch publish: " + (data.error || "Unknown error"));
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `🚀 Publish All Live (1-Tap)`;
+      }
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `🚀 Publish All Live (1-Tap)`;
+    }
+  }
+}
+
+function revertStagedInventory() {
+  const count = Object.keys(stagedInventoryChanges).length;
+  if (count === 0) return;
+  if (confirm(`Discard all ${count} unsaved inventory draft changes?`)) {
+    stagedInventoryChanges = {};
+    updateStagingBarUI();
+    renderShopInventory();
+  }
+}
+
 function renderShopInventory() {
   const search = (document.getElementById('shopInvSearch')?.value || '').toLowerCase();
   const grid = document.getElementById('shopInventoryGrid');
@@ -1786,13 +2196,15 @@ function renderShopInventory() {
   const filtered = STORE_CATALOG.filter(it => it.name.toLowerCase().includes(search) || it.bin.toLowerCase().includes(search));
 
   grid.innerHTML = filtered.map(item => {
+    const staged = stagedInventoryChanges[item.id];
     const meta = liveInventoryItems[item.id] || {};
-    const isInStock = meta.is_in_stock !== undefined ? meta.is_in_stock : (liveInventoryMap[item.id] !== false);
-    const customPrice = meta.custom_price != null ? meta.custom_price : item.price;
-    const isDiscountActive = !!meta.is_discount_active;
-    const discPercent = meta.discount_percent || 0;
-    const discPrice = meta.discount_price != null ? meta.discount_price : '';
-    const autoClearance = !!meta.auto_clearance_enabled;
+
+    const isInStock = staged ? staged.is_in_stock : (meta.is_in_stock !== undefined ? meta.is_in_stock : (liveInventoryMap[item.id] !== false));
+    const customPrice = staged ? staged.custom_price : (meta.custom_price != null ? meta.custom_price : item.price);
+    const isDiscountActive = staged ? staged.is_discount_active : (!!meta.is_discount_active);
+    const discPercent = staged ? staged.discount_percent : (meta.discount_percent || 0);
+    const discPrice = staged ? (staged.discount_price != null ? staged.discount_price : '') : (meta.discount_price != null ? meta.discount_price : '');
+    const autoClearance = staged ? staged.auto_clearance_enabled : (!!meta.auto_clearance_enabled);
     const isMeat = isMeatItem(item);
 
     // Calculate effective live price for preview
@@ -1806,13 +2218,14 @@ function renderShopInventory() {
     }
 
     return `
-      <div class="inv-card" id="invCard_${item.id}">
+      <div class="inv-card ${staged ? 'has-draft' : ''}" id="invCard_${item.id}">
         <!-- Top Row: Name, Bin, and Stock Toggle -->
         <div class="inv-card-top">
           <div class="inv-info">
             <div class="inv-name">
               <span>${item.emoji}</span> 
               <span>${item.name}</span>
+              <span id="draftBadge_${item.id}" style="display:${staged ? 'inline-block' : 'none'}; background:rgba(255,183,77,0.2); color:#FFB74D; border:1px solid #FFB74D; font-size:0.65rem; font-weight:800; padding:1px 6px; border-radius:4px; margin-left:6px;">DRAFT</span>
             </div>
             <div class="inv-bin">${item.bin}</div>
             <div class="inv-price-tag">Standard Catalog: ₹${item.price} / ${item.unit}</div>
@@ -1822,7 +2235,7 @@ function renderShopInventory() {
               <input type="checkbox" id="stockToggle_${item.id}" ${isInStock ? 'checked' : ''} onchange="toggleShopStock('${item.id}', this.checked)" />
               <span class="toggle-slider"></span>
             </label>
-            <span style="font-size:0.68rem; font-weight:700; color:${isInStock ? 'var(--accent-green)' : '#E74C3C'};">
+            <span id="stockLabel_${item.id}" style="font-size:0.68rem; font-weight:700; color:${isInStock ? 'var(--accent-green)' : '#E74C3C'};">
               ${isInStock ? 'IN STOCK' : 'OUT OF STOCK'}
             </span>
           </div>
@@ -1855,7 +2268,7 @@ function renderShopInventory() {
                 <span>⚡</span>
                 <span><strong>Auto-Evening Clearance</strong> (10% off after 6 PM IST to sell day's fresh cut)</span>
               </div>
-              <input type="checkbox" id="autoClearance_${item.id}" ${autoClearance ? 'checked' : ''} onchange="saveProductSettings('${item.id}')" style="cursor:pointer; transform:scale(1.2);" />
+              <input type="checkbox" id="autoClearance_${item.id}" ${autoClearance ? 'checked' : ''} onchange="stageProductChange('${item.id}')" style="cursor:pointer; transform:scale(1.2);" />
             </div>
           ` : ''}
 
@@ -1865,7 +2278,7 @@ function renderShopInventory() {
               Customer sees: <strong style="color:white; font-size:0.95rem;">₹${previewPrice}</strong>
               ${isDiscountActive && previewPrice < customPrice ? `<span style="text-decoration:line-through; color:#888; font-size:0.75rem;">₹${customPrice}</span>` : ''}
             </div>
-            <button class="inv-btn-save" id="btnSave_${item.id}" onclick="saveProductSettings('${item.id}')">
+            <button class="inv-btn-save" id="btnSave_${item.id}" onclick="saveProductSettings('${item.id}')" title="Save this single item immediately to D1">
               <span>💾</span> Save Price
             </button>
           </div>
@@ -1873,6 +2286,7 @@ function renderShopInventory() {
       </div>
     `;
   }).join('');
+  updateStagingBarUI();
 }
 
 function toggleDiscountFields(productId, unit) {
@@ -1906,6 +2320,9 @@ function updateItemPreview(productId, unit) {
   }
 
   previewEl.innerHTML = `Customer sees: <strong style="color:white; font-size:0.95rem;">₹${finalPrice}</strong> ${isDisc && finalPrice < basePrice ? `<span style="text-decoration:line-through; color:#888; font-size:0.75rem;">₹${basePrice}</span>` : ''}`;
+
+  // Stage locally with zero D1 writes
+  stageProductChange(productId);
 }
 
 async function saveProductSettings(productId) {
@@ -1957,6 +2374,14 @@ async function saveProductSettings(productId) {
       };
       liveInventoryMap[productId] = savedData.is_in_stock;
 
+      // Unstage if it was staged
+      delete stagedInventoryChanges[productId];
+      const card = document.getElementById(`invCard_${productId}`);
+      if (card) card.classList.remove('has-draft');
+      const draftBadge = document.getElementById(`draftBadge_${productId}`);
+      if (draftBadge) draftBadge.style.display = 'none';
+      updateStagingBarUI();
+
       if (saveBtn) {
         saveBtn.className = 'inv-btn-save saved';
         saveBtn.innerHTML = `<span>✓</span> Saved Live`;
@@ -1982,28 +2407,190 @@ async function saveProductSettings(productId) {
   }
 }
 
-async function toggleShopStock(productId, isChecked) {
-  liveInventoryMap[productId] = isChecked;
-  if (!liveInventoryItems[productId]) liveInventoryItems[productId] = {};
-  liveInventoryItems[productId].is_in_stock = isChecked;
+function toggleShopStock(productId, isChecked) {
+  const lbl = document.getElementById(`stockLabel_${productId}`);
+  if (lbl) {
+    lbl.textContent = isChecked ? 'IN STOCK' : 'OUT OF STOCK';
+    lbl.style.color = isChecked ? 'var(--accent-green)' : '#E74C3C';
+  }
+  // Stage locally with 0 writes!
+  stageProductChange(productId);
+}
 
-  try {
-    const res = await fetch(INVENTORY_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId, is_in_stock: isChecked })
-    });
-    if (!res.ok) {
-      alert("Failed to update inventory stock");
-      liveInventoryMap[productId] = !isChecked;
-      liveInventoryItems[productId].is_in_stock = !isChecked;
-      renderShopInventory();
+// ── MERCHANT CALCULATOR ENGINE (Standard, Mandi Yield & Margin) ──
+let calcDisplayVal = '0';
+let calcPrevVal = '';
+let calcOp = null;
+let calcNewNumber = true;
+
+function toggleCalculator() {
+  const overlay = document.getElementById('calcModalOverlay');
+  if (!overlay) return;
+  overlay.style.display = (overlay.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function switchCalcTab(tab) {
+  document.getElementById('calcTabBasic')?.classList.toggle('active', tab === 'basic');
+  document.getElementById('calcTabMandi')?.classList.toggle('active', tab === 'mandi');
+  document.getElementById('calcTabMargin')?.classList.toggle('active', tab === 'margin');
+
+  const vBasic = document.getElementById('calcViewBasic');
+  const vMandi = document.getElementById('calcViewMandi');
+  const vMargin = document.getElementById('calcViewMargin');
+  if (vBasic) vBasic.style.display = tab === 'basic' ? 'block' : 'none';
+  if (vMandi) vMandi.style.display = tab === 'mandi' ? 'flex' : 'none';
+  if (vMargin) vMargin.style.display = tab === 'margin' ? 'flex' : 'none';
+}
+
+function calcUpdateScreen() {
+  const disp = document.getElementById('calcDisplay');
+  const hist = document.getElementById('calcHistory');
+  if (disp) disp.textContent = calcDisplayVal;
+  if (hist) {
+    hist.textContent = calcOp ? `${calcPrevVal} ${calcOp}` : '';
+  }
+}
+
+function calcAction(action) {
+  if (!isNaN(action)) {
+    if (calcNewNumber || calcDisplayVal === '0') {
+      calcDisplayVal = String(action);
+      calcNewNumber = false;
+    } else {
+      if (calcDisplayVal.length < 12) calcDisplayVal += String(action);
     }
-  } catch(e) {
-    alert("Connection error: " + e.message);
-    liveInventoryMap[productId] = !isChecked;
-    liveInventoryItems[productId].is_in_stock = !isChecked;
-    renderShopInventory();
+    calcUpdateScreen();
+    return;
+  }
+
+  if (action === '.') {
+    if (calcNewNumber) {
+      calcDisplayVal = '0.';
+      calcNewNumber = false;
+    } else if (!calcDisplayVal.includes('.')) {
+      calcDisplayVal += '.';
+    }
+    calcUpdateScreen();
+    return;
+  }
+
+  if (action === 'C') {
+    calcDisplayVal = '0';
+    calcPrevVal = '';
+    calcOp = null;
+    calcNewNumber = true;
+    calcUpdateScreen();
+    return;
+  }
+
+  if (action === 'back') {
+    if (!calcNewNumber && calcDisplayVal.length > 1) {
+      calcDisplayVal = calcDisplayVal.slice(0, -1);
+    } else {
+      calcDisplayVal = '0';
+      calcNewNumber = true;
+    }
+    calcUpdateScreen();
+    return;
+  }
+
+  if (action === '%') {
+    const val = parseFloat(calcDisplayVal) || 0;
+    calcDisplayVal = String(Number((val / 100).toFixed(4)));
+    calcNewNumber = true;
+    calcUpdateScreen();
+    return;
+  }
+
+  if (['+', '-', '*', '/'].includes(action)) {
+    if (calcOp && !calcNewNumber) {
+      calcCompute();
+    }
+    calcPrevVal = calcDisplayVal;
+    calcOp = action;
+    calcNewNumber = true;
+    calcUpdateScreen();
+    return;
+  }
+
+  if (action === '=') {
+    if (calcOp) {
+      calcCompute();
+      calcOp = null;
+      calcPrevVal = '';
+      calcNewNumber = true;
+      calcUpdateScreen();
+    }
+    return;
+  }
+}
+
+function calcCompute() {
+  const prev = parseFloat(calcPrevVal);
+  const curr = parseFloat(calcDisplayVal);
+  if (isNaN(prev) || isNaN(curr)) return;
+  let res = 0;
+  switch(calcOp) {
+    case '+': res = prev + curr; break;
+    case '-': res = prev - curr; break;
+    case '*': res = prev * curr; break;
+    case '/': res = curr !== 0 ? prev / curr : 0; break;
+  }
+  calcDisplayVal = String(Math.round(res * 10000) / 10000);
+}
+
+function copyCalcResult() {
+  if (navigator.clipboard && calcDisplayVal) {
+    navigator.clipboard.writeText(calcDisplayVal);
+    const disp = document.getElementById('calcDisplay');
+    if (disp) {
+      const orig = disp.textContent;
+      disp.textContent = 'Copied!';
+      setTimeout(() => { disp.textContent = orig; }, 800);
+    }
+  }
+}
+
+function calcMandiYield() {
+  const liveRate = parseFloat(document.getElementById('calcLiveRate')?.value || 0);
+  const costEl = document.getElementById('calcDressedCost');
+  const recEl = document.getElementById('calcRecRetail');
+  if (!liveRate || liveRate <= 0) {
+    if (costEl) costEl.textContent = '₹0.00 / kg';
+    if (recEl) recEl.textContent = '₹0.00 / kg';
+    return;
+  }
+  // Standard poultry dressing yield is ~70% (live bird -> dressed meat)
+  const dressedCost = liveRate / 0.70;
+  // Recommended 25% gross margin
+  const recSelling = dressedCost * 1.25;
+
+  if (costEl) costEl.textContent = `₹${dressedCost.toFixed(2)} / kg`;
+  if (recEl) recEl.textContent = `₹${Math.round(recSelling)} / kg`;
+}
+
+function calcMargin() {
+  const cost = parseFloat(document.getElementById('calcCostPrice')?.value || 0);
+  const sell = parseFloat(document.getElementById('calcSellPrice')?.value || 0);
+  const profitEl = document.getElementById('calcProfitAmt');
+  const marginEl = document.getElementById('calcMarginPct');
+
+  if (!sell || sell <= 0) {
+    if (profitEl) profitEl.textContent = '₹0.00';
+    if (marginEl) marginEl.textContent = '0.0%';
+    return;
+  }
+
+  const profit = sell - cost;
+  const marginPct = (profit / sell) * 100;
+
+  if (profitEl) {
+    profitEl.textContent = `₹${profit.toFixed(2)}`;
+    profitEl.style.color = profit >= 0 ? '#2ECC71' : '#E74C3C';
+  }
+  if (marginEl) {
+    marginEl.textContent = `${marginPct.toFixed(1)}%`;
+    marginEl.style.color = marginPct >= 0 ? '#FFB74D' : '#E74C3C';
   }
 }
 
