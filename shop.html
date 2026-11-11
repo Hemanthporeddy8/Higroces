@@ -656,57 +656,199 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
 }
 .calc-modal-overlay {
   position: fixed;
-  bottom: 76px;
+  bottom: 80px;
   right: 24px;
-  z-index: 1600;
+  z-index: 2500;
   display: none;
-  width: 320px;
-  background: #141C19;
-  border: 1.5px solid #2E453B;
-  border-radius: 14px;
+  flex-direction: column !important;
+  box-sizing: border-box;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: #121A17;
+  border: 1.5px solid #2A3E35;
+  border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
-  animation: fadeInCalc 0.2s ease-out;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06);
+  animation: fadeInCalc 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.calc-modal-overlay.open {
+  display: flex !important;
 }
 @keyframes fadeInCalc {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.calc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.calc-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #FFB74D;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+.calc-close-btn {
+  background: #1C2723;
+  border: 1px solid #2B3D35;
+  color: #8C9E97;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.calc-close-btn:hover {
+  background: #3B1B17;
+  border-color: #5C2620;
+  color: #FFA39E;
+}
+.calc-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  background: #0A110E;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #1C2C25;
+  width: 100%;
+  box-sizing: border-box;
+}
+.calc-tab {
+  flex: 1;
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 7px 4px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.15s;
+}
+.calc-tab:hover {
+  color: white;
+  background: rgba(255,255,255,0.04);
+}
+.calc-tab.active {
+  background: #1C2B25;
+  color: #FFB74D;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+#calcViewBasic, #calcViewMandi, #calcViewMargin {
+  width: 100%;
+  box-sizing: border-box;
 }
 .calc-screen {
-  background: #0A100E;
-  border: 1px solid #1C2B25;
-  border-radius: 8px;
-  padding: 12px;
+  background: #070D0A;
+  border: 1px solid #192B23;
+  border-radius: 10px;
+  padding: 10px 14px;
   text-align: right;
   font-family: 'DM Mono', monospace;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
-.calc-history { font-size: 0.75rem; color: #8C9E97; min-height: 16px; }
-.calc-display { font-size: 1.6rem; font-weight: 700; color: #2ECC71; overflow-x: auto; scrollbar-width: none; }
-.calc-keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.calc-btn {
-  background: #1C2723;
-  border: 1px solid #283A33;
-  color: white;
-  font-family: 'DM Mono', monospace;
-  font-size: 1rem;
+.calc-history {
+  font-size: 0.75rem;
+  color: #7A8E86;
+  min-height: 18px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calc-display {
+  font-size: 1.85rem;
   font-weight: 700;
-  padding: 10px 0;
-  border-radius: 6px;
+  color: #2ECC71;
+  overflow-x: auto;
+  scrollbar-width: none;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+.calc-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.calc-btn {
+  background: #18231F;
+  border: 1px solid #263830;
+  color: #FFFFFF;
+  font-family: 'DM Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  height: 42px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  user-select: none;
 }
-.calc-btn:hover { background: #2A3B35; }
-.calc-btn.op { background: #0E3B2E; color: #A2D9CE; }
-.calc-btn.op:hover { background: #155543; }
-.calc-btn.eq { background: #27AE60; color: white; border-color: #2ECC71; }
-.calc-btn.clear { background: #3B1B17; color: #FFA39E; }
-.calc-tabs { display: flex; gap: 4px; margin-bottom: 10px; background: #0F1714; padding: 3px; border-radius: 6px; }
-.calc-tab {
-  flex: 1; text-align: center; font-size: 0.72rem; font-weight: 700; padding: 5px;
-  border-radius: 4px; color: var(--text-muted); cursor: pointer; border: none; background: transparent;
+.calc-btn:hover {
+  background: #23342D;
+  border-color: #385045;
+  transform: translateY(-1px);
 }
-.calc-tab.active { background: #1C2B25; color: #FFB74D; }
+.calc-btn:active {
+  transform: translateY(1px);
+}
+.calc-btn.op {
+  background: #0D3327;
+  border-color: #175240;
+  color: #A2D9CE;
+  font-size: 1.15rem;
+}
+.calc-btn.op:hover {
+  background: #134737;
+  color: #FFFFFF;
+}
+.calc-btn.eq {
+  background: #27AE60;
+  border-color: #2ECC71;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+.calc-btn.eq:hover {
+  background: #2ECC71;
+}
+.calc-btn.clear {
+  background: #331714;
+  border-color: #52231E;
+  color: #FFA39E;
+  font-size: 0.95rem;
+}
+.calc-btn.clear:hover {
+  background: #46201B;
+}
+.calc-btn.copy {
+  background: #102920;
+  border-color: #194434;
+  color: #A2D9CE;
+  font-size: 0.85rem;
+}
+.calc-btn.copy:hover {
+  background: #173B2E;
+}
 
 /* ── ZEPTO SMART PICKER ASSISTANT MODAL ── */
 .picker-modal-overlay {
@@ -1238,13 +1380,15 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
 
 <!-- FLOATING CALCULATOR MODAL -->
 <div class="calc-modal-overlay" id="calcModalOverlay">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-    <div style="font-size:0.82rem; font-weight:800; color:#FFB74D; display:flex; align-items:center; gap:6px;">
+  <!-- Top Header -->
+  <div class="calc-header">
+    <div class="calc-title">
       <span>🧮</span> Mandi &amp; Margin Calculator
     </div>
-    <button onclick="toggleCalculator()" style="background:none; border:none; color:#8C9E97; font-size:1.1rem; cursor:pointer;">✕</button>
+    <button class="calc-close-btn" onclick="toggleCalculator()" title="Close Calculator">✕</button>
   </div>
 
+  <!-- Tabs Navigation -->
   <div class="calc-tabs">
     <button class="calc-tab active" id="calcTabBasic" onclick="switchCalcTab('basic')">Standard</button>
     <button class="calc-tab" id="calcTabMandi" onclick="switchCalcTab('mandi')">🍗 Mandi Yield</button>
@@ -1281,51 +1425,63 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
       <button class="calc-btn" onclick="calcAction('0')">0</button>
       <button class="calc-btn" onclick="calcAction('.')">.</button>
       <button class="calc-btn eq" onclick="calcAction('=')">=</button>
-      <button class="calc-btn" onclick="copyCalcResult()" title="Copy result to clipboard" style="font-size:0.8rem; background:#0F3025; color:#A2D9CE;">📋</button>
+      <button class="calc-btn copy" onclick="copyCalcResult()" title="Copy result to clipboard">📋</button>
     </div>
   </div>
 
   <!-- VIEW 2: MANDI YIELD HELPER -->
-  <div id="calcViewMandi" style="display:none; flex-direction:column; gap:8px;">
-    <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:4px;">Convert wholesale live poultry rate to dressed meat cost:</div>
-    <div>
-      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">LIVE BIRD RATE (₹/KG):</label>
-      <input type="number" id="calcLiveRate" placeholder="e.g. 130" oninput="calcMandiYield()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+  <div id="calcViewMandi" style="display:none; flex-direction:column; gap:10px;">
+    <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+      Enter the wholesale live bird rate from Mandi. Converts to dressed meat cost accounting for feather/waste shrinkage (~70% dressed yield):
     </div>
-    <div style="background:#0F1714; border:1px solid #1E2D27; border-radius:8px; padding:10px; font-family:'DM Mono'; font-size:0.78rem;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span style="color:#8C9E97;">Dressed Yield:</span>
-        <span style="color:white;">~70%</span>
+    <div>
+      <label style="font-size:0.72rem; color:#A2D9CE; font-weight:800; display:block; margin-bottom:5px;">LIVE BIRD RATE (₹/KG):</label>
+      <div style="position:relative; display:flex; align-items:center;">
+        <span style="position:absolute; left:10px; color:#8C9E97; font-family:'DM Mono'; font-size:1rem; font-weight:700;">₹</span>
+        <input type="number" id="calcLiveRate" placeholder="e.g. 130" oninput="calcMandiYield()" style="width:100%; box-sizing:border-box; background:#1C2622; border:1px solid #2B3D35; color:white; padding:9px 10px 9px 28px; border-radius:8px; font-family:'DM Mono'; font-size:1rem; font-weight:700;" />
       </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+    </div>
+    <!-- Quick Rate Presets -->
+    <div style="display:flex; gap:5px; flex-wrap:wrap;">
+      <button type="button" onclick="setLiveRatePreset(115)" style="background:#182420; border:1px solid #283A32; color:#A2D9CE; font-family:'DM Mono'; font-size:0.72rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;">₹115</button>
+      <button type="button" onclick="setLiveRatePreset(125)" style="background:#182420; border:1px solid #283A32; color:#A2D9CE; font-family:'DM Mono'; font-size:0.72rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;">₹125</button>
+      <button type="button" onclick="setLiveRatePreset(135)" style="background:#182420; border:1px solid #283A32; color:#A2D9CE; font-family:'DM Mono'; font-size:0.72rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;">₹135</button>
+      <button type="button" onclick="setLiveRatePreset(145)" style="background:#182420; border:1px solid #283A32; color:#A2D9CE; font-family:'DM Mono'; font-size:0.72rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;">₹145</button>
+    </div>
+    <div style="background:#070D0A; border:1px solid #192B23; border-radius:10px; padding:12px; font-family:'DM Mono'; font-size:0.82rem; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#8C9E97;">Standard Dressed Yield:</span>
+        <span style="color:white; font-weight:700;">~70%</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #1E2D27; padding-top:6px;">
         <span style="color:#8C9E97;">Net Dressed Cost:</span>
-        <span style="color:#FFB74D; font-weight:700;" id="calcDressedCost">₹0.00 / kg</span>
+        <span style="color:#FFB74D; font-weight:800; font-size:0.95rem;" id="calcDressedCost">₹0.00 / kg</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span style="color:#8C9E97;">Rec. Selling (25% margin):</span>
-        <span style="color:#2ECC71; font-weight:800;" id="calcRecRetail">₹0.00 / kg</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #1E2D27; padding-top:6px;">
+        <span style="color:#8C9E97;">Rec. Retail (25% margin):</span>
+        <span style="color:#2ECC71; font-weight:900; font-size:1.05rem;" id="calcRecRetail">₹0.00 / kg</span>
       </div>
     </div>
   </div>
 
   <!-- VIEW 3: PROFIT MARGIN HELPER -->
-  <div id="calcViewMargin" style="display:none; flex-direction:column; gap:8px;">
+  <div id="calcViewMargin" style="display:none; flex-direction:column; gap:10px;">
     <div>
-      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">COST / WHOLESALE PRICE (₹):</label>
-      <input type="number" id="calcCostPrice" placeholder="e.g. 190" oninput="calcMargin()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+      <label style="font-size:0.72rem; color:#A2D9CE; font-weight:800; display:block; margin-bottom:5px;">COST / WHOLESALE PRICE (₹):</label>
+      <input type="number" id="calcCostPrice" placeholder="e.g. 190" oninput="calcMargin()" style="width:100%; box-sizing:border-box; background:#1C2622; border:1px solid #2B3D35; color:white; padding:9px 10px; border-radius:8px; font-family:'DM Mono'; font-size:0.95rem; font-weight:700;" />
     </div>
     <div>
-      <label style="font-size:0.7rem; color:#A2D9CE; font-weight:700;">SELLING PRICE (₹):</label>
-      <input type="number" id="calcSellPrice" placeholder="e.g. 260" oninput="calcMargin()" style="width:100%; background:#1C2622; border:1px solid #2B3D35; color:white; padding:7px; border-radius:6px; font-family:'DM Mono'; font-size:0.9rem;" />
+      <label style="font-size:0.72rem; color:#A2D9CE; font-weight:800; display:block; margin-bottom:5px;">SELLING PRICE (₹):</label>
+      <input type="number" id="calcSellPrice" placeholder="e.g. 260" oninput="calcMargin()" style="width:100%; box-sizing:border-box; background:#1C2622; border:1px solid #2B3D35; color:white; padding:9px 10px; border-radius:8px; font-family:'DM Mono'; font-size:0.95rem; font-weight:700;" />
     </div>
-    <div style="background:#0F1714; border:1px solid #1E2D27; border-radius:8px; padding:10px; font-family:'DM Mono'; font-size:0.78rem;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span style="color:#8C9E97;">Net Profit:</span>
-        <span style="color:#2ECC71; font-weight:800;" id="calcProfitAmt">₹0.00</span>
+    <div style="background:#070D0A; border:1px solid #192B23; border-radius:10px; padding:12px; font-family:'DM Mono'; font-size:0.82rem; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#8C9E97;">Net Rupee Profit:</span>
+        <span style="color:#2ECC71; font-weight:900; font-size:1rem;" id="calcProfitAmt">₹0.00</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #1E2D27; padding-top:6px;">
         <span style="color:#8C9E97;">Profit Margin %:</span>
-        <span style="color:#FFB74D; font-weight:800;" id="calcMarginPct">0.0%</span>
+        <span style="color:#FFB74D; font-weight:900; font-size:1rem;" id="calcMarginPct">0.0%</span>
       </div>
     </div>
   </div>
@@ -2426,7 +2582,22 @@ let calcNewNumber = true;
 function toggleCalculator() {
   const overlay = document.getElementById('calcModalOverlay');
   if (!overlay) return;
-  overlay.style.display = (overlay.style.display === 'flex') ? 'none' : 'flex';
+  const isHidden = (overlay.style.display === 'none' || overlay.style.display === '' || !overlay.classList.contains('open'));
+  if (isHidden) {
+    overlay.classList.add('open');
+    overlay.style.display = 'flex';
+  } else {
+    overlay.classList.remove('open');
+    overlay.style.display = 'none';
+  }
+}
+
+function setLiveRatePreset(val) {
+  const inp = document.getElementById('calcLiveRate');
+  if (inp) {
+    inp.value = val;
+    calcMandiYield();
+  }
 }
 
 function switchCalcTab(tab) {
@@ -2779,7 +2950,13 @@ function closeNavDrawer() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeNavDrawer();
+  if (e.key === 'Escape') {
+    closeNavDrawer();
+    const overlay = document.getElementById('calcModalOverlay');
+    if (overlay && (overlay.style.display === 'flex' || overlay.classList.contains('open'))) {
+      toggleCalculator();
+    }
+  }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
