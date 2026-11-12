@@ -799,7 +799,7 @@ export default {
 
         const now = Date.now();
         const sessionRow = await env.DB.prepare(`
-          SELECT s.id as session_id, s.expires_at, u.id, u.name, u.email, u.phone, u.role
+          SELECT s.id as session_id, s.expires_at, u.id as user_id, u.name, u.email, u.phone, u.role
           FROM sessions s
           JOIN users u ON s.user_id = u.id
           WHERE s.id = ? AND s.expires_at > ?
@@ -812,7 +812,7 @@ export default {
         return new Response(JSON.stringify({
           authenticated: true,
           user: {
-            id: sessionRow.id,
+            id: sessionRow.user_id || sessionRow.id,
             name: sessionRow.name,
             email: sessionRow.email,
             phone: sessionRow.phone,
@@ -2215,8 +2215,16 @@ export default {
           const isAdmin = url.searchParams.get('admin') === 'true';
 
           // A0. Customer Order History Query
-          if (userId) {
-            const userOrders = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY datetime(created_at) DESC LIMIT 50").bind(userId).all();
+          let targetUserId = userId;
+          if (!targetUserId && (url.searchParams.get('my_orders') === 'true' || url.searchParams.get('customer') === 'true')) {
+            const token = getCustomerSessionToken(request);
+            if (token) {
+              const sRow = await env.DB.prepare("SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?").bind(token, Date.now()).first();
+              if (sRow) targetUserId = sRow.user_id;
+            }
+          }
+          if (targetUserId) {
+            const userOrders = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY datetime(created_at) DESC LIMIT 50").bind(targetUserId).all();
             return new Response(JSON.stringify({ orders: userOrders.results || [] }), { headers: corsHeaders(request) });
           }
 
