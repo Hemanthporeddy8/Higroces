@@ -1677,10 +1677,193 @@ header {
 }
 
 @media screen and (min-width: 601px) and (max-width: 960px) {
-  .product-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 14px;
-  }
+/* ── CUSTOMER AUTH & USER PROFILE ── */
+.btn-auth-user {
+  background: rgba(12,81,63,0.08);
+  color: var(--brand-primary);
+  border: 1.5px solid rgba(12,81,63,0.2);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-auth-user:hover {
+  background: rgba(12,81,63,0.15);
+  border-color: var(--brand-primary);
+}
+.btn-auth-user.logged-in {
+  background: #E8F5E9;
+  border-color: #2ECC71;
+  color: #1B5E20;
+}
+.user-auth-wrapper {
+  position: relative;
+}
+.user-account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #141C19;
+  border: 1.5px solid #283C33;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  z-index: 1050;
+  overflow: hidden;
+  animation: fadeInDown 0.15s ease-out;
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.user-dropdown-header {
+  padding: 12px 14px;
+  background: #0A110E;
+  border-bottom: 1px solid #1C2B25;
+}
+.user-dropdown-links {
+  padding: 6px 0;
+}
+.user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: white;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.user-dropdown-item:hover {
+  background: #1E2D27;
+}
+
+/* ── CUSTOMER AUTH MODAL ── */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 16, 14, 0.85);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeInModal 0.2s ease-out;
+}
+.auth-modal-overlay.open {
+  display: flex;
+}
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.auth-modal-card {
+  background: #141C19;
+  border: 1.5px solid #2E453B;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+  box-sizing: border-box;
+  color: white;
+}
+.auth-tabs {
+  display: flex;
+  background: #0A110E;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #1C2B25;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: 9px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.auth-tab.active {
+  background: #1C2B25;
+  color: #2ECC71;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.auth-input-group {
+  margin-bottom: 14px;
+}
+.auth-label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #A2D9CE;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+.auth-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1C2622;
+  border: 1.5px solid #2B3D35;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.auth-input:focus {
+  border-color: #2ECC71;
+  box-shadow: 0 0 0 3px rgba(46,204,113,0.15);
+}
+.auth-btn-submit {
+  width: 100%;
+  background: #27AE60;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(39,174,96,0.3);
+}
+.auth-btn-submit:hover {
+  background: #2ECC71;
+  transform: translateY(-1px);
+}
+.auth-error-box {
+  background: rgba(231,76,60,0.15);
+  border: 1px solid #E74C3C;
+  color: #FFA39E;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+  display: none;
 }
 </style>
 </head>
@@ -1916,6 +2099,18 @@ header {
 
   <div class="nav-drawer-section-title">Amorelot Portals &amp; Apps</div>
   <div class="nav-drawer-links">
+    <!-- Customer Profile / Sign In Tile in Mobile Drawer -->
+    <a href="javascript:void(0)" onclick="closeNavDrawer(); handleAuthButtonClick();" class="nav-drawer-link" id="drawerAuthLink" style="background:rgba(46,204,113,0.12); border-color:rgba(46,204,113,0.35); margin-bottom:6px;">
+      <div class="nav-drawer-link-left">
+        <span class="drawer-emoji" id="drawerAuthIcon">👤</span>
+        <div>
+          <div style="color:#2ECC71; font-weight:800; font-size:0.9rem;" id="drawerAuthTitle">Sign In / Register</div>
+          <div style="font-size:0.72rem; color:#A2D9CE;" id="drawerAuthSub">Track past orders &amp; saved address</div>
+        </div>
+      </div>
+      <span class="nav-drawer-badge" id="drawerAuthBadge" style="background:#2ECC71; color:#0A1F16;">Login</span>
+    </a>
+
     <!-- 1-Click Install App Tile for Mobile -->
     <a href="javascript:void(0)" onclick="closeNavDrawer(); triggerPwaInstall();" class="nav-drawer-link" style="background:rgba(255,183,77,0.12); border-color:rgba(255,183,77,0.4);">
       <div class="nav-drawer-link-left">
@@ -2031,6 +2226,28 @@ header {
       <button class="btn-install-app" id="btnInstallApp" onclick="triggerPwaInstall()" title="Install Amorelot directly to your phone">
         <span>📲</span> <span class="install-text">Install App</span>
       </button>
+
+      <!-- Customer Auth User Button -->
+      <div class="user-auth-wrapper">
+        <button class="btn-auth-user" id="btnAuthUser" onclick="handleAuthButtonClick()" title="Customer Sign In / Profile">
+          <span id="authUserIcon">👤</span>
+          <span id="authUserName">Sign In</span>
+        </button>
+        <div class="user-account-dropdown" id="userAccountDropdown" style="display:none;">
+          <div class="user-dropdown-header">
+            <div style="font-weight:800; color:white; font-size:0.92rem;" id="dropdownUserName">Customer Name</div>
+            <div style="font-size:0.75rem; color:#A2D9CE;" id="dropdownUserEmail">customer@email.com</div>
+          </div>
+          <div class="user-dropdown-links">
+            <a href="javascript:void(0)" onclick="openMyOrdersModal(); closeAccountDropdown();" class="user-dropdown-item">
+              <span>📦</span> My Past Orders
+            </a>
+            <a href="javascript:void(0)" onclick="customerLogout(); closeAccountDropdown();" class="user-dropdown-item" style="color:#FFA39E;">
+              <span>🚪</span> Sign Out
+            </a>
+          </div>
+        </div>
+      </div>
 
       <button class="cart-widget" onclick="openCartDrawer()">
         🛒 Cart
@@ -2219,6 +2436,102 @@ header {
     <button class="btn-checkout" onclick="openOrderModal()">
       🚀 Place Order
     </button>
+  </div>
+<!-- CUSTOMER AUTH MODAL (SIGN IN & REGISTER) -->
+<div class="auth-modal-overlay" id="authModalOverlay" onclick="if(event.target===this) closeAuthModal()">
+  <div class="auth-modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.4rem;">🥬</span>
+        <div>
+          <div style="font-weight:800; font-size:1.05rem; color:white;">Amorelot Account</div>
+          <div style="font-size:0.72rem; color:#A2D9CE;">Fast 10-Min Delivery &amp; Live Tracking</div>
+        </div>
+      </div>
+      <button onclick="closeAuthModal()" style="background:none; border:none; color:#8C9E97; font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Tab Selector -->
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" id="tabBtnLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button type="button" class="auth-tab" id="tabBtnRegister" onclick="switchAuthTab('register')">Create Account</button>
+    </div>
+
+    <div class="auth-error-box" id="authErrorBox"></div>
+
+    <!-- 1. SIGN IN FORM -->
+    <form id="authLoginForm" onsubmit="submitLoginForm(event)">
+      <div class="auth-input-group">
+        <label class="auth-label">EMAIL ADDRESS</label>
+        <input type="email" id="loginEmail" class="auth-input" placeholder="name@example.com" required autocomplete="email" />
+      </div>
+      <div class="auth-input-group">
+        <label class="auth-label">PASSWORD</label>
+        <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="auth-btn-submit" id="btnLoginSubmit">
+        <span>Sign In</span> ➔
+      </button>
+      <div style="text-align:center; margin-top:14px; font-size:0.78rem; color:#8C9E97;">
+        Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:#2ECC71; font-weight:700;">Create one free</a>
+      </div>
+    </form>
+
+    <!-- 2. REGISTER FORM -->
+    <form id="authRegisterForm" onsubmit="submitRegisterForm(event)" style="display:none;">
+      <div class="auth-input-group">
+        <label class="auth-label">FULL NAME</label>
+        <input type="text" id="regName" class="auth-input" placeholder="e.g. Ravi Kumar" required autocomplete="name" />
+      </div>
+      <div class="auth-input-group">
+        <label class="auth-label">PHONE NUMBER (FOR RIDER CONTACT)</label>
+        <input type="tel" id="regPhone" class="auth-input" placeholder="e.g. 9876543210" pattern="[0-9]{10}" title="10-digit mobile number" autocomplete="tel" />
+      </div>
+      <div class="auth-input-group">
+        <label class="auth-label">EMAIL ADDRESS</label>
+        <input type="email" id="regEmail" class="auth-input" placeholder="name@example.com" required autocomplete="email" />
+      </div>
+      <div class="auth-input-group">
+        <label class="auth-label">PASSWORD (MIN 6 CHARACTERS)</label>
+        <input type="password" id="regPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" />
+      </div>
+      <div class="auth-input-group">
+        <label class="auth-label">CONFIRM PASSWORD</label>
+        <input type="password" id="regConfirmPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" />
+      </div>
+      <button type="submit" class="auth-btn-submit" id="btnRegisterSubmit">
+        <span>Create Account</span> ➔
+      </button>
+      <div style="text-align:center; margin-top:14px; font-size:0.78rem; color:#8C9E97;">
+        Already have an account? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:#2ECC71; font-weight:700;">Sign in</a>
+      </div>
+    </form>
+
+    <!-- Guest Perks Callout -->
+    <div style="margin-top:18px; padding-top:14px; border-top:1px solid #1C2B25; font-size:0.75rem; color:#A2D9CE; display:flex; justify-content:space-around; text-align:center;">
+      <div>⚡ 10-Min Fast Delivery</div>
+      <div>📦 Live Tracking</div>
+      <div>🔒 100% Secure</div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER PAST ORDERS MODAL -->
+<div class="auth-modal-overlay" id="myOrdersModalOverlay" onclick="if(event.target===this) closeMyOrdersModal()">
+  <div class="auth-modal-card" style="max-width:520px; max-height:85vh; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.3rem;">📦</span>
+        <div>
+          <div style="font-weight:800; font-size:1.05rem; color:white;">My Past Orders</div>
+          <div style="font-size:0.72rem; color:#A2D9CE;">Live status, items &amp; delivery timestamps</div>
+        </div>
+      </div>
+      <button onclick="closeMyOrdersModal()" style="background:none; border:none; color:#8C9E97; font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+    <div id="myOrdersListContainer" style="overflow-y:auto; flex:1; padding-right:4px;">
+      <!-- Populated by JS -->
+    </div>
   </div>
 </div>
 
@@ -3400,12 +3713,14 @@ async function submitDirectOrder() {
     delivery_slot: delivery_slot,
     cust_lat: customerLiveLat,
     cust_lng: customerLiveLng,
-    shop_id: (activeShop && activeShop.id) ? activeShop.id : 'shop_primary_hub'
+    shop_id: (activeShop && activeShop.id) ? activeShop.id : 'shop_primary_hub',
+    user_id: currentUser ? currentUser.id : undefined
   };
 
   try {
     const res = await fetch(API_BASE, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderPayload)
     });
@@ -3954,10 +4269,381 @@ async function checkActiveOrderBanner() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CUSTOMER AUTHENTICATION ENGINE (Stateful Cookie / Token Auth)
+// ═══════════════════════════════════════════════════════════════
+let currentUser = null;
+
+async function checkCustomerAuth() {
+  try {
+    const headers = {};
+    const localToken = localStorage.getItem('amorelot_session_token');
+    if (localToken) headers['X-Session-Token'] = localToken;
+
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      credentials: 'include',
+      headers
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.user) {
+        currentUser = data.user;
+        updateUserAuthUI();
+        // Pre-fill checkout if empty
+        const nameInput = document.getElementById('custName');
+        const phoneInput = document.getElementById('custPhone');
+        if (nameInput && !nameInput.value) nameInput.value = currentUser.name || '';
+        if (phoneInput && !phoneInput.value && currentUser.phone) phoneInput.value = currentUser.phone || '';
+      } else {
+        currentUser = null;
+        updateUserAuthUI();
+      }
+    }
+  } catch(e) {
+    console.warn("checkCustomerAuth error:", e);
+  }
+}
+
+function updateUserAuthUI() {
+  const btnAuthUser = document.getElementById('btnAuthUser');
+  const authUserName = document.getElementById('authUserName');
+  const authUserIcon = document.getElementById('authUserIcon');
+
+  const drawerAuthTitle = document.getElementById('drawerAuthTitle');
+  const drawerAuthSub = document.getElementById('drawerAuthSub');
+  const drawerAuthBadge = document.getElementById('drawerAuthBadge');
+  const drawerAuthIcon = document.getElementById('drawerAuthIcon');
+
+  const dropdownUserName = document.getElementById('dropdownUserName');
+  const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+
+  if (currentUser) {
+    const firstName = (currentUser.name || 'Account').split(' ')[0];
+    if (btnAuthUser) btnAuthUser.classList.add('logged-in');
+    if (authUserName) authUserName.textContent = firstName;
+    if (authUserIcon) authUserIcon.textContent = '👤';
+
+    if (drawerAuthTitle) drawerAuthTitle.textContent = `Hi, ${firstName}`;
+    if (drawerAuthSub) drawerAuthSub.textContent = currentUser.email;
+    if (drawerAuthBadge) {
+      drawerAuthBadge.textContent = 'Account';
+      drawerAuthBadge.style.background = '#2ECC71';
+      drawerAuthBadge.style.color = '#0A1F16';
+    }
+    if (drawerAuthIcon) drawerAuthIcon.textContent = '✨';
+
+    if (dropdownUserName) dropdownUserName.textContent = currentUser.name;
+    if (dropdownUserEmail) dropdownUserEmail.textContent = currentUser.email;
+  } else {
+    if (btnAuthUser) btnAuthUser.classList.remove('logged-in');
+    if (authUserName) authUserName.textContent = 'Sign In';
+    if (authUserIcon) authUserIcon.textContent = '👤';
+
+    if (drawerAuthTitle) drawerAuthTitle.textContent = 'Sign In / Register';
+    if (drawerAuthSub) drawerAuthSub.textContent = 'Track past orders & saved address';
+    if (drawerAuthBadge) {
+      drawerAuthBadge.textContent = 'Login';
+      drawerAuthBadge.style.background = '#2ECC71';
+      drawerAuthBadge.style.color = '#0A1F16';
+    }
+    if (drawerAuthIcon) drawerAuthIcon.textContent = '👤';
+  }
+}
+
+function handleAuthButtonClick() {
+  if (currentUser) {
+    toggleAccountDropdown();
+  } else {
+    openAuthModal('login');
+  }
+}
+
+function toggleAccountDropdown() {
+  const dd = document.getElementById('userAccountDropdown');
+  if (!dd) return;
+  dd.style.display = (dd.style.display === 'none' || dd.style.display === '') ? 'block' : 'none';
+}
+
+function closeAccountDropdown() {
+  const dd = document.getElementById('userAccountDropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function openAuthModal(defaultTab = 'login') {
+  closeAccountDropdown();
+  const overlay = document.getElementById('authModalOverlay');
+  if (overlay) overlay.classList.add('open');
+  switchAuthTab(defaultTab);
+  hideAuthError();
+}
+
+function closeAuthModal() {
+  const overlay = document.getElementById('authModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  hideAuthError();
+}
+
+function switchAuthTab(tab) {
+  hideAuthError();
+  const tabBtnLogin = document.getElementById('tabBtnLogin');
+  const tabBtnRegister = document.getElementById('tabBtnRegister');
+  const formLogin = document.getElementById('authLoginForm');
+  const formRegister = document.getElementById('authRegisterForm');
+
+  if (tab === 'login') {
+    tabBtnLogin?.classList.add('active');
+    tabBtnRegister?.classList.remove('active');
+    if (formLogin) formLogin.style.display = 'block';
+    if (formRegister) formRegister.style.display = 'none';
+  } else {
+    tabBtnRegister?.classList.add('active');
+    tabBtnLogin?.classList.remove('active');
+    if (formLogin) formLogin.style.display = 'none';
+    if (formRegister) formRegister.style.display = 'block';
+  }
+}
+
+function showAuthError(msg) {
+  const box = document.getElementById('authErrorBox');
+  if (box) {
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+}
+
+function hideAuthError() {
+  const box = document.getElementById('authErrorBox');
+  if (box) {
+    box.textContent = '';
+    box.style.display = 'none';
+  }
+}
+
+async function submitLoginForm(e) {
+  e.preventDefault();
+  hideAuthError();
+  const email = document.getElementById('loginEmail')?.value.trim();
+  const password = document.getElementById('loginPassword')?.value;
+  const btn = document.getElementById('btnLoginSubmit');
+
+  if (!email || !password) {
+    showAuthError("Please enter your email and password.");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Signing In...</span>';
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (data.session_token) localStorage.setItem('amorelot_session_token', data.session_token);
+      currentUser = data.user;
+      updateUserAuthUI();
+      closeAuthModal();
+
+      // Pre-fill customer checkout
+      const nameInput = document.getElementById('custName');
+      const phoneInput = document.getElementById('custPhone');
+      if (nameInput && !nameInput.value) nameInput.value = currentUser.name || '';
+      if (phoneInput && !phoneInput.value && currentUser.phone) phoneInput.value = currentUser.phone || '';
+
+      alert(`Welcome back, ${currentUser.name}! 👋`);
+    } else {
+      showAuthError(data.error || "Invalid email or password.");
+    }
+  } catch(err) {
+    showAuthError("Connection error: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Sign In</span> ➔';
+    }
+  }
+}
+
+async function submitRegisterForm(e) {
+  e.preventDefault();
+  hideAuthError();
+  const name = document.getElementById('regName')?.value.trim();
+  const phone = document.getElementById('regPhone')?.value.trim();
+  const email = document.getElementById('regEmail')?.value.trim();
+  const password = document.getElementById('regPassword')?.value;
+  const confirmPassword = document.getElementById('regConfirmPassword')?.value;
+  const btn = document.getElementById('btnRegisterSubmit');
+
+  if (!name || !email || !password) {
+    showAuthError("Please fill in all required fields.");
+    return;
+  }
+  if (password.length < 6) {
+    showAuthError("Password must be at least 6 characters.");
+    return;
+  }
+  if (password !== confirmPassword) {
+    showAuthError("Passwords do not match. Please retype.");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Creating Account...</span>';
+  }
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (data.session_token) localStorage.setItem('amorelot_session_token', data.session_token);
+      currentUser = data.user;
+      updateUserAuthUI();
+      closeAuthModal();
+
+      const nameInput = document.getElementById('custName');
+      const phoneInput = document.getElementById('custPhone');
+      if (nameInput) nameInput.value = currentUser.name || '';
+      if (phoneInput && currentUser.phone) phoneInput.value = currentUser.phone || '';
+
+      alert(`Account created successfully! Welcome to Amorelot, ${currentUser.name}! 🎉`);
+    } else {
+      showAuthError(data.error || "Failed to create account.");
+    }
+  } catch(err) {
+    showAuthError("Connection error: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Create Account</span> ➔';
+    }
+  }
+}
+
+async function customerLogout() {
+  try {
+    const headers = {};
+    const localToken = localStorage.getItem('amorelot_session_token');
+    if (localToken) headers['X-Session-Token'] = localToken;
+
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers
+    });
+  } catch(e) {}
+
+  localStorage.removeItem('amorelot_session_token');
+  currentUser = null;
+  updateUserAuthUI();
+  alert("You have been signed out.");
+}
+
+async function openMyOrdersModal() {
+  if (!currentUser) {
+    openAuthModal('login');
+    return;
+  }
+  const modal = document.getElementById('myOrdersModalOverlay');
+  const container = document.getElementById('myOrdersListContainer');
+  if (modal) modal.classList.add('open');
+  if (container) container.innerHTML = '<div style="text-align:center; padding:30px; color:#A2D9CE;">⏳ Loading your past orders...</div>';
+
+  try {
+    const res = await fetch(`/api/orders?userId=${encodeURIComponent(currentUser.id)}`);
+    const data = await res.json();
+    const orders = data.orders || [];
+
+    if (orders.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:30px; color:#8C9E97;">
+          <div style="font-size:2.5rem; margin-bottom:8px;">📦</div>
+          <div style="font-weight:700; color:white; font-size:1rem;">No orders yet</div>
+          <div style="font-size:0.8rem; margin-top:4px;">When you place an order, it will appear right here!</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = orders.map(ord => {
+      let itemsList = [];
+      try { itemsList = JSON.parse(ord.items || '[]'); } catch(e) {}
+      const itemsCount = itemsList.length;
+      const formattedDate = new Date(ord.created_at).toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const isDelivered = ord.status === 'delivered';
+
+      return `
+        <div style="background:#0F1714; border:1px solid #1E2D27; border-radius:10px; padding:14px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <span style="font-family:'DM Mono'; font-weight:800; color:white; font-size:0.9rem;">#${ord.id.slice(0, 8)}</span>
+              <span style="font-size:0.75rem; color:#8C9E97; margin-left:8px;">${formattedDate}</span>
+            </div>
+            <span style="background:${isDelivered ? 'rgba(46,204,113,0.18)' : 'rgba(255,183,77,0.18)'}; color:${isDelivered ? '#2ECC71' : '#FFB74D'}; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:12px; text-transform:uppercase;">
+              ${ord.status}
+            </span>
+          </div>
+          <div style="font-size:0.82rem; color:#DDD; margin-bottom:6px;">
+            ${itemsList.map(i => `${i.name} × ${i.quantity}`).join(', ') || `${itemsCount} item(s)`}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #1E2D27; padding-top:6px; font-size:0.82rem;">
+            <span style="color:#8C9E97;">Total: <strong style="color:#2ECC71;">₹${ord.total_price}</strong></span>
+            <button onclick="closeMyOrdersModal(); viewSpecificOrder('${ord.id}')" style="background:#1B2C24; border:1px solid #2B4538; color:#A2D9CE; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer;">
+              View Details ➔
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#E74C3C;">Failed to load orders.</div>';
+  }
+}
+
+function closeMyOrdersModal() {
+  const modal = document.getElementById('myOrdersModalOverlay');
+  if (modal) modal.classList.remove('open');
+}
+
+function viewSpecificOrder(orderId) {
+  if (typeof goToActiveOrderTrack === 'function') {
+    activeOrderId = orderId;
+    const tracker = document.getElementById('successOverlay');
+    if (tracker) tracker.classList.add('open');
+  }
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.user-auth-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    closeAccountDropdown();
+  }
+});
+
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  // Check customer session authentication
+  checkCustomerAuth();
+
   // Load remote feature flags (Fresh Tmrw, Subscriptions)
   loadAppSettings();
 

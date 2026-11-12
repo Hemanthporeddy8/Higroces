@@ -3,17 +3,79 @@
 
 const ADMIN_SECRET_KEY = "amorelot2026"; // Master Admin Secret Key (Emergency Fallback)
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
+function corsHeaders(request) {
+  let origin = '*';
+  let allowCreds = false;
+  if (request && typeof request.headers?.get === 'function') {
+    const o = request.headers.get('Origin');
+    if (o) {
+      origin = o;
+      allowCreds = true;
+    }
+  }
+  const headers = {
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key, Authorization, X-Session-Token",
     "Content-Type": "application/json",
     "Cache-Control": "no-cache, no-store, must-revalidate"
   };
+  if (allowCreds) {
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  return headers;
 }
 
-// ── CRYPTO & AUTH HELPERS (PBKDF2 SHA-256) ──
+// ── CUSTOMER WEB CRYPTO HELPERS (PBKDF2 SHA-256) ──
+function hexToUint8Array(hex) {
+  const cleanHex = String(hex || '').trim();
+  const len = cleanHex.length;
+  const bytes = new Uint8Array(len / 2);
+  for (let i = 0; i < len; i += 2) {
+    bytes[i / 2] = parseInt(cleanHex.substring(i, i + 2), 16);
+  }
+  return bytes;
+}
+
+function uint8ArrayToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashCustomerPassword(password, saltHex) {
+  const salt = saltHex 
+    ? hexToUint8Array(saltHex) 
+    : crypto.getRandomValues(new Uint8Array(16));
+  
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw", enc.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"]
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 50000, hash: "SHA-256" },
+    keyMaterial,
+    { name: "HMAC", hash: "SHA-256", length: 256 },
+    true,
+    ["sign"]
+  );
+  const exported = await crypto.subtle.exportKey("raw", key);
+  return {
+    hash: uint8ArrayToHex(new Uint8Array(exported)),
+    salt: uint8ArrayToHex(salt),
+  };
+}
+
+function getCustomerSessionToken(request) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/session_token=([a-zA-Z0-9_\-]+)/);
+  if (match) return match[1];
+  const auth = request.headers.get('Authorization') || '';
+  if (auth.startsWith('Bearer ')) return auth.substring(7).trim();
+  const xToken = request.headers.get('X-Session-Token');
+  if (xToken) return xToken.trim();
+  return null;
+}
+
+// ── CRYPTO & AUTH HELPERS (PBKDF2 SHA-256 for Admin / Shop) ──
 function generateSalt() {
   const array = new Uint8Array(16);
   crypto.getRandomValues(array);
@@ -565,6 +627,37 @@ async function ensureAllSchemas(db) {
     `).run();
   } catch(e) {}
 
+  // ── CUSTOMER AUTH TABLES (Stateful Session-Based Authentication) ──
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        name TEXT NOT NULL,
+        phone TEXT,
+        role TEXT DEFAULT 'customer',
+        created_at TEXT NOT NULL
+      )
+    `).run();
+  } catch(e) {}
+
+  try { await db.prepare("ALTER TABLE users ADD COLUMN phone TEXT").run(); } catch(e) {}
+  try { await db.prepare("ALTER TABLE orders ADD COLUMN user_id TEXT").run(); } catch(e) {}
+
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `).run();
+  } catch(e) {}
+
   // Initialize feature flags & Dark Store defaults
   try {
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', '0')").run();
@@ -593,6 +686,160 @@ export default {
       }
     } else {
       await ensureAllSchemas(env.DB);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/auth/* (Customer Stateful Session-Based Authentication)
+    // ═══════════════════════════════════════════════════════════════
+
+    // 1. REGISTER
+    if (url.pathname === "/api/auth/register" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const name = String(body.name || '').trim();
+        const email = String(body.email || '').trim().toLowerCase();
+        const password = String(body.password || '');
+        const phone = body.phone ? String(body.phone).trim() : null;
+
+        if (!name || !email || !password) {
+          return new Response(JSON.stringify({ error: "Name, email, and password are required." }), { status: 400, headers: corsHeaders(request) });
+        }
+        if (password.length < 6) {
+          return new Response(JSON.stringify({ error: "Password must be at least 6 characters long." }), { status: 400, headers: corsHeaders(request) });
+        }
+
+        const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
+        if (existing) {
+          return new Response(JSON.stringify({ error: "An account with this email already exists." }), { status: 409, headers: corsHeaders(request) });
+        }
+
+        const { hash, salt } = await hashCustomerPassword(password);
+        const userId = "usr_" + crypto.randomUUID().slice(0, 12);
+        const nowIso = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO users (id, email, password_hash, salt, name, phone, role, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'customer', ?)
+        `).bind(userId, email, hash, salt, name, phone, nowIso).run();
+
+        // 30 days session
+        const sessionToken = crypto.randomUUID();
+        const expiresAt = Date.now() + (30 * 24 * 3600 * 1000);
+
+        await env.DB.prepare(`
+          INSERT INTO sessions (id, user_id, expires_at, created_at)
+          VALUES (?, ?, ?, ?)
+        `).bind(sessionToken, userId, expiresAt, nowIso).run();
+
+        const headers = corsHeaders(request);
+        headers['Set-Cookie'] = `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`;
+
+        return new Response(JSON.stringify({
+          success: true,
+          authenticated: true,
+          session_token: sessionToken,
+          user: { id: userId, name, email, phone, role: 'customer' }
+        }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
+      }
+    }
+
+    // 2. LOGIN
+    if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const email = String(body.email || '').trim().toLowerCase();
+        const password = String(body.password || '');
+
+        if (!email || !password) {
+          return new Response(JSON.stringify({ error: "Email and password are required." }), { status: 400, headers: corsHeaders(request) });
+        }
+
+        const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+        if (!user) {
+          return new Response(JSON.stringify({ error: "Invalid email or password." }), { status: 401, headers: corsHeaders(request) });
+        }
+
+        const { hash } = await hashCustomerPassword(password, user.salt);
+        if (hash !== user.password_hash) {
+          return new Response(JSON.stringify({ error: "Invalid email or password." }), { status: 401, headers: corsHeaders(request) });
+        }
+
+        const sessionToken = crypto.randomUUID();
+        const expiresAt = Date.now() + (30 * 24 * 3600 * 1000);
+        const nowIso = new Date().toISOString();
+
+        await env.DB.prepare(`
+          INSERT INTO sessions (id, user_id, expires_at, created_at)
+          VALUES (?, ?, ?, ?)
+        `).bind(sessionToken, user.id, expiresAt, nowIso).run();
+
+        const headers = corsHeaders(request);
+        headers['Set-Cookie'] = `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`;
+
+        return new Response(JSON.stringify({
+          success: true,
+          authenticated: true,
+          session_token: sessionToken,
+          user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role || 'customer' }
+        }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
+      }
+    }
+
+    // 3. ME (SESSION VERIFICATION)
+    if (url.pathname === "/api/auth/me" && request.method === "GET") {
+      try {
+        const token = getCustomerSessionToken(request);
+        if (!token) {
+          return new Response(JSON.stringify({ authenticated: false, user: null }), { headers: corsHeaders(request) });
+        }
+
+        const now = Date.now();
+        const sessionRow = await env.DB.prepare(`
+          SELECT s.id as session_id, s.expires_at, u.id, u.name, u.email, u.phone, u.role
+          FROM sessions s
+          JOIN users u ON s.user_id = u.id
+          WHERE s.id = ? AND s.expires_at > ?
+        `).bind(token, now).first();
+
+        if (!sessionRow) {
+          return new Response(JSON.stringify({ authenticated: false, user: null }), { headers: corsHeaders(request) });
+        }
+
+        return new Response(JSON.stringify({
+          authenticated: true,
+          user: {
+            id: sessionRow.id,
+            name: sessionRow.name,
+            email: sessionRow.email,
+            phone: sessionRow.phone,
+            role: sessionRow.role || 'customer'
+          }
+        }), { headers: corsHeaders(request) });
+      } catch(err) {
+        return new Response(JSON.stringify({ authenticated: false, user: null, error: err.message }), { status: 500, headers: corsHeaders(request) });
+      }
+    }
+
+    // 4. LOGOUT
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      try {
+        const token = getCustomerSessionToken(request);
+        if (token) {
+          try {
+            await env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(token).run();
+          } catch(e) {}
+        }
+
+        const headers = corsHeaders(request);
+        headers['Set-Cookie'] = `session_token=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+        return new Response(JSON.stringify({ success: true, message: "Logged out successfully" }), { headers });
+      } catch(err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1908,13 +2155,24 @@ export default {
             shop_id = 'shop_primary_hub';
           }
 
+          let user_id = body.user_id ? String(body.user_id).trim() : null;
+          if (!user_id) {
+            try {
+              const token = getCustomerSessionToken(request);
+              if (token) {
+                const sRow = await env.DB.prepare("SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?").bind(token, Date.now()).first();
+                if (sRow) user_id = sRow.user_id;
+              }
+            } catch(e) {}
+          }
+
           await env.DB.prepare(`
             INSERT INTO orders (
               id, customer_name, customer_phone, delivery_address, 
               special_notes, items, subtotal, delivery_fee, total_price, 
               status, delivery_zone, delivery_otp, order_type, delivery_slot,
-              cust_lat, cust_lng, shop_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              cust_lat, cust_lng, shop_id, user_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
           `).bind(
             id,
             body.customer_name || 'Customer',
@@ -1932,16 +2190,17 @@ export default {
             delivery_slot,
             cust_lat,
             cust_lng,
-            shop_id
+            shop_id,
+            user_id
           ).run();
 
-          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, shop_id, ...body };
+          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, shop_id, user_id, ...body };
           return new Response(JSON.stringify({ success: true, order: created }), {
             status: 201,
-            headers: corsHeaders()
+            headers: corsHeaders(request)
           });
         } catch (err) {
-          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
         }
       }
 
@@ -1949,10 +2208,17 @@ export default {
       if (request.method === "GET") {
         try {
           const orderId = url.searchParams.get('orderId');
+          const userId = url.searchParams.get('userId');
           const zone = url.searchParams.get('zone');
           const rider = url.searchParams.get('rider');
           const isShop = url.searchParams.get('shop') === 'true';
           const isAdmin = url.searchParams.get('admin') === 'true';
+
+          // A0. Customer Order History Query
+          if (userId) {
+            const userOrders = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY datetime(created_at) DESC LIMIT 50").bind(userId).all();
+            return new Response(JSON.stringify({ orders: userOrders.results || [] }), { headers: corsHeaders(request) });
+          }
 
           // A. Admin Portal Query
           if (isAdmin) {
