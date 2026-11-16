@@ -453,7 +453,7 @@
         </div>
         <div class="timeline-step" id="step-preparing">
           <div class="step-circle">2</div>
-          <div class="step-label">Carving</div>
+          <div class="step-label" id="stepPreparingLabel">Carving</div>
         </div>
         <div class="timeline-step" id="step-packed">
           <div class="step-circle">3</div>
@@ -574,24 +574,31 @@
         const data = await res.json();
         if (data && data.order) {
           currentOrder = data.order;
+          if (data.order.shop_lat && data.order.shop_lng) {
+            STORE_COORDS = [Number(data.order.shop_lng), Number(data.order.shop_lat)];
+            if (data.order.shop_name) STORE_NAME = data.order.shop_name;
+            if (!routeDrawn && map) map.setCenter(STORE_COORDS);
+          }
           renderOrderUI(data.order);
         }
       } catch(e) {
         console.warn("fetchOrderData error:", e);
       }
 
-      // Fetch dynamic Dark Store Hub settings from Cloudflare D1
-      try {
-        const setRes = await fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' });
-        if (setRes.ok) {
-          const settings = await setRes.json();
-          if (settings.dark_store_lat && settings.dark_store_lng) {
-            STORE_COORDS = [Number(settings.dark_store_lng), Number(settings.dark_store_lat)];
-            if (settings.dark_store_name) STORE_NAME = settings.dark_store_name;
-            if (!routeDrawn) map.setCenter(STORE_COORDS);
+      // Fetch dynamic Dark Store Hub settings ONLY as fallback if order has no custom shop coords
+      if (!currentOrder || !currentOrder.shop_lat) {
+        try {
+          const setRes = await fetch('/api/settings?t=' + Date.now(), { cache: 'no-store' });
+          if (setRes.ok) {
+            const settings = await setRes.json();
+            if (settings.dark_store_lat && settings.dark_store_lng) {
+              STORE_COORDS = [Number(settings.dark_store_lng), Number(settings.dark_store_lat)];
+              if (settings.dark_store_name) STORE_NAME = settings.dark_store_name;
+              if (!routeDrawn && map) map.setCenter(STORE_COORDS);
+            }
           }
-        }
-      } catch(e) {}
+        } catch(e) {}
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -607,6 +614,20 @@
 
       const currentIdx = steps.indexOf(mapped);
 
+      // Category detection: grocery vs meat
+      const items = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
+      const hasMeat = items.some(it => {
+        const n = (it.name || '').toLowerCase();
+        const c = (it.category || '').toLowerCase();
+        return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' ||
+               n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn');
+      });
+      const isGrocery = (order.shop_category === 'grocery') || (!hasMeat);
+
+      // Update step 2 label text dynamically
+      const prepLabel = document.getElementById('stepPreparingLabel');
+      if (prepLabel) prepLabel.textContent = isGrocery ? 'Packing' : 'Carving';
+
       // Update timeline step styling
       steps.forEach((step, idx) => {
         const el = document.getElementById('step-' + step);
@@ -620,22 +641,30 @@
       const titleEl = document.getElementById('statusTitle');
       const subEl   = document.getElementById('statusSubtitle');
 
+      const shopDisplayName = order.shop_name || STORE_NAME || (isGrocery ? 'Grocery Hub' : 'Meat Hub');
+
       if (status === 'scheduled') {
         emojiEl.textContent = '🌱';
         titleEl.textContent = 'Scheduled for Tomorrow';
-        subEl.textContent = order.delivery_slot ? `Arriving ${order.delivery_slot}. Mandi harvest at 5:00 AM!` : 'Harvesting fresh produce at 5:00 AM tomorrow.';
+        subEl.textContent = order.delivery_slot ? `Arriving ${order.delivery_slot}. Early morning dispatch!` : 'Scheduled for morning delivery.';
       } else if (status === 'pending') {
         emojiEl.textContent = '⏳';
         titleEl.textContent = 'Order Confirmed';
-        subEl.textContent = 'Sent to central meat hub. Butcher station assigned.';
+        subEl.textContent = isGrocery 
+          ? `Sent to ${shopDisplayName}. Gathering and packing your items.`
+          : `Sent to ${shopDisplayName}. Butcher carving station assigned.`;
       } else if (status === 'preparing') {
-        emojiEl.textContent = '🔪';
-        titleEl.textContent = 'Carving Your Cuts';
-        subEl.textContent = 'Master butcher is slicing, weighing & temperature-checking your meat.';
+        emojiEl.textContent = isGrocery ? '🛍️' : '🔪';
+        titleEl.textContent = isGrocery ? 'Packing Your Groceries' : 'Carving Your Cuts';
+        subEl.textContent = isGrocery
+          ? `Staff at ${shopDisplayName} is picking and packing your grocery items into a carry bag.`
+          : 'Master butcher is slicing, weighing & temperature-checking your cuts.';
       } else if (status === 'packed') {
         emojiEl.textContent = '📦';
-        titleEl.textContent = 'Packed Fresh & Sealed';
-        subEl.textContent = 'Cold-pack insulated. Waiting for delivery rider pickup.';
+        titleEl.textContent = isGrocery ? 'Bag Packed & Ready' : 'Packed Fresh & Sealed';
+        subEl.textContent = isGrocery
+          ? 'Grocery bag packed & sealed. Waiting for delivery rider pickup.'
+          : 'Cold-pack insulated. Waiting for delivery rider pickup.';
       } else if (status === 'accepted') {
         emojiEl.textContent = '🛵';
         titleEl.textContent = 'Rider On the Way!';
@@ -643,7 +672,7 @@
       } else if (status === 'delivered') {
         emojiEl.textContent = '✅';
         titleEl.textContent = 'Delivered!';
-        subEl.textContent = 'Handover verified. Fresh items delivered to your kitchen!';
+        subEl.textContent = 'Handover verified. Fresh items delivered to your doorstep!';
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else if (status === 'cancelled') {
         emojiEl.textContent = '❌';
@@ -675,23 +704,32 @@
       if (pin && status !== 'delivered' && status !== 'cancelled' && status !== 'expired') {
         document.getElementById('floatingOtpValue').textContent = pin;
         document.getElementById('floatingOtpPill').style.display = 'flex';
-        document.getElementById('handoverOtpBadge').textContent = pin;
         document.getElementById('handoverBox').style.display = 'flex';
+        document.getElementById('handoverOtpBadge').textContent = pin;
       } else {
         document.getElementById('floatingOtpPill').style.display = 'none';
         document.getElementById('handoverBox').style.display = 'none';
       }
 
-      // Cancellation Grace Button
+      // Smart Cancellation Button
       const cancelWrap = document.getElementById('cancelWrap');
-      if (status === 'pending' && cancelSecsLeft > 0) {
-        cancelWrap.style.display = 'block';
+      if (isGrocery) {
+        // Groceries can be cancelled in pending or preparing (before rider departs)
+        if ((status === 'pending' || status === 'preparing') && cancelSecsLeft > 0) {
+          cancelWrap.style.display = 'block';
+        } else {
+          cancelWrap.style.display = 'none';
+        }
       } else {
-        cancelWrap.style.display = 'none';
+        // Meat can only be cancelled during pending before cutting starts
+        if (status === 'pending' && cancelSecsLeft > 0) {
+          cancelWrap.style.display = 'block';
+        } else {
+          cancelWrap.style.display = 'none';
+        }
       }
 
       // Render Items Preview
-      const items = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
       const itemsContainer = document.getElementById('orderItemsPreview');
       itemsContainer.innerHTML = `
         <div style="font-weight:700; color:var(--text-muted); margin-bottom:6px; font-size:0.75rem; text-transform:uppercase;">
@@ -699,7 +737,7 @@
         </div>
         ${items.map(i => `
           <div class="item-row">
-            <span class="item-name">${i.emoji || '🥩'} ${i.name}</span>
+            <span class="item-name">${i.emoji || (isGrocery ? '🛒' : '🥩')} ${i.name}</span>
             <span class="item-qty">${i.qty}x (${i.unit})</span>
             <span class="item-price">₹${i.price * i.qty}</span>
           </div>
@@ -718,17 +756,29 @@
     async function drawOrderMapRoute(order) {
       if (routeDrawn && routeCoordinates.length > 0) return;
 
+      // Ensure store coordinates use the actual assigned shop location
+      if (order.shop_lat && order.shop_lng) {
+        STORE_COORDS = [Number(order.shop_lng), Number(order.shop_lat)];
+        if (order.shop_name) STORE_NAME = order.shop_name;
+      }
+
       const dest = (order.cust_lat && order.cust_lng)
         ? [Number(order.cust_lng), Number(order.cust_lat)]
-        : (ZONE_DESTINATIONS[order.delivery_zone] || ZONE_DESTINATIONS['HSR Layout']);
+        : (ZONE_DESTINATIONS[order.delivery_zone] || STORE_COORDS);
       const [storeLng, storeLat] = STORE_COORDS;
       const [custLng, custLat] = dest;
 
       // Add Store Marker
       const storeEl = document.createElement('div');
       storeEl.className = 'map-marker marker-store';
-      storeEl.innerHTML = '🏪';
-      storeEl.title = STORE_NAME || 'Dark Store Hub';
+      const items = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
+      const hasMeat = items.some(it => {
+        const n = (it.name || '').toLowerCase();
+        const c = (it.category || '').toLowerCase();
+        return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom';
+      });
+      storeEl.innerHTML = (order.shop_category === 'grocery' || !hasMeat) ? '🛒' : '🥩';
+      storeEl.title = STORE_NAME || 'Store Hub';
       new maplibregl.Marker({ element: storeEl }).setLngLat(STORE_COORDS).addTo(map);
 
       // Add Customer Doorstep Marker

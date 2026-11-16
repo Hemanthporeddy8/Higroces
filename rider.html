@@ -648,6 +648,39 @@ let currentRiderName = localStorage.getItem('rider_name') || '';
 let currentRiderZone = localStorage.getItem('rider_zone') || '';
 let lastPendingCount = null;
 
+async function loadRiderShopZones() {
+  try {
+    const res = await fetch('/api/shops');
+    if (!res.ok) return;
+    const data = await res.json();
+    const shops = data.shops || [];
+    const select = document.getElementById('riderZoneInput');
+    if (!select) return;
+
+    let html = `
+      <option value="all">🌟 All Zones / All Partner Hubs</option>
+    `;
+    shops.forEach(s => {
+      const icon = s.category === 'grocery' ? '🛒' : '🥩';
+      const loc = s.address ? ` (${s.address})` : '';
+      html += `<option value="${s.name}">${icon} ${s.name}${loc}</option>`;
+    });
+    html += `
+      <option value="HSR Layout">📍 HSR Layout</option>
+      <option value="Koramangala">📍 Koramangala</option>
+      <option value="Indiranagar">📍 Indiranagar</option>
+      <option value="Jayanagar">📍 Jayanagar</option>
+    `;
+    select.innerHTML = html;
+
+    if (currentRiderZone) {
+      select.value = currentRiderZone;
+    }
+  } catch(e) {
+    console.warn("Failed to load rider shop zones:", e);
+  }
+}
+
 function checkRiderLogin() {
   if (!currentRiderName || !currentRiderZone) {
     document.getElementById('loginOverlay').classList.add('open');
@@ -656,7 +689,7 @@ function checkRiderLogin() {
     document.getElementById('loginOverlay').classList.remove('open');
     document.getElementById('riderStatusBar').style.display = 'flex';
     document.getElementById('riderNameDisplay').textContent = currentRiderName;
-    document.getElementById('riderZoneDisplay').textContent = currentRiderZone;
+    document.getElementById('riderZoneDisplay').textContent = currentRiderZone === 'all' ? 'All Zones' : currentRiderZone;
     
     fetchOrders();
   }
@@ -807,13 +840,27 @@ function renderOrderItemMarkup(o, isPending) {
       </div>
       
       <div class="cust-info">
+        <div style="background:rgba(16,185,129,0.08); border:1.5px solid rgba(16,185,129,0.3); border-radius:8px; padding:10px 12px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; font-size:0.75rem; letter-spacing:0.05em; color:#065F46; text-transform:uppercase;">🏪 PICKUP STORE</span>
+            <span style="font-size:0.75rem; font-weight:700; background:#E5E7EB; padding:2px 6px; border-radius:4px;">${o.shop_category === 'grocery' ? '🛒 Wholesale / Grocery' : '🥩 Butcher Hub'}</span>
+          </div>
+          <div style="font-weight:800; font-size:0.95rem; color:#111827; margin-top:3px;">${o.shop_name || 'Primary Store Hub'}</div>
+          ${o.shop_address ? `<div style="font-size:0.78rem; color:#4B5563; margin-top:2px;">📍 ${o.shop_address}</div>` : ''}
+          ${o.shop_lat && o.shop_lng ? `
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.shop_lat + ',' + o.shop_lng)}" target="_blank" rel="noopener" style="display:inline-block; margin-top:6px; font-size:0.75rem; font-weight:700; color:#059669; text-decoration:none;">
+              🧭 Navigate to Pickup Store ↗
+            </a>
+          ` : ''}
+        </div>
+
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
           <div class="cust-name">👤 ${o.customer_name}</div>
           <div>${bagTagsHtml}</div>
         </div>
         <a href="tel:${o.customer_phone}" class="cust-phone">📞 ${maskedPhone} (Tap to Call 📞)</a>
         <div class="cust-address">
-          <div>📍 Address: <strong>${o.delivery_address}</strong></div>
+          <div>📍 Delivery: <strong>${o.delivery_address}</strong></div>
           <div style="margin-top:6px;">${navBtnHtml}</div>
         </div>
         ${o.special_notes ? `<div class="order-note">📝 Note: ${o.special_notes}</div>` : ''}
@@ -941,7 +988,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeNavDrawer();
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadRiderShopZones();
   checkRiderLogin();
   
   // Auto-poll orders every 5 seconds for fast updates

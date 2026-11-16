@@ -2286,7 +2286,19 @@ export default {
 
           // B. Customer Tracking Query
           if (orderId) {
-            const order = await env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(orderId).first();
+            const order = await env.DB.prepare(`
+              SELECT 
+                o.*, 
+                s.name as shop_name, 
+                s.latitude as shop_lat, 
+                s.longitude as shop_lng, 
+                s.address as shop_address, 
+                s.category as shop_category,
+                s.phone as shop_phone
+              FROM orders o
+              LEFT JOIN shops s ON o.shop_id = s.id
+              WHERE o.id = ?
+            `).bind(orderId).first();
             if (!order) {
               return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: corsHeaders() });
             }
@@ -2337,13 +2349,29 @@ export default {
           let activeOrders = [];
 
           if (zone) {
-            const res = await env.DB.prepare(`
-              SELECT * FROM orders 
-              WHERE (status = 'pending' OR status = 'packed') 
-              AND delivery_zone = ? 
-              AND datetime(created_at) >= datetime('now', '-8 hours')
-              ORDER BY datetime(created_at) DESC
-            `).bind(zone).all();
+            let riderQuery = `
+              SELECT 
+                o.*, 
+                s.name as shop_name, 
+                s.address as shop_address, 
+                s.latitude as shop_lat, 
+                s.longitude as shop_lng 
+              FROM orders o
+              LEFT JOIN shops s ON o.shop_id = s.id
+              WHERE (o.status = 'pending' OR o.status = 'packed')
+              AND datetime(o.created_at) >= datetime('now', '-8 hours')
+            `;
+            let rParams = [];
+            if (zone !== 'all' && zone !== 'All Zones') {
+              riderQuery += ` AND (o.delivery_zone = ? OR s.name = ? OR o.shop_id = ?)`;
+              rParams.push(zone, zone, zone);
+            }
+            riderQuery += ` ORDER BY datetime(o.created_at) DESC`;
+
+            const res = rParams.length > 0 
+              ? await env.DB.prepare(riderQuery).bind(...rParams).all()
+              : await env.DB.prepare(riderQuery).all();
+
             pendingOrders = (res.results || []).map(o => {
               const { delivery_otp, ...safe } = o;
               return safe;
@@ -2352,9 +2380,16 @@ export default {
 
           if (rider) {
             const res = await env.DB.prepare(`
-              SELECT * FROM orders 
-              WHERE status = 'accepted' AND rider_name = ? 
-              ORDER BY datetime(created_at) DESC
+              SELECT 
+                o.*, 
+                s.name as shop_name, 
+                s.address as shop_address, 
+                s.latitude as shop_lat, 
+                s.longitude as shop_lng 
+              FROM orders o
+              LEFT JOIN shops s ON o.shop_id = s.id
+              WHERE o.status = 'accepted' AND o.rider_name = ? 
+              ORDER BY datetime(o.created_at) DESC
             `).bind(rider).all();
             activeOrders = (res.results || []).map(o => {
               const { delivery_otp, ...safe } = o;
@@ -2398,14 +2433,36 @@ export default {
 
           // 2. Customer Cancellation Handling
           if (status === 'cancelled') {
-            if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
-              return new Response(JSON.stringify({ 
-                error: "Cannot cancel order: Butcher carving or delivery transit has already started." 
-              }), { status: 400, headers: corsHeaders() });
-            }
             if (existing.status === 'delivered') {
               return new Response(JSON.stringify({ error: "Order already delivered." }), { status: 400, headers: corsHeaders() });
             }
+
+            let hasMeat = false;
+            try {
+              const pItems = typeof existing.items === 'string' ? JSON.parse(existing.items) : (existing.items || []);
+              hasMeat = pItems.some(it => {
+                const n = (it.name || '').toLowerCase();
+                const c = (it.category || '').toLowerCase();
+                return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' ||
+                       n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn');
+              });
+            } catch(e) {}
+
+            if (hasMeat) {
+              if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
+                return new Response(JSON.stringify({ 
+                  error: "Cannot cancel order: Master butcher carving has already begun. As per fresh perishable food policy, custom meat cuts cannot be cancelled once preparation starts." 
+                }), { status: 400, headers: corsHeaders() });
+              }
+            } else {
+              // Packaged Grocery order: allow cancellation unless delivery rider is already dispatched
+              if (existing.status === 'accepted') {
+                return new Response(JSON.stringify({ 
+                  error: "Cannot cancel order: Delivery partner is already on the way to your doorstep." 
+                }), { status: 400, headers: corsHeaders() });
+              }
+            }
+
             await env.DB.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").bind(id).run();
             return new Response(JSON.stringify({ success: true, id, status: 'cancelled' }), { headers: corsHeaders() });
           }
