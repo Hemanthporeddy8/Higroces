@@ -1006,6 +1006,221 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   font-size: 0.74rem; color: var(--text-muted); line-height: 1.45;
 }
 .nav-drawer-note strong { color: var(--accent-gold); }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CARTOON ROLLING SHUTTER & 15-MIN WIND-DOWN COMPONENT           */
+/* ═══════════════════════════════════════════════════════════════ */
+.rolling-shutter-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99990;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-100%);
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rolling-shutter-container.state-winddown {
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.rolling-shutter-container.state-winddown .shutter-curtain {
+  justify-content: flex-end;
+  padding-bottom: 24px;
+  pointer-events: auto;
+}
+
+.rolling-shutter-container.state-closed {
+  transform: translateY(0%);
+  pointer-events: auto;
+}
+.rolling-shutter-container.state-closed .shutter-curtain {
+  justify-content: center;
+  padding-bottom: 0;
+  pointer-events: auto;
+}
+
+/* Shutter Curtain Slats (Galvanized Corrugated Metal) */
+.shutter-curtain {
+  flex: 1;
+  width: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #5A6578 0px,
+    #3E4856 12px,
+    #212832 14px,
+    #353F4E 16px,
+    #4F5B6C 22px,
+    #5A6578 26px
+  );
+  box-shadow: inset 0 -20px 40px rgba(0,0,0,0.8), inset 0 20px 30px rgba(255,255,255,0.15);
+  border-left: 18px solid #111827;
+  border-right: 18px solid #111827;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.shutter-curtain::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0; width: 6px;
+  background: rgba(255,255,255,0.2);
+}
+.shutter-curtain::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; right: 0; width: 6px;
+  background: rgba(0,0,0,0.5);
+}
+
+/* Bottom Heavy Angle Iron Plate */
+.shutter-bottom-bar {
+  width: 100%;
+  height: 56px;
+  background: #1F2937;
+  border-top: 4px solid #6B7280;
+  border-bottom: 6px solid #000000;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  position: relative;
+}
+
+/* Hazard Tape on Bottom Bar */
+.shutter-hazard-tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #F59E0B,
+    #F59E0B 12px,
+    #111827 12px,
+    #111827 24px
+  );
+}
+
+.shutter-handle {
+  width: 60px;
+  height: 16px;
+  background: linear-gradient(to bottom, #E5E7EB, #9CA3AF);
+  border-radius: 8px;
+  border: 2px solid #4B5563;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 8px rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+/* Center Signboard Card on Shutter */
+.shutter-signboard {
+  background: #0E1614;
+  border: 3px solid #2ECC71;
+  border-radius: 20px;
+  padding: 24px 30px;
+  text-align: center;
+  max-width: 520px;
+  width: 90%;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(46,204,113,0.3);
+  position: relative;
+  animation: signboardPop 0.5s ease;
+}
+
+.shutter-signboard.winddown-mode {
+  border-color: #F59E0B;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(245,158,11,0.35);
+}
+
+.shutter-timer-display {
+  font-family: 'DM Mono', monospace;
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #FBBF24;
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(251,191,36,0.6);
+  margin: 6px 0;
+}
+
+.shutter-padlock-icon {
+  font-size: 4rem;
+  display: inline-block;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+  animation: lockWiggle 1.5s infinite ease-in-out;
+}
+
+@keyframes lockWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+
+@keyframes signboardPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Choice Modal */
+.shutter-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(5px);
+  z-index: 99995;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.shutter-modal-card {
+  background: #14201C;
+  border: 1.5px solid #233630;
+  border-radius: 18px;
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+  color: white;
+  animation: modalScaleUp 0.25s ease-out;
+}
+@keyframes modalScaleUp {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.shutter-opt-card {
+  background: #0E1614;
+  border: 1.5px solid #20312B;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.shutter-opt-card:hover {
+  background: #192723;
+  border-color: #2ECC71;
+  transform: translateY(-2px);
+}
+.shutter-opt-card.recommended {
+  border-color: rgba(245,158,11,0.5);
+  background: rgba(245,158,11,0.06);
+}
+.shutter-opt-card.recommended:hover {
+  border-color: #F59E0B;
+  background: rgba(245,158,11,0.12);
+}
 </style>
 </head>
 <body>
@@ -1484,6 +1699,111 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
         <span style="color:#FFB74D; font-weight:900; font-size:1rem;" id="calcMarginPct">0.0%</span>
       </div>
     </div>
+  </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- STORE CLOSING / OFFLINE CHOICE MODAL                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="shutter-modal-backdrop" id="shutterChoiceModal">
+  <div class="shutter-modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="font-size:1.25rem; font-weight:900; color:#F59E0B; display:flex; align-items:center; gap:8px;">
+        <span>🏪</span> Store Closing Options
+      </div>
+      <button onclick="closeShutterChoiceModal()" style="background:transparent; border:none; color:#8C9E97; font-size:1.5rem; cursor:pointer; line-height:1;">&times;</button>
+    </div>
+    
+    <p style="font-size:0.86rem; color:#A3D9C9; line-height:1.45; margin-bottom:16px;">
+      Choose how you want to close the shop. Recommended: <strong>15-Minute Wind-Down</strong> stops new incoming customer orders while letting you finish active prep.
+    </p>
+
+    <!-- OPTION 1: 15-MINUTE WIND-DOWN (RECOMMENDED) -->
+    <div class="shutter-opt-card recommended" onclick="startShutterWindDown(15)">
+      <div style="font-size:2rem;">⏳</div>
+      <div style="flex:1;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <strong style="color:#FBBF24; font-size:0.95rem;">15-Minute Wind-Down</strong>
+          <span style="background:#F59E0B; color:#000; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px;">RECOMMENDED</span>
+        </div>
+        <div style="font-size:0.76rem; color:#D1D5DB; margin-top:3px;">
+          Storefront immediately stops new orders. Shutter rolls half-down. Finish your active orders before the final lock.
+        </div>
+      </div>
+      <div style="color:#FBBF24; font-size:1.3rem; font-weight:900;">➔</div>
+    </div>
+
+    <!-- OPTION 2: INSTANT LOCK -->
+    <div class="shutter-opt-card" onclick="lockShutterImmediately()">
+      <div style="font-size:2rem;">⚡</div>
+      <div style="flex:1;">
+        <strong style="color:#EF4444; font-size:0.95rem;">Lock Store Instantly</strong>
+        <div style="font-size:0.76rem; color:#9CA3AF; margin-top:3px;">
+          Roll shutter all the way down and lock immediately. No new orders accepted.
+        </div>
+      </div>
+      <div style="color:#EF4444; font-size:1.3rem; font-weight:900;">➔</div>
+    </div>
+
+    <div style="text-align:right; margin-top:16px;">
+      <button type="button" onclick="closeShutterChoiceModal()" style="background:transparent; border:1px solid #374151; color:#9CA3AF; padding:8px 16px; border-radius:8px; font-size:0.8rem; cursor:pointer;">
+        Keep Store Online (Cancel)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CARTOON ROLLING SHUTTER COMPONENT                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="rolling-shutter-container" id="rollingShutterContainer">
+  <div class="shutter-curtain">
+    <!-- WIND-DOWN CARD (Shown when state-winddown) -->
+    <div class="shutter-signboard winddown-mode" id="shutterWinddownCard" style="display:none; pointer-events:auto;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:4px;">
+        <span style="font-size:1.3rem;">⏳</span>
+        <span style="font-size:1.05rem; font-weight:900; color:#F59E0B; letter-spacing:1px;">STORE WINDING DOWN</span>
+      </div>
+      <div style="font-size:0.78rem; color:#E5E7EB; margin-bottom:8px;">
+        Storefront is <strong>OFFLINE</strong> to new orders. Finish active orders below!
+      </div>
+      <div class="shutter-timer-display" id="shutterTimerDisplay">15:00</div>
+      <div style="display:flex; justify-content:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
+        <button type="button" onclick="lockShutterImmediately()" style="background:#DC2626; color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:800; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(220,38,38,0.4);">
+          <span>🔒</span> Finish & Lock Now
+        </button>
+        <button type="button" onclick="pullUpShutter()" style="background:#1F2937; color:#E5E7EB; border:1.5px solid #4B5563; padding:10px 16px; border-radius:10px; font-weight:700; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <span>↺</span> Cancel & Reopen
+        </button>
+      </div>
+    </div>
+
+    <!-- FULLY CLOSED CARD (Shown when state-closed) -->
+    <div class="shutter-signboard" id="shutterClosedCard" style="display:none; pointer-events:auto;">
+      <div class="shutter-padlock-icon">🔒</div>
+      <div style="font-size:1.35rem; font-weight:900; color:#EF4444; margin-top:8px; letter-spacing:1px;">
+        STORE IS CLOSED
+      </div>
+      <div style="font-size:0.82rem; color:#9CA3AF; margin:8px auto 16px; max-width:360px; line-height:1.4;">
+        Rolling shutter is pulled down and locked. Customer ordering is paused on the storefront.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <button type="button" onclick="pullUpShutter()" style="background:linear-gradient(135deg, #10B981, #059669); color:white; border:none; padding:14px 28px; border-radius:12px; font-weight:900; font-size:1rem; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 8px 25px rgba(16,185,129,0.5); width:100%; max-width:320px; justify-content:center;">
+          <span style="font-size:1.2rem;">🟢</span> Pull Up Shutter & Open Store
+        </button>
+        <div style="font-size:0.72rem; color:#6B7280;">
+          💡 Pull up when you arrive at shop to start accepting orders.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM HEAVY BAR WITH CAUTION TAPE & HANDLES -->
+  <div class="shutter-bottom-bar" style="pointer-events:auto;">
+    <div class="shutter-hazard-tape"></div>
+    <div class="shutter-handle" onclick="onShutterHandleClick()" title="Pull shutter"></div>
+    <div style="color:#9CA3AF; font-size:0.75rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">
+      AMORELOT HIGH-SPEED ROLLING SHUTTER
+    </div>
+    <div class="shutter-handle" onclick="onShutterHandleClick()" title="Pull shutter"></div>
   </div>
 </div>
 
@@ -2795,23 +3115,267 @@ async function manualRefresh() {
   }, 400);
 }
 
-// ── STORE ONLINE / OFFLINE CONTROLLER ──
+// ═══════════════════════════════════════════════════════════════
+// CARTOON ROLLING SHUTTER & 15-MINUTE STORE WIND-DOWN CONTROLLER
+// ═══════════════════════════════════════════════════════════════
 let isStoreOnline = true;
+let shutterWinddownTimer = null;
 
-async function loadStoreStatus() {
+// Native Web Audio API Sound Synthesizer (Zero external audio assets)
+function playShutterSound(action) {
   try {
-    const res = await fetch('/api/store/status?t=' + Date.now());
-    if (res.ok) {
-      const data = await res.json();
-      isStoreOnline = data.is_online !== false;
-      updateStoreStatusUI();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    if (action === 'roll_down' || action === 'roll_up') {
+      // 1. Shutter Slats Rattling (Bandpassed White Noise)
+      const bufferSize = ctx.sampleRate * 0.85;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.sin(i / 14);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.setValueAtTime(action === 'roll_down' ? 680 : 880, now);
+      bandpass.Q.setValueAtTime(3.5, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+      noise.connect(bandpass);
+      bandpass.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.82);
+
+      // 2. Heavy Roller Drum Resonance
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(action === 'roll_down' ? 60 : 45, now);
+      osc.frequency.linearRampToValueAtTime(action === 'roll_down' ? 38 : 75, now + 0.8);
+      oscGain.gain.setValueAtTime(0.18, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.8);
+    }
+
+    if (action === 'slam') {
+      // Bottom angle-iron bar slamming onto concrete
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(130, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 0.3);
+      oscGain.gain.setValueAtTime(0.85, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+
+    if (action === 'lock') {
+      // Brass padlock snapping shut
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1750, now);
+      osc.frequency.exponentialRampToValueAtTime(350, now + 0.08);
+      oscGain.gain.setValueAtTime(0.65, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
     }
   } catch(e) {
-    console.warn("loadStoreStatus error:", e);
+    console.warn("Shutter audio unavailable:", e);
   }
 }
 
-function updateStoreStatusUI() {
+function openShutterChoiceModal() {
+  const modal = document.getElementById('shutterChoiceModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeShutterChoiceModal() {
+  const modal = document.getElementById('shutterChoiceModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function onShutterHandleClick() {
+  const shutter = document.getElementById('rollingShutterContainer');
+  if (!shutter) return;
+  if (shutter.classList.contains('state-winddown')) {
+    if (confirm("Lock store immediately and pull shutter all the way down?")) {
+      lockShutterImmediately();
+    }
+  } else if (shutter.classList.contains('state-closed')) {
+    pullUpShutter();
+  }
+}
+
+// 1. Gentle 15-Minute Wind-Down (Stops customer orders, rolls shutter half-down)
+async function startShutterWindDown(minutes = 15) {
+  closeShutterChoiceModal();
+
+  const deadline = Date.now() + (minutes * 60 * 1000);
+  localStorage.setItem('shutter_winddown_deadline', deadline.toString());
+
+  // Roll down halfway with cartoon sound
+  playShutterSound('roll_down');
+  const shutter = document.getElementById('rollingShutterContainer');
+  const winddownCard = document.getElementById('shutterWinddownCard');
+  const closedCard = document.getElementById('shutterClosedCard');
+
+  if (shutter) {
+    shutter.className = 'rolling-shutter-container state-winddown';
+  }
+  if (winddownCard) winddownCard.style.display = 'block';
+  if (closedCard) closedCard.style.display = 'none';
+
+  // Mark store offline on backend immediately to pause new storefront orders
+  try {
+    isStoreOnline = false;
+    updateStoreStatusUI('WIND-DOWN');
+    await fetch('/api/store/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_online: false, wind_down: true })
+    });
+  } catch(e) {
+    console.warn("Failed to notify backend of winddown:", e);
+  }
+
+  // Start 15-minute countdown display
+  if (shutterWinddownTimer) clearInterval(shutterWinddownTimer);
+  updateWinddownDisplay(deadline);
+  shutterWinddownTimer = setInterval(() => {
+    const isDone = updateWinddownDisplay(deadline);
+    if (isDone) {
+      clearInterval(shutterWinddownTimer);
+      shutterWinddownTimer = null;
+      lockShutterImmediately();
+    }
+  }, 1000);
+}
+
+function updateWinddownDisplay(deadline) {
+  const display = document.getElementById('shutterTimerDisplay');
+  const now = Date.now();
+  const diffSec = Math.max(0, Math.floor((deadline - now) / 1000));
+  const m = Math.floor(diffSec / 60);
+  const s = diffSec % 60;
+  const formatted = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  if (display) display.textContent = formatted;
+  return diffSec <= 0;
+}
+
+// 2. Lock Store Immediately (Drops shutter 100%, padlock snap)
+async function lockShutterImmediately() {
+  closeShutterChoiceModal();
+  if (shutterWinddownTimer) {
+    clearInterval(shutterWinddownTimer);
+    shutterWinddownTimer = null;
+  }
+  localStorage.removeItem('shutter_winddown_deadline');
+
+  const shutter = document.getElementById('rollingShutterContainer');
+  const winddownCard = document.getElementById('shutterWinddownCard');
+  const closedCard = document.getElementById('shutterClosedCard');
+
+  if (shutter) {
+    shutter.className = 'rolling-shutter-container state-closed';
+  }
+  if (winddownCard) winddownCard.style.display = 'none';
+  if (closedCard) closedCard.style.display = 'block';
+
+  // Sound sequence: Roll down -> Heavy Slam -> Padlock Snap
+  playShutterSound('roll_down');
+  setTimeout(() => playShutterSound('slam'), 450);
+  setTimeout(() => playShutterSound('lock'), 750);
+
+  try {
+    isStoreOnline = false;
+    updateStoreStatusUI();
+    await fetch('/api/store/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_online: false })
+    });
+  } catch(e) {
+    console.warn("Failed to lock store status:", e);
+  }
+}
+
+// 3. Pull Up Shutter & Open Store (Go Online)
+async function pullUpShutter() {
+  if (shutterWinddownTimer) {
+    clearInterval(shutterWinddownTimer);
+    shutterWinddownTimer = null;
+  }
+  localStorage.removeItem('shutter_winddown_deadline');
+
+  playShutterSound('roll_up');
+
+  const shutter = document.getElementById('rollingShutterContainer');
+  const winddownCard = document.getElementById('shutterWinddownCard');
+  const closedCard = document.getElementById('shutterClosedCard');
+
+  if (shutter) {
+    shutter.className = 'rolling-shutter-container';
+  }
+  if (winddownCard) winddownCard.style.display = 'none';
+  if (closedCard) closedCard.style.display = 'none';
+
+  try {
+    const text = document.getElementById('storeStatusText');
+    if (text) text.textContent = 'Opening... ⌛';
+
+    const res = await fetch('/api/store/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_online: true })
+    });
+    if (res.ok) {
+      isStoreOnline = true;
+      updateStoreStatusUI();
+    } else {
+      alert("Failed to update store status.");
+      updateStoreStatusUI();
+    }
+  } catch(e) {
+    alert("Connection error: " + e.message);
+    updateStoreStatusUI();
+  }
+}
+
+function toggleStoreOnlineStatus() {
+  if (isStoreOnline) {
+    openShutterChoiceModal();
+  } else {
+    // If currently offline/closed or in wind-down, clicking the pill offers reopening or locks
+    const shutter = document.getElementById('rollingShutterContainer');
+    if (shutter && shutter.classList.contains('state-winddown')) {
+      openShutterChoiceModal();
+    } else {
+      pullUpShutter();
+    }
+  }
+}
+
+function updateStoreStatusUI(customLabel) {
   const btn = document.getElementById('btnStoreStatus');
   const text = document.getElementById('storeStatusText');
   const notice = document.getElementById('shopClosedNotice');
@@ -2824,35 +3388,68 @@ function updateStoreStatusUI() {
     if (notice) notice.style.display = 'none';
   } else {
     btn.className = 'store-status-pill offline';
-    text.textContent = 'OFFLINE';
-    if (notice) notice.style.display = 'block';
+    text.textContent = customLabel || 'OFFLINE';
+    if (notice) {
+      notice.style.display = 'block';
+      notice.innerHTML = customLabel === 'WIND-DOWN'
+        ? '⏳ <strong>STORE IS IN 15-MIN WIND-DOWN:</strong> New orders paused. Finishing in-progress orders.'
+        : '🛑 <strong>STORE IS CURRENTLY OFFLINE:</strong> Rolling shutter closed. Tap to open store and go Online.';
+    }
   }
 }
 
-async function toggleStoreOnlineStatus() {
-  const newStatus = !isStoreOnline;
-  const actionText = newStatus ? "OPEN the store and go ONLINE (Start accepting instant orders)?" : "CLOSE the store and go OFFLINE (Pause customer instant orders)?";
-  if (!confirm(`Are you sure you want to ${actionText}`)) return;
-
+async function loadStoreStatus() {
   try {
-    const text = document.getElementById('storeStatusText');
-    if (text) text.textContent = 'Updating... ⌛';
-
-    const res = await fetch('/api/store/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_online: newStatus })
-    });
+    const res = await fetch('/api/store/status?t=' + Date.now());
     if (res.ok) {
-      isStoreOnline = newStatus;
-      updateStoreStatusUI();
-    } else {
-      alert("Failed to update store status.");
-      updateStoreStatusUI();
+      const data = await res.json();
+      isStoreOnline = data.is_online !== false;
+
+      const shutter = document.getElementById('rollingShutterContainer');
+      const winddownCard = document.getElementById('shutterWinddownCard');
+      const closedCard = document.getElementById('shutterClosedCard');
+
+      if (!isStoreOnline) {
+        // Check if an active wind-down countdown was in progress
+        const deadlineStr = localStorage.getItem('shutter_winddown_deadline');
+        const deadline = deadlineStr ? parseInt(deadlineStr, 10) : 0;
+        const remainingSec = Math.floor((deadline - Date.now()) / 1000);
+
+        if (remainingSec > 0) {
+          // Resume wind-down countdown
+          if (shutter) shutter.className = 'rolling-shutter-container state-winddown';
+          if (winddownCard) winddownCard.style.display = 'block';
+          if (closedCard) closedCard.style.display = 'none';
+          updateStoreStatusUI('WIND-DOWN');
+          updateWinddownDisplay(deadline);
+
+          if (shutterWinddownTimer) clearInterval(shutterWinddownTimer);
+          shutterWinddownTimer = setInterval(() => {
+            const isDone = updateWinddownDisplay(deadline);
+            if (isDone) {
+              clearInterval(shutterWinddownTimer);
+              shutterWinddownTimer = null;
+              lockShutterImmediately();
+            }
+          }, 1000);
+        } else {
+          // Full closed shutter
+          localStorage.removeItem('shutter_winddown_deadline');
+          if (shutter) shutter.className = 'rolling-shutter-container state-closed';
+          if (winddownCard) winddownCard.style.display = 'none';
+          if (closedCard) closedCard.style.display = 'block';
+          updateStoreStatusUI('OFFLINE');
+        }
+      } else {
+        localStorage.removeItem('shutter_winddown_deadline');
+        if (shutter) shutter.className = 'rolling-shutter-container';
+        if (winddownCard) winddownCard.style.display = 'none';
+        if (closedCard) closedCard.style.display = 'none';
+        updateStoreStatusUI();
+      }
     }
   } catch(e) {
-    alert("Connection error: " + e.message);
-    updateStoreStatusUI();
+    console.warn("loadStoreStatus error:", e);
   }
 }
 
