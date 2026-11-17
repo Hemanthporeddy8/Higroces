@@ -1864,6 +1864,73 @@ header {
   margin-bottom: 14px;
   display: none;
 }
+
+/* Password Eye Button & Wrapper */
+.pwd-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pwd-input-wrapper .auth-input {
+  padding-right: 44px;
+}
+.pwd-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  color: #8C9E97;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  user-select: none;
+}
+.pwd-toggle-btn:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Password Strength Meter */
+.pwd-strength-container {
+  margin-top: 7px;
+  display: none;
+  animation: fadeInModal 0.2s ease-out;
+}
+.pwd-strength-bars {
+  display: flex;
+  gap: 5px;
+  height: 5px;
+  margin-bottom: 5px;
+}
+.pwd-strength-bar {
+  flex: 1;
+  height: 100%;
+  background: #233630;
+  border-radius: 3px;
+  transition: background 0.25s ease;
+}
+.pwd-strength-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Password Match Indicator */
+.pwd-match-hint {
+  font-size: 0.74rem;
+  margin-top: 6px;
+  font-weight: 700;
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -2466,7 +2533,10 @@ header {
       </div>
       <div class="auth-input-group">
         <label class="auth-label">PASSWORD</label>
-        <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required autocomplete="current-password" />
+        <div class="pwd-input-wrapper">
+          <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show / Hide Password" aria-label="Show or hide password">👁️</button>
+        </div>
       </div>
       <button type="submit" class="auth-btn-submit" id="btnLoginSubmit">
         <span>Sign In</span> ➔
@@ -2492,11 +2562,32 @@ header {
       </div>
       <div class="auth-input-group">
         <label class="auth-label">PASSWORD (MIN 6 CHARACTERS)</label>
-        <input type="password" id="regPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" />
+        <div class="pwd-input-wrapper">
+          <input type="password" id="regPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" oninput="checkPasswordStrength(this.value); checkPasswordMatch();" />
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Show / Hide Password" aria-label="Show or hide password">👁️</button>
+        </div>
+        <!-- Live Password Strength Meter -->
+        <div class="pwd-strength-container" id="pwdStrengthContainer">
+          <div class="pwd-strength-bars">
+            <div class="pwd-strength-bar" id="pwdBar1"></div>
+            <div class="pwd-strength-bar" id="pwdBar2"></div>
+            <div class="pwd-strength-bar" id="pwdBar3"></div>
+            <div class="pwd-strength-bar" id="pwdBar4"></div>
+          </div>
+          <div class="pwd-strength-text">
+            <span style="color:#8C9E97;">Password Strength:</span>
+            <span id="pwdStrengthLabel" style="color:#EF4444;">Too Short</span>
+          </div>
+        </div>
       </div>
       <div class="auth-input-group">
         <label class="auth-label">CONFIRM PASSWORD</label>
-        <input type="password" id="regConfirmPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" />
+        <div class="pwd-input-wrapper">
+          <input type="password" id="regConfirmPassword" class="auth-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" oninput="checkPasswordMatch()" />
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('regConfirmPassword', this)" title="Show / Hide Password" aria-label="Show or hide password">👁️</button>
+        </div>
+        <!-- Live Passwords Match Indicator -->
+        <div class="pwd-match-hint" id="pwdMatchHint"></div>
       </div>
       <button type="submit" class="auth-btn-submit" id="btnRegisterSubmit">
         <span>Create Account</span> ➔
@@ -4390,6 +4481,13 @@ function switchAuthTab(tab) {
   const formLogin = document.getElementById('authLoginForm');
   const formRegister = document.getElementById('authRegisterForm');
 
+  // Reset password visibility icons & types
+  document.querySelectorAll('.pwd-toggle-btn').forEach(b => b.textContent = '👁️');
+  ['loginPassword', 'regPassword', 'regConfirmPassword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.type = 'password';
+  });
+
   if (tab === 'login') {
     tabBtnLogin?.classList.add('active');
     tabBtnRegister?.classList.remove('active');
@@ -4400,6 +4498,98 @@ function switchAuthTab(tab) {
     tabBtnLogin?.classList.remove('active');
     if (formLogin) formLogin.style.display = 'none';
     if (formRegister) formRegister.style.display = 'block';
+  }
+}
+
+// Show / Hide Password (Eye Toggle)
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+    btn.setAttribute('title', 'Hide password');
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+    btn.setAttribute('title', 'Show password');
+  }
+}
+
+// Live Password Strength Meter
+function checkPasswordStrength(val) {
+  const container = document.getElementById('pwdStrengthContainer');
+  const label = document.getElementById('pwdStrengthLabel');
+  const bar1 = document.getElementById('pwdBar1');
+  const bar2 = document.getElementById('pwdBar2');
+  const bar3 = document.getElementById('pwdBar3');
+  const bar4 = document.getElementById('pwdBar4');
+
+  if (!container || !label || !bar1) return;
+
+  if (!val || val.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+
+  let score = 0;
+  if (val.length >= 6) score++;
+  if (val.length >= 8) score++;
+  if (/[0-9]/.test(val) && /[a-zA-Z]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val) || (/[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val) && val.length >= 8)) score++;
+
+  const defaultBg = '#233630';
+  bar1.style.background = defaultBg;
+  bar2.style.background = defaultBg;
+  bar3.style.background = defaultBg;
+  bar4.style.background = defaultBg;
+
+  if (score <= 1) {
+    bar1.style.background = '#EF4444';
+    label.textContent = val.length < 6 ? 'Too Short (< 6 chars)' : 'Weak';
+    label.style.color = '#EF4444';
+  } else if (score === 2) {
+    bar1.style.background = '#F59E0B';
+    bar2.style.background = '#F59E0B';
+    label.textContent = 'Fair (Add numbers & letters)';
+    label.style.color = '#F59E0B';
+  } else if (score === 3) {
+    bar1.style.background = '#FBBF24';
+    bar2.style.background = '#FBBF24';
+    bar3.style.background = '#FBBF24';
+    label.textContent = 'Good';
+    label.style.color = '#FBBF24';
+  } else {
+    bar1.style.background = '#10B981';
+    bar2.style.background = '#10B981';
+    bar3.style.background = '#10B981';
+    bar4.style.background = '#10B981';
+    label.textContent = 'Strong 🛡️';
+    label.style.color = '#10B981';
+  }
+}
+
+// Live Confirm Password Match Indicator
+function checkPasswordMatch() {
+  const pwd = document.getElementById('regPassword')?.value || '';
+  const confirmPwd = document.getElementById('regConfirmPassword')?.value || '';
+  const hint = document.getElementById('pwdMatchHint');
+
+  if (!hint) return;
+
+  if (!confirmPwd) {
+    hint.style.display = 'none';
+    hint.textContent = '';
+    return;
+  }
+
+  hint.style.display = 'block';
+  if (pwd === confirmPwd) {
+    hint.innerHTML = '<span style="color:#10B981;">✓ Passwords match</span>';
+  } else {
+    hint.innerHTML = '<span style="color:#EF4444;">✗ Passwords do not match</span>';
   }
 }
 
