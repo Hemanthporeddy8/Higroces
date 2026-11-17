@@ -1931,9 +1931,76 @@ header {
   font-weight: 700;
   display: none;
 }
+
+/* ── IN-APP TOAST NOTIFICATION ENGINE ── */
+.app-toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-140%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #141E1A;
+  border: 1.5px solid #2ECC71;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(46,204,113,0.3);
+  padding: 13px 22px;
+  border-radius: 14px;
+  color: white;
+  min-width: 290px;
+  max-width: 90vw;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  cursor: pointer;
+}
+.app-toast-container.toast-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.app-toast-icon {
+  font-size: 1.55rem;
+  line-height: 1;
+}
+.app-toast-title {
+  font-weight: 800;
+  font-size: 0.94rem;
+  color: white;
+}
+.app-toast-sub {
+  font-size: 0.78rem;
+  color: #A2D9CE;
+  margin-top: 2px;
+}
+.app-toast-container.toast-info {
+  border-color: #3B82F6;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(59,130,246,0.3);
+}
+.app-toast-container.toast-info .app-toast-sub { color: #93C5FD; }
+.app-toast-container.toast-warning {
+  border-color: #F59E0B;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(245,158,11,0.3);
+}
+.app-toast-container.toast-warning .app-toast-sub { color: #FDE68A; }
+.app-toast-container.toast-error {
+  border-color: #EF4444;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(239,68,68,0.3);
+}
+.app-toast-container.toast-error .app-toast-sub { color: #FCA5A5; }
 </style>
 </head>
 <body>
+
+<!-- IN-APP TOAST NOTIFICATION CONTAINER -->
+<div class="app-toast-container" id="appToastContainer" onclick="hideAppToast()" title="Tap to dismiss">
+  <span class="app-toast-icon" id="appToastIcon">🎉</span>
+  <div>
+    <div class="app-toast-title" id="appToastTitle">Notification</div>
+    <div class="app-toast-sub" id="appToastSub">Message</div>
+  </div>
+</div>
 
 <!-- SUCCESS OVERLAY (LIVE TRACKER WITH DEAD RECKONING) -->
 <div class="success-overlay" id="successOverlay">
@@ -4360,9 +4427,50 @@ async function checkActiveOrderBanner() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CUSTOMER AUTHENTICATION ENGINE (Stateful Cookie / Token Auth)
+// IN-APP FLOATING TOAST NOTIFICATION ENGINE
+// ═══════════════════════════════════════════════════════════════
+let appToastTimer = null;
+function showAppToast(title, message, icon = '🎉', type = 'success', durationMs = 3800) {
+  const toast = document.getElementById('appToastContainer');
+  const tTitle = document.getElementById('appToastTitle');
+  const tSub = document.getElementById('appToastSub');
+  const tIcon = document.getElementById('appToastIcon');
+  if (!toast) return;
+
+  if (appToastTimer) clearTimeout(appToastTimer);
+
+  if (tTitle) tTitle.textContent = title;
+  if (tSub) tSub.textContent = message;
+  if (tIcon) tIcon.textContent = icon;
+
+  toast.className = `app-toast-container toast-visible toast-${type}`;
+
+  appToastTimer = setTimeout(() => {
+    hideAppToast();
+  }, durationMs);
+}
+
+function hideAppToast() {
+  const toast = document.getElementById('appToastContainer');
+  if (toast) toast.classList.remove('toast-visible');
+  if (appToastTimer) {
+    clearTimeout(appToastTimer);
+    appToastTimer = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOMER AUTHENTICATION ENGINE (Zero-Flicker Optimistic Cache)
 // ═══════════════════════════════════════════════════════════════
 let currentUser = null;
+
+// Synchronous Instant Restore (Runs in 0ms on page load to prevent "Sign In" flicker!)
+try {
+  const cachedUserRaw = localStorage.getItem('amorelot_cached_user');
+  if (cachedUserRaw) {
+    currentUser = JSON.parse(cachedUserRaw);
+  }
+} catch(e) {}
 
 async function checkCustomerAuth() {
   try {
@@ -4379,6 +4487,7 @@ async function checkCustomerAuth() {
       const data = await res.json();
       if (data.authenticated && data.user) {
         currentUser = data.user;
+        localStorage.setItem('amorelot_cached_user', JSON.stringify(data.user));
         updateUserAuthUI();
         // Pre-fill checkout if empty
         const nameInput = document.getElementById('custName');
@@ -4387,8 +4496,15 @@ async function checkCustomerAuth() {
         if (phoneInput && !phoneInput.value && currentUser.phone) phoneInput.value = currentUser.phone || '';
       } else {
         currentUser = null;
+        localStorage.removeItem('amorelot_cached_user');
+        localStorage.removeItem('amorelot_session_token');
         updateUserAuthUI();
       }
+    } else {
+      currentUser = null;
+      localStorage.removeItem('amorelot_cached_user');
+      localStorage.removeItem('amorelot_session_token');
+      updateUserAuthUI();
     }
   } catch(e) {
     console.warn("checkCustomerAuth error:", e);
@@ -4637,6 +4753,7 @@ async function submitLoginForm(e) {
     const data = await res.json();
     if (res.ok && data.success) {
       if (data.session_token) localStorage.setItem('amorelot_session_token', data.session_token);
+      if (data.user) localStorage.setItem('amorelot_cached_user', JSON.stringify(data.user));
       currentUser = data.user;
       updateUserAuthUI();
       closeAuthModal();
@@ -4647,7 +4764,7 @@ async function submitLoginForm(e) {
       if (nameInput && !nameInput.value) nameInput.value = currentUser.name || '';
       if (phoneInput && !phoneInput.value && currentUser.phone) phoneInput.value = currentUser.phone || '';
 
-      alert(`Welcome back, ${currentUser.name}! 👋`);
+      showAppToast(`Welcome back, ${currentUser.name}!`, 'Logged in successfully. Fast delivery is active.', '👋', 'success');
     } else {
       showAuthError(data.error || "Invalid email or password.");
     }
@@ -4700,6 +4817,7 @@ async function submitRegisterForm(e) {
     const data = await res.json();
     if (res.ok && data.success) {
       if (data.session_token) localStorage.setItem('amorelot_session_token', data.session_token);
+      if (data.user) localStorage.setItem('amorelot_cached_user', JSON.stringify(data.user));
       currentUser = data.user;
       updateUserAuthUI();
       closeAuthModal();
@@ -4709,7 +4827,7 @@ async function submitRegisterForm(e) {
       if (nameInput) nameInput.value = currentUser.name || '';
       if (phoneInput && currentUser.phone) phoneInput.value = currentUser.phone || '';
 
-      alert(`Account created successfully! Welcome to Amorelot, ${currentUser.name}! 🎉`);
+      showAppToast(`Welcome, ${currentUser.name}! 🎉`, 'Your account is active. Fast delivery is ready!', '✨', 'success');
     } else {
       showAuthError(data.error || "Failed to create account.");
     }
@@ -4737,9 +4855,10 @@ async function customerLogout() {
   } catch(e) {}
 
   localStorage.removeItem('amorelot_session_token');
+  localStorage.removeItem('amorelot_cached_user');
   currentUser = null;
   updateUserAuthUI();
-  alert("You have been signed out.");
+  showAppToast('Signed Out', 'You have been signed out safely.', '🚪', 'info');
 }
 
 async function openMyOrdersModal() {
@@ -4830,7 +4949,10 @@ document.addEventListener('click', (e) => {
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  // Check customer session authentication
+  // Synchronous instant render from local cache (0ms, no "Sign In" flicker!)
+  updateUserAuthUI();
+
+  // Background verification with Cloudflare server
   checkCustomerAuth();
 
   // Load remote feature flags (Fresh Tmrw, Subscriptions)
