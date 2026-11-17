@@ -445,8 +445,11 @@
         </div>
       </div>
 
+      <!-- Terminal State Action Wrap (Shown on Expired or Cancelled) -->
+      <div id="terminalActionWrap" style="display:none; margin:14px 0 6px;"></div>
+
       <!-- Step Timeline -->
-      <div class="timeline-steps">
+      <div class="timeline-steps" id="timelineStepsBar">
         <div class="timeline-step active" id="step-pending">
           <div class="step-circle">1</div>
           <div class="step-label">Confirmed</div>
@@ -640,49 +643,88 @@
       const emojiEl = document.getElementById('statusEmoji');
       const titleEl = document.getElementById('statusTitle');
       const subEl   = document.getElementById('statusSubtitle');
-
       const shopDisplayName = order.shop_name || STORE_NAME || (isGrocery ? 'Grocery Hub' : 'Meat Hub');
+
+      const timelineBar = document.getElementById('timelineStepsBar');
+      const terminalWrap = document.getElementById('terminalActionWrap');
 
       if (status === 'scheduled') {
         emojiEl.textContent = '🌱';
         titleEl.textContent = 'Scheduled for Tomorrow';
         subEl.textContent = order.delivery_slot ? `Arriving ${order.delivery_slot}. Early morning dispatch!` : 'Scheduled for morning delivery.';
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) terminalWrap.style.display = 'none';
       } else if (status === 'pending') {
         emojiEl.textContent = '⏳';
         titleEl.textContent = 'Order Confirmed';
         subEl.textContent = isGrocery 
           ? `Sent to ${shopDisplayName}. Gathering and packing your items.`
           : `Sent to ${shopDisplayName}. Butcher carving station assigned.`;
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) terminalWrap.style.display = 'none';
       } else if (status === 'preparing') {
         emojiEl.textContent = isGrocery ? '🛍️' : '🔪';
         titleEl.textContent = isGrocery ? 'Packing Your Groceries' : 'Carving Your Cuts';
         subEl.textContent = isGrocery
           ? `Staff at ${shopDisplayName} is picking and packing your grocery items into a carry bag.`
           : 'Master butcher is slicing, weighing & temperature-checking your cuts.';
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) terminalWrap.style.display = 'none';
       } else if (status === 'packed') {
         emojiEl.textContent = '📦';
         titleEl.textContent = isGrocery ? 'Bag Packed & Ready' : 'Packed Fresh & Sealed';
         subEl.textContent = isGrocery
           ? 'Grocery bag packed & sealed. Waiting for delivery rider pickup.'
           : 'Cold-pack insulated. Waiting for delivery rider pickup.';
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) terminalWrap.style.display = 'none';
       } else if (status === 'accepted') {
         emojiEl.textContent = '🛵';
         titleEl.textContent = 'Rider On the Way!';
         subEl.textContent = order.rider_name ? `${order.rider_name} is riding to your doorstep.` : 'Rider picked up pack. Out for delivery!';
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) terminalWrap.style.display = 'none';
       } else if (status === 'delivered') {
         emojiEl.textContent = '✅';
-        titleEl.textContent = 'Delivered!';
+        titleEl.textContent = 'Order Delivered!';
         subEl.textContent = 'Handover verified. Fresh items delivered to your doorstep!';
+        if (timelineBar) timelineBar.style.display = 'flex';
+        if (terminalWrap) {
+          terminalWrap.style.display = 'block';
+          terminalWrap.innerHTML = `
+            <a href="/" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:linear-gradient(135deg, #10B981, #059669); color:white; font-weight:800; font-size:0.92rem; padding:12px; border-radius:10px; text-decoration:none; box-shadow:0 4px 14px rgba(16,185,129,0.35); box-sizing:border-box;">
+              <span>🛒</span> Shop Again
+            </a>
+          `;
+        }
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else if (status === 'cancelled') {
         emojiEl.textContent = '❌';
         titleEl.textContent = 'Order Cancelled';
         subEl.textContent = 'This order has been cancelled.';
+        if (timelineBar) timelineBar.style.display = 'none';
+        if (terminalWrap) {
+          terminalWrap.style.display = 'block';
+          terminalWrap.innerHTML = `
+            <a href="/" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:#1F2937; color:#E5E7EB; border:1px solid #374151; font-weight:800; font-size:0.92rem; padding:12px; border-radius:10px; text-decoration:none; box-sizing:border-box;">
+              <span>🛒</span> Return to Store &amp; Shop Again
+            </a>
+          `;
+        }
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else if (status === 'expired') {
         emojiEl.textContent = '⏰';
         titleEl.textContent = 'Order Expired';
-        subEl.textContent = 'This delivery window has expired. Please contact support or place a new order.';
+        subEl.textContent = 'This 15-minute delivery window expired without rider pickup.';
+        if (timelineBar) timelineBar.style.display = 'none';
+        if (terminalWrap) {
+          terminalWrap.style.display = 'block';
+          terminalWrap.innerHTML = `
+            <a href="/" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:linear-gradient(135deg, #10B981, #059669); color:white; font-weight:800; font-size:0.95rem; padding:13px; border-radius:10px; text-decoration:none; box-shadow:0 4px 16px rgba(16,185,129,0.4); box-sizing:border-box;">
+              <span>🛒</span> Place a New Order
+            </a>
+          `;
+        }
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       }
 
@@ -754,6 +796,21 @@
     let routeDrawn = false;
 
     async function drawOrderMapRoute(order) {
+      if (order.status === 'expired' || order.status === 'cancelled') {
+        const etaPill = document.getElementById('floatingEtaPill');
+        if (etaPill) etaPill.style.display = 'none';
+        if (map && map.getSource && map.getSource('delivery-route')) {
+          map.getSource('delivery-route').setData({
+            type: 'FeatureCollection',
+            features: []
+          });
+        }
+        return;
+      }
+
+      const etaPill = document.getElementById('floatingEtaPill');
+      if (etaPill) etaPill.style.display = 'flex';
+
       if (routeDrawn && routeCoordinates.length > 0) return;
 
       // Ensure store coordinates use the actual assigned shop location
