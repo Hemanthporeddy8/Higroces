@@ -2297,7 +2297,19 @@ export default {
             user_id
           ).run();
 
-          const created = { id, status: initialStatus, delivery_otp, order_type, delivery_slot, cust_lat, cust_lng, shop_id, user_id, ...body };
+          const created = { 
+            ...body, 
+            id, 
+            status: initialStatus, 
+            delivery_otp, 
+            order_type, 
+            delivery_slot, 
+            cust_lat, 
+            cust_lng, 
+            shop_id, 
+            user_id,
+            created_at: new Date().toISOString()
+          };
           return new Response(JSON.stringify({ success: true, order: created }), {
             status: 201,
             headers: corsHeaders(request)
