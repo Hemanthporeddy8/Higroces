@@ -2182,45 +2182,81 @@ export default {
           const cust_lng = (body.cust_lng !== undefined && body.cust_lng !== null && body.cust_lng !== '') ? Number(body.cust_lng) : null;
           let shop_id = (body.shop_id && String(body.shop_id).trim()) ? String(body.shop_id).trim() : null;
 
-          // 🧠 Smart Shop Routing: If shop_id not provided by customer, auto-assign best eligible shop
-          if (!shop_id) {
-            try {
-              let hasMeat = false;
-              const parsedItems = typeof body.items === 'string' ? JSON.parse(body.items) : (body.items || []);
-              hasMeat = parsedItems.some(it => {
-                const n = (it.name || '').toLowerCase();
-                const c = (it.category || '').toLowerCase();
-                return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' ||
-                       n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn');
-              });
+          // 🧠 Smart Shop Routing: Enforce Meat Store for meat orders and Grocery Store for groceries
+          let hasMeat = false;
+          try {
+            const parsedItems = typeof body.items === 'string' ? JSON.parse(body.items) : (body.items || []);
+            hasMeat = parsedItems.some(it => {
+              const n = (it.name || '').toLowerCase();
+              const c = (it.category || '').toLowerCase();
+              return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' || it.isButcher || it.isCustom ||
+                     n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn') || n.includes('curry cut') || n.includes('biryani cut') || n.includes('boneless') || n.includes('bengali cut');
+            });
+          } catch(e) {}
 
-              const targetCat = hasMeat ? 'meat' : 'grocery';
-              const shopRes = await env.DB.prepare("SELECT * FROM shops WHERE is_active = 1").all();
-              const activeShops = shopRes.results || [];
-              const eligible = activeShops.filter(s => s.category === 'all' || !s.category || s.category === targetCat);
+          const shopRes = await env.DB.prepare("SELECT * FROM shops WHERE is_active = 1").all();
+          const activeShops = shopRes.results || [];
 
-              if (eligible.length > 0) {
-                if (cust_lat && cust_lng) {
-                  let closest = eligible[0];
-                  let minD = Infinity;
-                  for (const s of eligible) {
-                    const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
-                    if (d < minD) {
-                      minD = d;
-                      closest = s;
-                    }
-                  }
-                  shop_id = closest.id;
-                } else {
-                  shop_id = eligible[0].id;
+          // Filter shops strictly capable of fulfilling this item type
+          const eligibleShops = activeShops.filter(s => {
+            if (hasMeat) {
+              return s.category === 'meat' || s.category === 'all';
+            } else {
+              return s.category === 'grocery' || s.category === 'all' || !s.category;
+            }
+          });
+
+          // Check if customer-selected shop is valid for this item type
+          let finalShop = null;
+          if (shop_id) {
+            finalShop = eligibleShops.find(s => s.id === shop_id);
+          }
+
+          // If customer-selected shop is valid, check delivery radius if customer GPS provided
+          if (finalShop && cust_lat && cust_lng) {
+            const d = haversineKm(cust_lat, cust_lng, finalShop.latitude, finalShop.longitude);
+            const radius = Number(finalShop.delivery_radius_km) || 15.0;
+            if (d > radius) {
+              // Selected shop is outside delivery radius, find another eligible shop within radius
+              finalShop = null;
+            }
+          }
+
+          // If no valid shop, or if grocery shop was selected for a meat order: auto-route to best eligible meat shop within radius
+          if (!finalShop && eligibleShops.length > 0) {
+            if (cust_lat && cust_lng) {
+              let closest = null;
+              let minD = Infinity;
+              for (const s of eligibleShops) {
+                const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
+                const radius = Number(s.delivery_radius_km) || 15.0;
+                if (d <= radius && d < minD) {
+                  minD = d;
+                  closest = s;
                 }
               }
-            } catch(e) {}
+              finalShop = closest;
+            } else {
+              // Default to primary meat hub if meat order and no GPS provided
+              finalShop = eligibleShops.find(s => s.id === 'shop_primary_hub') || eligibleShops[0];
+            }
           }
 
-          if (!shop_id) {
-            shop_id = 'shop_primary_hub';
+          if (!finalShop) {
+            if (hasMeat) {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: "No meat shop near you: No active butcher hub is available to fulfill custom meat cuts in your area." 
+              }), { status: 400, headers: corsHeaders(request) });
+            } else {
+              return new Response(JSON.stringify({ 
+                success: false,
+                error: "No grocery store available near you in this zone." 
+              }), { status: 400, headers: corsHeaders(request) });
+            }
           }
+
+          shop_id = finalShop.id;
 
           let user_id = body.user_id ? String(body.user_id).trim() : null;
           if (!user_id) {
@@ -2239,7 +2275,7 @@ export default {
               special_notes, items, subtotal, delivery_fee, total_price, 
               status, delivery_zone, delivery_otp, order_type, delivery_slot,
               cust_lat, cust_lng, shop_id, user_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
           `).bind(
             id,
             body.customer_name || 'Customer',
@@ -2506,12 +2542,16 @@ export default {
 
             // Enforce strict 60s cancellation window from order placement
             if (existing.created_at) {
-              const orderCreatedMs = new Date(existing.created_at).getTime();
-              const elapsedSecs = (Date.now() - orderCreatedMs) / 1000;
-              if (elapsedSecs > 60) {
-                return new Response(JSON.stringify({ 
-                  error: "Cancellation window closed: Orders can only be cancelled within 60 seconds of checkout." 
-                }), { status: 400, headers: corsHeaders(request) });
+              const s = String(existing.created_at || '').trim();
+              const utcStr = (s.endsWith('Z') || s.includes('+')) ? s : s.replace(' ', 'T') + 'Z';
+              const orderCreatedMs = new Date(utcStr).getTime();
+              if (!isNaN(orderCreatedMs)) {
+                const elapsedSecs = (Date.now() - orderCreatedMs) / 1000;
+                if (elapsedSecs > 60) {
+                  return new Response(JSON.stringify({ 
+                    error: "Cancellation window closed: Orders can only be cancelled within 60 seconds of checkout." 
+                  }), { status: 400, headers: corsHeaders(request) });
+                }
               }
             }
 

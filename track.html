@@ -753,17 +753,21 @@
         document.getElementById('handoverBox').style.display = 'none';
       }
 
-      // Smart 60-Second Grace Cancellation (Calculated strictly from order creation time)
+      // Smart 60-Second Grace Cancellation (Calculated strictly from order creation time in UTC)
       const cancelWrap = document.getElementById('cancelWrap');
       if (order.created_at) {
-        const orderCreatedMs = new Date(order.created_at).getTime();
-        const elapsedSecs = Math.floor((Date.now() - orderCreatedMs) / 1000);
-        cancelSecsLeft = Math.max(0, 60 - elapsedSecs);
+        const s = String(order.created_at || '').trim();
+        const utcStr = (s.endsWith('Z') || s.includes('+')) ? s : s.replace(' ', 'T') + 'Z';
+        const orderCreatedMs = new Date(utcStr).getTime();
+        if (!isNaN(orderCreatedMs)) {
+          const elapsedSecs = Math.max(0, Math.floor((Date.now() - orderCreatedMs) / 1000));
+          cancelSecsLeft = Math.max(0, 60 - elapsedSecs);
+        }
       }
       const cancelSecsSpan = document.getElementById('cancelSecs');
       if (cancelSecsSpan) cancelSecsSpan.textContent = cancelSecsLeft;
 
-      if (status === 'pending' && cancelSecsLeft > 0) {
+      if ((status === 'pending' || status === 'scheduled') && cancelSecsLeft > 0) {
         cancelWrap.style.display = 'block';
       } else {
         cancelWrap.style.display = 'none';
