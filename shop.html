@@ -1221,9 +1221,75 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   border-color: #F59E0B;
   background: rgba(245,158,11,0.12);
 }
+
+/* IN-APP FLOATING TOAST NOTIFICATION ENGINE */
+.app-toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-140%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #141E1A;
+  border: 1.5px solid #2ECC71;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(46,204,113,0.3);
+  padding: 13px 22px;
+  border-radius: 14px;
+  color: white;
+  min-width: 290px;
+  max-width: 90vw;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.app-toast-container.toast-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.app-toast-icon {
+  font-size: 1.55rem;
+  line-height: 1;
+}
+.app-toast-title {
+  font-weight: 800;
+  font-size: 0.94rem;
+  color: white;
+}
+.app-toast-sub {
+  font-size: 0.78rem;
+  color: #A2D9CE;
+  margin-top: 2px;
+}
+.app-toast-container.toast-info {
+  border-color: #3B82F6;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(59,130,246,0.3);
+}
+.app-toast-container.toast-info .app-toast-sub { color: #93C5FD; }
+.app-toast-container.toast-warning {
+  border-color: #F59E0B;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(245,158,11,0.3);
+}
+.app-toast-container.toast-warning .app-toast-sub { color: #FDE68A; }
+.app-toast-container.toast-error {
+  border-color: #EF4444;
+  box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 25px rgba(239,68,68,0.3);
+}
+.app-toast-container.toast-error .app-toast-sub { color: #FCA5A5; }
 </style>
 </head>
 <body>
+
+<!-- IN-APP TOAST NOTIFICATION CONTAINER -->
+<div class="app-toast-container" id="appToastContainer" onclick="hideShopToast()" title="Tap to dismiss">
+  <span class="app-toast-icon" id="appToastIcon">🎉</span>
+  <div>
+    <div class="app-toast-title" id="appToastTitle">Notification</div>
+    <div class="app-toast-sub" id="appToastSub">Message</div>
+  </div>
+</div>
 
 <!-- OPTION B: SLIDE-OUT NAVIGATION DRAWER (3 FIELD PORTALS ONLY) -->
 <div class="nav-drawer-backdrop" id="navDrawerBackdrop" onclick="closeNavDrawer()"></div>
@@ -3085,20 +3151,60 @@ function calcMargin() {
   }
 }
 
+let shopToastTimer = null;
+function showShopToast(title, message, icon = '🎉', type = 'success', durationMs = 3800) {
+  const toast = document.getElementById('appToastContainer');
+  const tTitle = document.getElementById('appToastTitle');
+  const tSub = document.getElementById('appToastSub');
+  const tIcon = document.getElementById('appToastIcon');
+  if (!toast) return;
+
+  if (shopToastTimer) clearTimeout(shopToastTimer);
+
+  if (tTitle) tTitle.textContent = title;
+  if (tSub) tSub.textContent = message;
+  if (tIcon) tIcon.textContent = icon;
+
+  toast.className = `app-toast-container toast-visible toast-${type}`;
+
+  shopToastTimer = setTimeout(() => {
+    hideShopToast();
+  }, durationMs);
+}
+
+function hideShopToast() {
+  const toast = document.getElementById('appToastContainer');
+  if (toast) toast.classList.remove('toast-visible');
+  if (shopToastTimer) {
+    clearTimeout(shopToastTimer);
+    shopToastTimer = null;
+  }
+}
+
 async function updateOrderStatus(id, status) {
   try {
     const res = await fetch(API_BASE, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getShopAuthHeaders()
+      },
       body: JSON.stringify({ id, status })
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert("Failed to update status");
+      const errMsg = data.error || (res.status === 503 ? "Server busy (CPU limit). Please retry." : "Failed to update status");
+      showShopToast("Status Update Failed", errMsg, "⚠️", "error");
       return;
     }
+    const succMsg = status === 'preparing' 
+      ? (currentStation === 'butcher' ? 'Carving started! Meat prep active.' : 'Picking started! Shelf items active.') 
+      : (status === 'packed' ? 'Order packed and ready for delivery partner!' : `Order updated to ${status}`);
+    showShopToast("Status Updated", succMsg, "✅", "success");
     fetchShopOrders();
   } catch(e) {
-    console.error(e);
+    console.error("updateOrderStatus error:", e);
+    showShopToast("Network Error", e.message || "Failed to reach server.", "⚠️", "error");
   }
 }
 

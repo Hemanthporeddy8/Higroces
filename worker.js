@@ -669,23 +669,56 @@ async function ensureAllSchemas(db) {
   } catch(e) {}
 }
 
+let isSchemaInitialized = false;
+async function ensureAllSchemasOnce(db) {
+  if (isSchemaInitialized || !db) return;
+  try {
+    await ensureAllSchemas(db);
+    isSchemaInitialized = true;
+  } catch(e) {
+    console.warn("ensureAllSchemas error:", e);
+  }
+}
+
+let lastExpirySweep = 0;
+async function runExpirySweep(db) {
+  if (!db) return;
+  const now = Date.now();
+  if (now - lastExpirySweep < 60000) return; // Run at most once every 60s
+  lastExpirySweep = now;
+  try {
+    await db.prepare(`
+      UPDATE orders 
+      SET status = 'expired' 
+      WHERE (order_type IS NULL OR order_type = 'instant')
+      AND (
+        (status = 'pending' AND datetime(created_at) < datetime('now', '-30 minutes'))
+        OR
+        (status IN ('preparing', 'packed', 'accepted') AND datetime(created_at) < datetime('now', '-45 minutes'))
+      )
+    `).run();
+  } catch(e) {
+    console.warn("runExpirySweep error:", e);
+  }
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // 1. CORS Preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     if (!env.DB) {
       if (url.pathname.startsWith('/api/')) {
         return new Response(JSON.stringify({ 
           error: "Cloudflare D1 is not bound (env.DB is missing)." 
-        }), { status: 500, headers: corsHeaders() });
+        }), { status: 500, headers: corsHeaders(request) });
       }
-    } else {
-      await ensureAllSchemas(env.DB);
+    } else if (url.pathname.startsWith('/api/')) {
+      await ensureAllSchemasOnce(env.DB);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -2083,19 +2116,12 @@ export default {
     // API: /api/orders
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/orders") {
-      // Auto-expire instant orders (pending > 30m, or uncompleted stuck orders > 45 minutes)
-      try {
-        await env.DB.prepare(`
-          UPDATE orders 
-          SET status = 'expired' 
-          WHERE (order_type IS NULL OR order_type = 'instant')
-          AND (
-            (status = 'pending' AND datetime(created_at) < datetime('now', '-30 minutes'))
-            OR
-            (status IN ('preparing', 'packed', 'accepted') AND datetime(created_at) < datetime('now', '-45 minutes'))
-          )
-        `).run();
-      } catch(e) {}
+      // Auto-expire instant orders (throttled background task, 0-latency)
+      if (ctx && typeof ctx.waitUntil === 'function') {
+        ctx.waitUntil(runExpirySweep(env.DB));
+      } else {
+        await runExpirySweep(env.DB);
+      }
 
       // POST: Place a new order (Customer)
       if (request.method === "POST") {
@@ -2410,12 +2436,12 @@ export default {
           const { id, status, rider_name, otp } = body;
 
           if (!id || !status) {
-            return new Response(JSON.stringify({ error: "id and status are required" }), { status: 400, headers: corsHeaders() });
+            return new Response(JSON.stringify({ error: "id and status are required" }), { status: 400, headers: corsHeaders(request) });
           }
 
           const existing = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(id).first();
           if (!existing) {
-            return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: corsHeaders() });
+            return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: corsHeaders(request) });
           }
 
           const adminAuth = await verifyAdminAuth(request, env);
@@ -2428,13 +2454,13 @@ export default {
             } else {
               await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?").bind(status, id).run();
             }
-            return new Response(JSON.stringify({ success: true, id, status, adminOverride: true }), { headers: corsHeaders() });
+            return new Response(JSON.stringify({ success: true, id, status, adminOverride: true }), { headers: corsHeaders(request) });
           }
 
           // 2. Customer Cancellation Handling
           if (status === 'cancelled') {
             if (existing.status === 'delivered') {
-              return new Response(JSON.stringify({ error: "Order already delivered." }), { status: 400, headers: corsHeaders() });
+              return new Response(JSON.stringify({ error: "Order already delivered." }), { status: 400, headers: corsHeaders(request) });
             }
 
             let hasMeat = false;
@@ -2452,19 +2478,19 @@ export default {
               if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
                 return new Response(JSON.stringify({ 
                   error: "Cannot cancel order: Master butcher carving has already begun. As per fresh perishable food policy, custom meat cuts cannot be cancelled once preparation starts." 
-                }), { status: 400, headers: corsHeaders() });
+                }), { status: 400, headers: corsHeaders(request) });
               }
             } else {
               // Packaged Grocery order: allow cancellation unless delivery rider is already dispatched
               if (existing.status === 'accepted') {
                 return new Response(JSON.stringify({ 
                   error: "Cannot cancel order: Delivery partner is already on the way to your doorstep." 
-                }), { status: 400, headers: corsHeaders() });
+                }), { status: 400, headers: corsHeaders(request) });
               }
             }
 
             await env.DB.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").bind(id).run();
-            return new Response(JSON.stringify({ success: true, id, status: 'cancelled' }), { headers: corsHeaders() });
+            return new Response(JSON.stringify({ success: true, id, status: 'cancelled' }), { headers: corsHeaders(request) });
           }
 
           // 3. Rider Handover Delivery with 4-Digit OTP Verification
@@ -2474,12 +2500,12 @@ export default {
               if (!submittedOtp || submittedOtp !== existing.delivery_otp.toString()) {
                 return new Response(JSON.stringify({ 
                   error: "Invalid Handover PIN! Please ask the customer at the door for the 4-digit code shown on their tracking screen." 
-                }), { status: 400, headers: corsHeaders() });
+                }), { status: 400, headers: corsHeaders(request) });
               }
             }
 
             await env.DB.prepare("UPDATE orders SET status = 'delivered' WHERE id = ?").bind(id).run();
-            return new Response(JSON.stringify({ success: true, id, status: 'delivered' }), { headers: corsHeaders() });
+            return new Response(JSON.stringify({ success: true, id, status: 'delivered' }), { headers: corsHeaders(request) });
           }
 
           // 4. Shop & Rider Status Updates
@@ -2489,9 +2515,9 @@ export default {
             await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?").bind(status, id).run();
           }
 
-          return new Response(JSON.stringify({ success: true, id, status, rider_name }), { headers: corsHeaders() });
+          return new Response(JSON.stringify({ success: true, id, status, rider_name }), { headers: corsHeaders(request) });
         } catch (err) {
-          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders() });
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
         }
       }
 
