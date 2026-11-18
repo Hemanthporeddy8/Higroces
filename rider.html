@@ -7,6 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0C513F">
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -510,6 +513,48 @@ header {
   font-size: 0.74rem; color: var(--text-muted); line-height: 1.45;
 }
 .nav-drawer-note strong { color: #FFB74D; }
+
+/* RIDER MODAL OVERLAYS & VIEWFINDER */
+.rider-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.rider-modal-card {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes modalPop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.rider-modal-header {
+  padding: 14px 18px;
+  background: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rider-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #6B7280;
+  cursor: pointer;
+  line-height: 1;
+}
 </style>
 </head>
 <body>
@@ -637,6 +682,54 @@ header {
 
 </div>
 
+<!-- BAG QR SCANNER MODAL -->
+<div class="rider-modal-overlay" id="bagScannerModal" style="display:none;">
+  <div class="rider-modal-card">
+    <div class="rider-modal-header">
+      <div>
+        <div style="font-weight:800; font-size:1rem; color:#111827;">📷 Scan Bag Handover QR</div>
+        <div style="font-size:0.75rem; color:#6B7280;" id="scannerTargetOrderText">Order #...</div>
+      </div>
+      <button class="rider-modal-close" onclick="closeBagScannerModal()">&times;</button>
+    </div>
+    <div style="padding:16px;">
+      <div id="qrScannerViewfinder" style="width:100%; border-radius:12px; overflow:hidden; background:#000; min-height:240px; position:relative;">
+        <!-- html5-qrcode video attaches here -->
+      </div>
+      <div id="scannerFeedback" style="margin-top:12px; font-size:0.85rem; text-align:center; font-weight:700; color:#374151;">
+        Point camera at the QR code displayed on the store terminal or bag label.
+      </div>
+      <div style="margin-top:14px; text-align:center;">
+        <button type="button" class="btn-navigate" onclick="switchToManualCodeEntry()" style="background:#4B5563; font-size:0.8rem; padding:8px 14px; border:none; border-radius:6px; cursor:pointer; color:white;">
+          ⌨️ Can't scan? Enter Code Manually
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RYDEALOT IN-APP NAVIGATION MODAL -->
+<div class="rider-modal-overlay" id="rydealotNavModal" style="display:none;">
+  <div class="rider-modal-card" style="max-width:550px; width:95%; height:85vh; display:flex; flex-direction:column;">
+    <div class="rider-modal-header">
+      <div>
+        <div style="font-weight:800; font-size:1.05rem; color:#111827; display:flex; align-items:center; gap:6px;">
+          <span>🧭</span> <span>Rydealot Turn-by-Turn Route</span>
+        </div>
+        <div style="font-size:0.78rem; color:#059669; font-weight:700;" id="navEtaBadge">Calculating route...</div>
+      </div>
+      <button class="rider-modal-close" onclick="closeRydealotNavModal()">&times;</button>
+    </div>
+    <div id="rydealotNavMap" style="flex:1; width:100%; background:#1C2220;"></div>
+    <div style="padding:12px 16px; background:#F9FAFB; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-size:0.8rem; color:#4B5563;" id="navDestinationSummary">Destination: ...</div>
+      <button type="button" class="btn-navigate" onclick="closeRydealotNavModal()" style="background:#0C513F; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+        Got it 👍
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Sound effect for new order -->
 <audio id="bellSound" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav" preload="auto"></audio>
 
@@ -742,7 +835,20 @@ async function fetchOrders() {
   }
 }
 
+let rawOrdersPendingCache = [];
+let rawOrdersActiveCache = [];
+
 function renderOrdersList(pendingOrders, activeOrders) {
+  rawOrdersPendingCache = pendingOrders;
+  rawOrdersActiveCache = activeOrders;
+
+  // Auto-manage GPS telemetry based on active deliveries
+  if (activeOrders.length > 0 && !riderGpsWatchId) {
+    startRiderGpsTracking(activeOrders[0].id);
+  } else if (activeOrders.length === 0 && riderGpsWatchId) {
+    stopRiderGpsTracking();
+  }
+
   const pendingList = document.getElementById('pendingList');
   const activeList  = document.getElementById('activeList');
   
@@ -791,9 +897,14 @@ function renderOrderItemMarkup(o, isPending) {
   const destinationAddress = `${o.delivery_address || ''}, ${o.delivery_zone || ''}`.trim();
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationAddress)}`;
   const navBtnHtml = `
-    <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-navigate">
-      🗺️ Open in Google Maps ↗
-    </a>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button type="button" class="btn-navigate" onclick="openRydealotNavModal('${o.id}')" style="flex:1.2; background:#0C513F; color:white; border:none; padding:9px 12px; border-radius:8px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+        🧭 Rydealot In-App Map 🗺️
+      </button>
+      <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-navigate" style="flex:1; background:#374151; color:white; text-decoration:none; padding:9px 12px; border-radius:8px; font-weight:700; text-align:center; display:flex; align-items:center; justify-content:center; gap:4px;">
+        🔊 Voice Audio GPS ↗
+      </a>
+    </div>
   `;
 
   const itemsHTML = items.map(i => `
@@ -812,11 +923,31 @@ function renderOrderItemMarkup(o, isPending) {
     statusBadge = '<span class="status-pill pending">⏳ Order Placed</span>';
   }
 
-  const actionSection = isPending
-    ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">Accept Order 🛵</button>`
-    : `
+  let actionSection = '';
+  if (isPending) {
+    if (o.status === 'packed') {
+      actionSection = `
+        <button class="btn-action accept" onclick="openBagScannerModal('${o.id}')" style="background:#059669; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">
+          📷 Scan Bag QR to Pick Up 🛵
+        </button>
+        <button class="btn-action" onclick="manualBagCodeEntry('${o.id}')" style="background:#1F2937; color:#9CA3AF; margin-top:6px; font-size:0.8rem; border:1px solid #374151;">
+          ⌨️ Enter Order Code Manually
+        </button>
+      `;
+    } else {
+      actionSection = `
+        <div style="background:#FEF3C7; color:#92400E; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; text-align:center; margin-bottom:6px;">
+          ⏳ Dark store is packing this basket. Head to store pickup bay!
+        </div>
+        <button class="btn-action accept" onclick="acceptOrder('${o.id}')" style="background:#D97706;">
+          Claim Order &amp; Head to Store 🛵
+        </button>
+      `;
+    }
+  } else {
+    actionSection = `
       <div class="delivery-verify-box">
-        <div class="otp-box-title">🔐 Ask Customer for 4-Digit Delivery Code:</div>
+        <div class="otp-box-title">🔐 Ask Customer at Door for 4-Digit Delivery Code:</div>
         <div class="otp-input-row">
           <input type="text" inputmode="numeric" maxlength="4" class="rider-otp-input" id="otp-input-${o.id}" placeholder="e.g. 5832" />
           <button class="btn-action deliver" id="btn-del-${o.id}" onclick="deliverWithOtp('${o.id}')">Verify &amp; Deliver ✅</button>
@@ -824,6 +955,7 @@ function renderOrderItemMarkup(o, isPending) {
         <div class="otp-err-msg" id="otp-err-${o.id}"></div>
       </div>
     `;
+  }
 
   const maskedPhone = o.customer_phone && o.customer_phone.length >= 10
     ? o.customer_phone.substring(0, 5) + '-XXXXX'
@@ -878,6 +1010,259 @@ function renderOrderItemMarkup(o, isPending) {
   `;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// LIVE RIDER GPS BROADCASTING (0 D1 Writes, Edge RAM Telemetry)
+// ═══════════════════════════════════════════════════════════════
+let activeRiderOrderId = null;
+let riderGpsWatchId = null;
+let lastGpsSendTime = 0;
+
+function startRiderGpsTracking(orderId) {
+  activeRiderOrderId = orderId;
+  if (!navigator.geolocation) return;
+  if (riderGpsWatchId) navigator.geolocation.clearWatch(riderGpsWatchId);
+
+  riderGpsWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const now = Date.now();
+      if (now - lastGpsSendTime < 4000) return; // Throttle to 1 ping per 4 seconds
+      lastGpsSendTime = now;
+
+      fetch('/api/rider/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: activeRiderOrderId,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          heading: pos.coords.heading || 0,
+          speed: pos.coords.speed || 0,
+          riderName: currentRiderName
+        })
+      }).catch(() => {});
+    },
+    (err) => {
+      console.warn("Rider GPS watch error:", err);
+    },
+    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+  );
+}
+
+function stopRiderGpsTracking() {
+  if (riderGpsWatchId) {
+    navigator.geolocation.clearWatch(riderGpsWatchId);
+    riderGpsWatchId = null;
+  }
+  activeRiderOrderId = null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BAG HANDOVER CAMERA QR SCANNER & AUDIO CHIME
+// ═══════════════════════════════════════════════════════════════
+let html5QrScanner = null;
+let targetScanOrderId = null;
+
+function playScanTone(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'success') {
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } else {
+      osc.frequency.setValueAtTime(160, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    }
+  } catch(e) {}
+}
+
+async function openBagScannerModal(orderId) {
+  targetScanOrderId = orderId;
+  const shortId = orderId.substring(0, 8).toUpperCase();
+  document.getElementById('scannerTargetOrderText').textContent = `Target Order #${shortId}`;
+  document.getElementById('scannerFeedback').innerHTML = `📷 Point camera at QR on bag for Order <b>#${shortId}</b>`;
+  document.getElementById('scannerFeedback').style.color = '#374151';
+  document.getElementById('bagScannerModal').style.display = 'flex';
+
+  if (typeof Html5Qrcode !== 'undefined') {
+    try {
+      if (html5QrScanner) {
+        await html5QrScanner.stop().catch(() => {});
+        html5QrScanner = null;
+      }
+      html5QrScanner = new Html5Qrcode("qrScannerViewfinder");
+      await html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => onQrCodeDetected(decodedText),
+        () => {}
+      );
+    } catch(err) {
+      console.warn("Camera start failed, fallback to manual entry:", err);
+      document.getElementById('qrScannerViewfinder').innerHTML = `
+        <div style="padding:30px 14px; text-align:center; color:#E5E7EB;">
+          <div style="font-size:2rem; margin-bottom:8px;">📷</div>
+          <div style="font-size:0.85rem;">Camera permission unavailable or denied.</div>
+        </div>
+      `;
+    }
+  }
+}
+
+async function onQrCodeDetected(decodedText) {
+  if (!targetScanOrderId) return;
+  const clean = decodedText.trim();
+  const shortTarget = targetScanOrderId.substring(0, 8).toLowerCase();
+
+  if (clean.includes(targetScanOrderId) || clean.toLowerCase().includes(shortTarget)) {
+    playScanTone('success');
+    const feedback = document.getElementById('scannerFeedback');
+    feedback.innerHTML = `✅ <b>Verified Bag Handover!</b> Accepting delivery...`;
+    feedback.style.color = '#059669';
+
+    if (html5QrScanner) {
+      await html5QrScanner.stop().catch(() => {});
+      html5QrScanner = null;
+    }
+
+    setTimeout(async () => {
+      closeBagScannerModal();
+      await acceptOrder(targetScanOrderId);
+    }, 600);
+  } else {
+    playScanTone('error');
+    const feedback = document.getElementById('scannerFeedback');
+    feedback.innerHTML = `❌ <b>WRONG BAG!</b> This QR does not match Order #${targetScanOrderId.substring(0,8).toUpperCase()}. Put it back!`;
+    feedback.style.color = '#DC2626';
+  }
+}
+
+async function closeBagScannerModal() {
+  if (html5QrScanner) {
+    await html5QrScanner.stop().catch(() => {});
+    html5QrScanner = null;
+  }
+  document.getElementById('bagScannerModal').style.display = 'none';
+  targetScanOrderId = null;
+}
+
+function manualBagCodeEntry(orderId) {
+  const shortCode = orderId.substring(0, 8).toUpperCase();
+  const entered = prompt(`Dark Store Handover:\nEnter the 8-character order code printed on the bag label (Hint: ${shortCode}):`);
+  if (!entered) return;
+  if (entered.trim().toUpperCase() === shortCode || entered.trim() === orderId) {
+    playScanTone('success');
+    alert(`✅ Order #${shortCode} Verified! Order picked up.`);
+    acceptOrder(orderId);
+  } else {
+    playScanTone('error');
+    alert(`❌ Invalid Code! The entered code does not match this bag.`);
+  }
+}
+
+function switchToManualCodeEntry() {
+  const orderId = targetScanOrderId;
+  closeBagScannerModal();
+  if (orderId) manualBagCodeEntry(orderId);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IN-APP RYDEALOT SUPERMAPS NAVIGATION MODAL
+// ═══════════════════════════════════════════════════════════════
+let rydealotNavMapInstance = null;
+
+async function openRydealotNavModal(orderId) {
+  const all = [...rawOrdersPendingCache, ...rawOrdersActiveCache];
+  const order = all.find(o => o.id === orderId);
+  if (!order) return;
+
+  document.getElementById('navDestinationSummary').textContent = `Delivery: ${order.delivery_address || order.delivery_zone}`;
+  document.getElementById('navEtaBadge').textContent = 'Calculating optimal road route...';
+  document.getElementById('rydealotNavModal').style.display = 'flex';
+
+  setTimeout(async () => {
+    const storeCoords = (order.shop_lng && order.shop_lat) 
+      ? [Number(order.shop_lng), Number(order.shop_lat)] 
+      : [79.5359, 17.9870];
+
+    const destCoords = (order.cust_lng && order.cust_lat)
+      ? [Number(order.cust_lng), Number(order.cust_lat)]
+      : [storeCoords[0] + 0.02, storeCoords[1] + 0.015];
+
+    if (!rydealotNavMapInstance) {
+      rydealotNavMapInstance = new maplibregl.Map({
+        container: 'rydealotNavMap',
+        style: {
+          version: 8,
+          sources: {
+            'osm-tiles': {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256
+            }
+          },
+          layers: [{ id: 'osm-layer', type: 'raster', source: 'osm-tiles' }]
+        },
+        center: storeCoords,
+        zoom: 13
+      });
+    }
+
+    const map = rydealotNavMapInstance;
+    map.resize();
+
+    // Call Rydealot Supermaps Routing API
+    try {
+      const routeUrl = `https://rydealot-supermaps-api.rydealotmaps.workers.dev/route/v1/driving/${storeCoords[0]},${storeCoords[1]};${destCoords[0]},${destCoords[1]}?overview=full&geometries=geojson`;
+      const res = await fetch(routeUrl);
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const distKm = (route.distance / 1000).toFixed(1);
+        const mins = Math.ceil(route.duration / 60);
+        document.getElementById('navEtaBadge').textContent = `⚡ ${mins} mins • ${distKm} km via Rydealot Maps`;
+
+        if (map.getSource('rider-nav-route')) {
+          map.getSource('rider-nav-route').setData(route.geometry);
+        } else {
+          map.addSource('rider-nav-route', { type: 'geojson', data: route.geometry });
+          map.addLayer({
+            id: 'rider-nav-line',
+            type: 'line',
+            source: 'rider-nav-route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#10B981', 'line-width': 6 }
+          });
+        }
+
+        const bounds = route.geometry.coordinates.reduce(
+          (b, c) => b.extend(c),
+          new maplibregl.LngLatBounds(route.geometry.coordinates[0], route.geometry.coordinates[0])
+        );
+        map.fitBounds(bounds, { padding: 40 });
+      }
+    } catch(e) {
+      document.getElementById('navEtaBadge').textContent = '📍 Destination plotted';
+      map.setCenter(destCoords);
+    }
+  }, 100);
+}
+
+function closeRydealotNavModal() {
+  document.getElementById('rydealotNavModal').style.display = 'none';
+}
+
 async function acceptOrder(orderId) {
   try {
     const res = await fetch(API_BASE, {
@@ -890,6 +1275,7 @@ async function acceptOrder(orderId) {
       alert('Failed to accept order: ' + (data.error || 'Server error'));
       return;
     }
+    startRiderGpsTracking(orderId);
     fetchOrders();
   } catch (err) {
     console.error(err);
@@ -937,6 +1323,7 @@ async function deliverWithOtp(orderId) {
       }
       return;
     }
+    stopRiderGpsTracking();
     fetchOrders();
   } catch (err) {
     console.error(err);

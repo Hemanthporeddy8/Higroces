@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1B2421">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --bg-kds: #141A18;
@@ -1639,6 +1640,41 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
   </div>
 </div>
 
+<!-- BAG HANDOVER QR MODAL -->
+<div class="picker-modal-overlay" id="bagQrModalOverlay" style="display:none;">
+  <div class="picker-modal-card" style="max-width:380px; text-align:center;">
+    <div class="picker-header">
+      <div>
+        <div class="picker-title">📦 Bag Handover QR Code</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Scan with Rider App to Confirm Pickup</div>
+      </div>
+      <button class="picker-close" onclick="closeBagQrModal()">&times;</button>
+    </div>
+
+    <div class="picker-body" style="padding:20px; display:flex; flex-direction:column; align-items:center;">
+      <div style="background:white; padding:16px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.5); display:inline-block; margin-bottom:14px;" id="bagQrCodeContainer">
+        <!-- QR Code rendered here -->
+      </div>
+
+      <div style="font-family:'DM Mono', monospace; font-size:1.25rem; font-weight:800; color:var(--accent-gold); letter-spacing:1px;" id="bagQrOrderId">
+        #ORDER-ID
+      </div>
+
+      <div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px;" id="bagQrOrderDetails">
+        Customer: ...
+      </div>
+
+      <div style="margin-top:14px; background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.3); border-radius:8px; padding:10px 14px; font-size:0.78rem; color:#A2D9CE; line-height:1.4;">
+        🛵 <b>Dark Store Handover Rule:</b> Ask delivery partner to scan this QR code with their rider portal to verify and begin dispatch.
+      </div>
+
+      <button class="btn-kds" onclick="closeBagQrModal()" style="margin-top:16px; background:#20312B; border:1px solid rgba(255,255,255,0.1); width:100%;">
+        Close Window
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- FLOATING STAGING & BATCH PUBLISH BAR -->
 <div id="inventoryStagingBar" class="inventory-staging-bar" style="display:none;">
   <div style="display:flex; align-items:center; gap:10px;">
@@ -2370,7 +2406,12 @@ function renderKdsOrders(allOrders) {
       actionBtn = `<button class="btn-kds btn-mark-packed" onclick="updateOrderStatus('${o.id}', 'packed')">${packBtnText}</button>`;
     } else if (o.status === 'packed') {
       statusPill = `<span class="status-pill packed">Ready for Rider 🛵</span>`;
-      actionBtn = `<div style="text-align:center; font-size:0.85rem; color:var(--accent-green); font-weight:700; padding:8px;">✅ Sealed in bag — Waiting for rider</div>`;
+      actionBtn = `
+        <div style="text-align:center; font-size:0.85rem; color:var(--accent-green); font-weight:700; padding:6px;">✅ Sealed in bag — Waiting for rider</div>
+        <button class="btn-kds" onclick="openBagQrModal('${o.id}')" style="background:#0F4A38; color:#2ECC71; border:1.5px solid #2ECC71; font-size:0.85rem; width:100%; margin-top:4px;">
+          🏷️ Show Bag Handover QR Code
+        </button>
+      `;
     }
 
     const itemsHTML = displayedItems.map(item => {
@@ -2554,17 +2595,54 @@ function togglePickerStep(idx, total) {
 
 async function finishSmartPick() {
   if (!activePickerOrderId) return;
+  const finishedOrderId = activePickerOrderId;
   if (pickerTimerInterval) clearInterval(pickerTimerInterval);
   
   // Transition order to packed
-  await updateOrderStatus(activePickerOrderId, 'packed');
+  await updateOrderStatus(finishedOrderId, 'packed');
   closeSmartPickerModal();
+
+  // Directly display Bag Handover QR Code for rider pickup
+  openBagQrModal(finishedOrderId);
 }
 
 function closeSmartPickerModal() {
   if (pickerTimerInterval) clearInterval(pickerTimerInterval);
   document.getElementById('pickerModalOverlay').style.display = 'none';
   activePickerOrderId = null;
+}
+
+function openBagQrModal(orderId) {
+  const order = rawOrdersCache.find(o => o.id === orderId);
+  if (!order) return;
+
+  document.getElementById('bagQrOrderId').textContent = `#${order.id.substring(0, 8).toUpperCase()}`;
+  document.getElementById('bagQrOrderDetails').textContent = `Customer: ${order.customer_name} • Phone: ${order.customer_phone || 'N/A'}`;
+  
+  const container = document.getElementById('bagQrCodeContainer');
+  container.innerHTML = '';
+
+  const qrData = `AMORELOT_BAG:${order.id}`;
+
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(container, {
+      text: qrData,
+      width: 190,
+      height: 190,
+      colorDark : "#0A120F",
+      colorLight : "#FFFFFF",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+  } else {
+    // High-res QR Image Fallback
+    container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(qrData)}" alt="Bag QR Code" style="width:190px; height:190px; display:block;" />`;
+  }
+
+  document.getElementById('bagQrModalOverlay').style.display = 'flex';
+}
+
+function closeBagQrModal() {
+  document.getElementById('bagQrModalOverlay').style.display = 'none';
 }
 
 // ── REAL-TIME INVENTORY STATION (SHOPKEEPER PRICES, DISCOUNTS & STOCK) ──

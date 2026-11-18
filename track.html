@@ -753,22 +753,20 @@
         document.getElementById('handoverBox').style.display = 'none';
       }
 
-      // Smart Cancellation Button
+      // Smart 60-Second Grace Cancellation (Calculated strictly from order creation time)
       const cancelWrap = document.getElementById('cancelWrap');
-      if (isGrocery) {
-        // Groceries can be cancelled in pending or preparing (before rider departs)
-        if ((status === 'pending' || status === 'preparing') && cancelSecsLeft > 0) {
-          cancelWrap.style.display = 'block';
-        } else {
-          cancelWrap.style.display = 'none';
-        }
+      if (order.created_at) {
+        const orderCreatedMs = new Date(order.created_at).getTime();
+        const elapsedSecs = Math.floor((Date.now() - orderCreatedMs) / 1000);
+        cancelSecsLeft = Math.max(0, 60 - elapsedSecs);
+      }
+      const cancelSecsSpan = document.getElementById('cancelSecs');
+      if (cancelSecsSpan) cancelSecsSpan.textContent = cancelSecsLeft;
+
+      if (status === 'pending' && cancelSecsLeft > 0) {
+        cancelWrap.style.display = 'block';
       } else {
-        // Meat can only be cancelled during pending before cutting starts
-        if (status === 'pending' && cancelSecsLeft > 0) {
-          cancelWrap.style.display = 'block';
-        } else {
-          cancelWrap.style.display = 'none';
-        }
+        cancelWrap.style.display = 'none';
       }
 
       // Render Items Preview
@@ -811,7 +809,15 @@
       const etaPill = document.getElementById('floatingEtaPill');
       if (etaPill) etaPill.style.display = 'flex';
 
-      if (routeDrawn && routeCoordinates.length > 0) return;
+      if (routeDrawn && routeCoordinates.length > 0) {
+        // If route already drawn, ensure live rider GPS/animation runs if order is accepted
+        if (order.status === 'accepted') {
+          checkLiveRiderLocationOrSimulate();
+        } else if (order.status === 'delivered') {
+          stopRiderAnimationAndPlaceAtDest();
+        }
+        return;
+      }
 
       // Ensure store coordinates use the actual assigned shop location
       if (order.shop_lat && order.shop_lng) {
@@ -899,7 +905,7 @@
 
           // Animate Rider Scooter along real road if in transit
           if (order.status === 'accepted') {
-            animateRiderAlongRoute();
+            checkLiveRiderLocationOrSimulate();
           }
         }
       } catch(e) {
@@ -911,29 +917,78 @@
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // 6. ANIMATE RIDER SCOOTER ALONG REAL ROAD COORDINATES
+    // 6. ANIMATE RIDER SCOOTER (LIVE GPS TELEMETRY + DEAD RECKONING)
     // ═══════════════════════════════════════════════════════════════
-    function animateRiderAlongRoute() {
-      if (!routeCoordinates || routeCoordinates.length < 2 || !riderMarker) return;
-      if (riderAnimFrame) cancelAnimationFrame(riderAnimFrame);
+    let liveGpsActive = false;
+    let transitStartTime = null;
 
-      let step = 0;
+    async function checkLiveRiderLocationOrSimulate() {
+      if (!currentOrder || currentOrder.status !== 'accepted' || !riderMarker) return;
+
+      // 1. Try reading real-time GPS telemetry from Edge RAM (0 D1 writes!)
+      try {
+        const res = await fetch(`/api/rider/location?orderId=${encodeURIComponent(currentOrder.id)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.location) {
+            liveGpsActive = true;
+            if (riderAnimFrame) {
+              cancelAnimationFrame(riderAnimFrame);
+              riderAnimFrame = null;
+            }
+            const lng = Number(data.location.lng);
+            const lat = Number(data.location.lat);
+            riderMarker.setLngLat([lng, lat]);
+            return;
+          }
+        }
+      } catch(e) {}
+
+      // 2. Fallback to client-side dead reckoning along Rydealot road coordinates
+      if (!liveGpsActive && routeCoordinates && routeCoordinates.length >= 2) {
+        if (!transitStartTime) transitStartTime = Date.now();
+        if (!riderAnimFrame) {
+          startDeadReckoningAnimation();
+        }
+      }
+    }
+
+    function startDeadReckoningAnimation() {
+      if (riderAnimFrame) cancelAnimationFrame(riderAnimFrame);
       const totalSteps = routeCoordinates.length;
 
-      function moveRider() {
+      function step() {
         if (!currentOrder || currentOrder.status !== 'accepted') return;
-        
-        step = (step + 1) % totalSteps;
-        const currentCoord = routeCoordinates[step];
-        riderMarker.setLngLat(currentCoord);
+        if (liveGpsActive) return;
 
-        // Continue loop smoothly
-        setTimeout(() => {
-          riderAnimFrame = requestAnimationFrame(moveRider);
-        }, 800);
+        // Progress smoothly along the road over 6-8 minutes
+        const elapsedSecs = (Date.now() - (transitStartTime || Date.now())) / 1000;
+        const totalDurationSecs = 360; // 6 mins simulation
+        const progress = Math.min(0.98, elapsedSecs / totalDurationSecs);
+        const targetIndex = Math.min(totalSteps - 1, Math.floor(progress * totalSteps));
+
+        if (routeCoordinates[targetIndex] && riderMarker) {
+          riderMarker.setLngLat(routeCoordinates[targetIndex]);
+        }
+
+        if (progress < 0.98) {
+          riderAnimFrame = requestAnimationFrame(() => {
+            setTimeout(step, 1000);
+          });
+        }
       }
 
-      riderAnimFrame = requestAnimationFrame(moveRider);
+      step();
+    }
+
+    function stopRiderAnimationAndPlaceAtDest() {
+      if (riderAnimFrame) {
+        cancelAnimationFrame(riderAnimFrame);
+        riderAnimFrame = null;
+      }
+      if (routeCoordinates && routeCoordinates.length > 0 && riderMarker) {
+        riderMarker.setLngLat(routeCoordinates[routeCoordinates.length - 1]);
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -976,12 +1031,12 @@
 
       // 60-second grace cancellation countdown
       cancelTimerInterval = setInterval(() => {
-        cancelSecsLeft--;
-        const span = document.getElementById('cancelSecs');
-        if (span) span.textContent = Math.max(0, cancelSecsLeft);
+        if (cancelSecsLeft > 0) {
+          cancelSecsLeft--;
+          const span = document.getElementById('cancelSecs');
+          if (span) span.textContent = cancelSecsLeft;
+        }
         if (cancelSecsLeft <= 0) {
-          clearInterval(cancelTimerInterval);
-          cancelTimerInterval = null;
           const wrap = document.getElementById('cancelWrap');
           if (wrap) wrap.style.display = 'none';
         }

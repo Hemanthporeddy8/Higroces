@@ -702,6 +702,9 @@ async function runExpirySweep(db) {
   }
 }
 
+// In-Memory Live Rider Location Telemetry (0 D1 Writes, sub-millisecond edge RAM)
+const riderLocationsMap = new Map();
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2113,6 +2116,44 @@ export default {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // API: /api/rider/location (Zero D1 Writes: Ephemeral In-Memory GPS Telemetry)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/rider/location") {
+      if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          const { orderId, lat, lng, heading, speed, riderName } = body;
+          if (!orderId || lat === undefined || lng === undefined) {
+            return new Response(JSON.stringify({ error: "orderId, lat, and lng are required" }), { status: 400, headers: corsHeaders(request) });
+          }
+          riderLocationsMap.set(orderId, {
+            lat: Number(lat),
+            lng: Number(lng),
+            heading: Number(heading || 0),
+            speed: Number(speed || 0),
+            riderName: riderName || 'Rider',
+            updated_at: Date.now()
+          });
+          return new Response(JSON.stringify({ success: true, d1_writes: 0 }), { headers: corsHeaders(request) });
+        } catch(e) {
+          return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders(request) });
+        }
+      }
+
+      if (request.method === "GET") {
+        const orderId = url.searchParams.get('orderId');
+        if (!orderId) {
+          return new Response(JSON.stringify({ error: "orderId query param required" }), { status: 400, headers: corsHeaders(request) });
+        }
+        const loc = riderLocationsMap.get(orderId);
+        if (loc && (Date.now() - loc.updated_at < 60000)) {
+          return new Response(JSON.stringify({ success: true, location: loc }), { headers: corsHeaders(request) });
+        }
+        return new Response(JSON.stringify({ success: false, location: null }), { headers: corsHeaders(request) });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // API: /api/orders
     // ═══════════════════════════════════════════════════════════════
     if (url.pathname === "/api/orders") {
@@ -2457,36 +2498,27 @@ export default {
             return new Response(JSON.stringify({ success: true, id, status, adminOverride: true }), { headers: corsHeaders(request) });
           }
 
-          // 2. Customer Cancellation Handling
+          // 2. Customer Cancellation Handling (Strict 60-Second Dark Store Rule)
           if (status === 'cancelled') {
             if (existing.status === 'delivered') {
               return new Response(JSON.stringify({ error: "Order already delivered." }), { status: 400, headers: corsHeaders(request) });
             }
 
-            let hasMeat = false;
-            try {
-              const pItems = typeof existing.items === 'string' ? JSON.parse(existing.items) : (existing.items || []);
-              hasMeat = pItems.some(it => {
-                const n = (it.name || '').toLowerCase();
-                const c = (it.category || '').toLowerCase();
-                return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' ||
-                       n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn');
-              });
-            } catch(e) {}
+            // Enforce strict 60s cancellation window from order placement
+            if (existing.created_at) {
+              const orderCreatedMs = new Date(existing.created_at).getTime();
+              const elapsedSecs = (Date.now() - orderCreatedMs) / 1000;
+              if (elapsedSecs > 60) {
+                return new Response(JSON.stringify({ 
+                  error: "Cancellation window closed: Orders can only be cancelled within 60 seconds of checkout." 
+                }), { status: 400, headers: corsHeaders(request) });
+              }
+            }
 
-            if (hasMeat) {
-              if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
-                return new Response(JSON.stringify({ 
-                  error: "Cannot cancel order: Master butcher carving has already begun. As per fresh perishable food policy, custom meat cuts cannot be cancelled once preparation starts." 
-                }), { status: 400, headers: corsHeaders(request) });
-              }
-            } else {
-              // Packaged Grocery order: allow cancellation unless delivery rider is already dispatched
-              if (existing.status === 'accepted') {
-                return new Response(JSON.stringify({ 
-                  error: "Cannot cancel order: Delivery partner is already on the way to your doorstep." 
-                }), { status: 400, headers: corsHeaders(request) });
-              }
+            if (existing.status === 'preparing' || existing.status === 'packed' || existing.status === 'accepted') {
+              return new Response(JSON.stringify({ 
+                error: "Cannot cancel order: Dark store staff has already begun picking and packing your basket." 
+              }), { status: 400, headers: corsHeaders(request) });
             }
 
             await env.DB.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").bind(id).run();
