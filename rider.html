@@ -1379,12 +1379,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadRiderShopZones();
   checkRiderLogin();
   
-  // Auto-poll orders every 5 seconds for fast updates
+  // Smart auto-poll: every 7 seconds when active, paused when tab is hidden
   setInterval(() => {
-    if (currentRiderName && currentRiderZone) {
+    if (!document.hidden && currentRiderName && currentRiderZone) {
       fetchOrders();
     }
-  }, 5000);
+  }, 7000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentRiderName && currentRiderZone) {
+      fetchOrders();
+    }
+  });
 });
 </script>
 </body>

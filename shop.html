@@ -3743,8 +3743,21 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('DOMContentLoaded', () => {
   checkMerchantSession();
   loadStoreStatus();
-  setInterval(fetchShopOrders, 5000);
-  setInterval(loadStoreStatus, 10000);
+  // Smart auto-poll: only when tab is visible
+  setInterval(() => {
+    if (!document.hidden && currentShopSession) fetchShopOrders();
+  }, 7000);
+
+  setInterval(() => {
+    if (!document.hidden) loadStoreStatus();
+  }, 15000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentShopSession) {
+      fetchShopOrders();
+      loadStoreStatus();
+    }
+  });
 });
 </script>
 </body>

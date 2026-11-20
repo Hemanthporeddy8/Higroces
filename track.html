@@ -1030,8 +1030,14 @@
     window.addEventListener('DOMContentLoaded', () => {
       fetchOrderData();
 
-      // Poll D1 every 3 seconds for live butcher / rider status updates
-      pollInterval = setInterval(fetchOrderData, 3000);
+      // Smart polling: every 6 seconds when active, paused when tab is hidden
+      pollInterval = setInterval(() => {
+        if (!document.hidden) fetchOrderData();
+      }, 6000);
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) fetchOrderData();
+      });
 
       // 60-second grace cancellation countdown
       cancelTimerInterval = setInterval(() => {
