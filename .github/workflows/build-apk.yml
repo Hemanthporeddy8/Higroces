@@ -8,6 +8,9 @@ on:
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Compile Android APK
@@ -48,3 +51,25 @@ jobs:
           name: HiGroces-Full-App-APK
           path: release-output/HiGroces-v1.0.apk
           retention-days: 30
+
+      - name: Publish Direct Public Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "HiGroces Android App v1.0.0"
+          body: |
+            ## 🚀 HiGroces Native Android App (Full Version)
+            
+            This APK contains the full HiGroces platform:
+            * 🛒 **Customer Storefront:** Live catalog, fresh meat & grocery baskets
+            * 🥩 **Butcher Workshop:** 3D interactive chicken carving & custom harvest
+            * 📍 **Live Order Tracker:** Real-time road route with scooter GPS
+            * 🛵 **Rider Delivery Portal:** Full-screen delivery management with background GPS & screen wake-lock
+            * 🏪 **Merchant KDS:** Order packing and station counter
+            
+            ### 📲 How to Install:
+            1. Tap **`HiGroces-v1.0.apk`** below to download directly to your phone.
+            2. Open the downloaded file and tap **Install** (enable "Install unknown apps" if prompted).
+            3. Open **HiGroces** from your home screen!
+          files: release-output/HiGroces-v1.0.apk
