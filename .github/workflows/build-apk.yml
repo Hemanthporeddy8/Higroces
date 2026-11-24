@@ -1,4 +1,4 @@
-name: Build HiGroces Android APK
+name: Build Amorelot Android APK
 
 on:
   push:
@@ -42,14 +42,15 @@ jobs:
       - name: Rename APK for Distribution
         run: |
           mkdir -p release-output
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-output/Amorelot-v1.0.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk release-output/HiGroces-v1.0.apk
-          echo "APK generated successfully at release-output/HiGroces-v1.0.apk"
+          echo "APK generated successfully at release-output/Amorelot-v1.0.apk"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HiGroces-Full-App-APK
-          path: release-output/HiGroces-v1.0.apk
+          name: Amorelot-Full-App-APK
+          path: release-output/Amorelot-v1.0.apk
           retention-days: 30
 
       - name: Publish Direct Public Release
@@ -57,11 +58,11 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: v1.0.0
-          name: "HiGroces Android App v1.0.0"
+          name: "Amorelot Android App v1.0.0"
           body: |
-            ## 🚀 HiGroces Native Android App (Full Version)
+            ## 🚀 Amorelot Native Android App (Full Version)
             
-            This APK contains the full HiGroces platform:
+            This APK contains the full Amorelot platform:
             * 🛒 **Customer Storefront:** Live catalog, fresh meat & grocery baskets
             * 🥩 **Butcher Workshop:** 3D interactive chicken carving & custom harvest
             * 📍 **Live Order Tracker:** Real-time road route with scooter GPS
@@ -69,7 +70,9 @@ jobs:
             * 🏪 **Merchant KDS:** Order packing and station counter
             
             ### 📲 How to Install:
-            1. Tap **`HiGroces-v1.0.apk`** below to download directly to your phone.
+            1. Tap **`Amorelot-v1.0.apk`** below to download directly to your phone.
             2. Open the downloaded file and tap **Install** (enable "Install unknown apps" if prompted).
-            3. Open **HiGroces** from your home screen!
-          files: release-output/HiGroces-v1.0.apk
+            3. Open **Amorelot** from your home screen!
+          files: |
+            release-output/Amorelot-v1.0.apk
+            release-output/HiGroces-v1.0.apk

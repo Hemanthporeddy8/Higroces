@@ -2530,7 +2530,7 @@ header {
     <button class="install-choice-close" onclick="closeInstallChoiceModal()" aria-label="Close dialog">&times;</button>
     <div class="install-choice-header">
       <div class="install-choice-icon">📲</div>
-      <h3 class="install-choice-title">Get the HiGroces App</h3>
+      <h3 class="install-choice-title">Get the Amorelot App</h3>
       <p class="install-choice-subtitle">Select the option that fits your role &amp; device</p>
     </div>
 
@@ -2549,8 +2549,8 @@ header {
         <li><span class="check">✔</span> <strong>No browser tabs:</strong> Dedicated app shell, cannot accidentally close</li>
         <li><span class="check">✔</span> <strong>Full platform:</strong> Storefront, Butchery, Rider, Shop &amp; Admin</li>
       </ul>
-      <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/HiGroces-v1.0.apk" 
-         download="HiGroces-v1.0.apk"
+      <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/Amorelot-v1.0.apk" 
+         download="Amorelot-v1.0.apk"
          class="btn-install-choice-action apk"
          onclick="handleApkDownloadClick()">
         <span>⬇️</span> Download Android APK (5.2 MB)
@@ -2617,7 +2617,7 @@ header {
 
     <div class="header-actions">
       <!-- 📲 Native Install button (Opens dual-choice APK vs PWA modal) -->
-      <button class="btn-install-app" id="btnInstallApp" onclick="openInstallChoiceModal()" title="Install HiGroces directly to your phone">
+      <button class="btn-install-app" id="btnInstallApp" onclick="openInstallChoiceModal()" title="Install Amorelot directly to your phone">
         <span>📲</span> <span class="install-text">Install App</span>
       </button>
 
@@ -4555,7 +4555,7 @@ let deferredInstallPrompt = null;
 function isRunningStandalone() {
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
          (window.navigator.standalone === true) ||
-         (navigator.userAgent && navigator.userAgent.includes('HiGrocesAndroid')) ||
+         (navigator.userAgent && (navigator.userAgent.includes('AmorelotAndroid') || navigator.userAgent.includes('HiGrocesAndroid'))) ||
          document.referrer.includes('android-app://');
 }
 
@@ -4591,7 +4591,7 @@ function closeInstallChoiceModal() {
 
 function handleApkDownloadClick() {
   if (typeof showToast === 'function') {
-    showToast('📥 Downloading HiGroces-v1.0.apk... Tap the downloaded file to install!', 'success');
+    showToast('📥 Downloading Amorelot-v1.0.apk... Tap the downloaded file to install!', 'success');
   }
   setTimeout(() => {
     closeInstallChoiceModal();

@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setUserAgentString(settings.getUserAgentString() + " HiGrocesAndroid/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " AmorelotAndroid/1.0");
 
         // Ensure cookies are enabled and synchronized
         CookieManager cookieManager = CookieManager.getInstance();
