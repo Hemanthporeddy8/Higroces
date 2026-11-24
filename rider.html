@@ -576,15 +576,6 @@ header {
 
   <div class="nav-drawer-section-title">Field Portals (Mobile Optimized)</div>
   <div class="nav-drawer-links">
-    <!-- Download Rider APK Link -->
-    <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/HiGroces-v1.0.apk" class="nav-drawer-link" id="drawerRiderApkLink" style="background:rgba(255,152,0,0.15); border-color:rgba(255,152,0,0.4);">
-      <div class="nav-drawer-link-left">
-        <span class="drawer-emoji">🤖</span>
-        <span style="color:#FF9800; font-weight:800;">Download Rider APK</span>
-      </div>
-      <span class="nav-drawer-badge" style="background:#FF9800; color:#0A120E;">5.2 MB</span>
-    </a>
-
     <a href="/index.html" class="nav-drawer-link">
       <div class="nav-drawer-link-left">
         <span class="drawer-emoji">🛒</span>
@@ -621,11 +612,6 @@ header {
   <div class="login-card">
     <h2>🛵 Rider Sign-In</h2>
     <p>Go active in your delivery zone to start receiving incoming grocery &amp; meat orders.</p>
-
-    <!-- APK Banner for real bike riders -->
-    <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/HiGroces-v1.0.apk" id="loginRiderApkBanner" style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(255,152,0,0.12); border:1.5px solid #FF9800; color:#D35400; padding:10px 14px; border-radius:8px; font-weight:800; font-size:0.82rem; text-decoration:none; margin-bottom:16px;">
-      <span>🤖</span> Riding a real bike? <u>Download Android APK</u> (Screen stays ON)
-    </a>
     
     <div class="form-group">
       <label>Rider Name</label>
@@ -662,9 +648,6 @@ header {
     </div>
     
     <div class="rider-status-bar" id="riderStatusBar" style="display:none">
-      <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/HiGroces-v1.0.apk" id="topRiderApkBtn" style="background:#FF9800; color:#0A120E; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="Download Android APK for bike delivery (Keeps screen awake)">
-        <span>🤖</span> APK
-      </a>
       <span>Rider: <strong id="riderNameDisplay" style="color:var(--brand-accent)"></strong></span>
       <span>Zone: <strong id="riderZoneDisplay"></strong></span>
       <button class="btn-logout" id="btnRefresh" onclick="refreshOrdersManual()" style="background:var(--brand-accent); font-weight:700; margin-right:4px;">Refresh 🔄</button>
@@ -1393,19 +1376,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
-  // If already running inside HiGroces Android APK or standalone PWA, hide APK download links
-  const isNativeApp = (navigator.userAgent && navigator.userAgent.includes('HiGrocesAndroid')) ||
-                      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-                      (window.navigator.standalone === true);
-  if (isNativeApp) {
-    const b1 = document.getElementById('loginRiderApkBanner');
-    const b2 = document.getElementById('topRiderApkBtn');
-    const b3 = document.getElementById('drawerRiderApkLink');
-    if (b1) b1.style.display = 'none';
-    if (b2) b2.style.display = 'none';
-    if (b3) b3.style.display = 'none';
-  }
-
   await loadRiderShopZones();
   checkRiderLogin();
   
