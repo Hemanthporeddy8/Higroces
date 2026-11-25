@@ -594,14 +594,16 @@ body {
     touch-action: pan-y !important;
   }
   .custom-right-panel {
+    order: 1 !important; /* Put diagram at the very top of mobile screen */
     flex: none !important;
     width: 100% !important;
-    height: 330px !important;
-    min-height: 310px !important;
-    padding-top: 50px !important;
-    padding-bottom: 8px !important;
+    height: auto !important;
+    min-height: unset !important;
+    padding-top: 48px !important;
+    padding-bottom: 0 !important;
     overflow: visible !important;
     touch-action: pan-y !important;
+    background: #EEEAE4 !important;
   }
   .ws-toolbar {
     top: 6px !important;
@@ -611,6 +613,7 @@ body {
     justify-content: space-between !important;
     gap: 4px !important;
     border-radius: 10px !important;
+    z-index: 100 !important;
   }
   .ws-tool-btn {
     padding: 5px 8px !important;
@@ -623,6 +626,7 @@ body {
     display: none !important;
   }
   .custom-left-panel {
+    order: 2 !important; /* Terminal and cuts directly underneath the diagram */
     position: relative !important;
     transform: none !important;
     bottom: auto !important;
@@ -637,6 +641,34 @@ body {
     z-index: 10 !important;
     padding: 16px 14px 80px !important;
     overflow-y: visible !important;
+  }
+  /* Scale chicken and fish SVG cleanly on mobile */
+  #diag-chicken > div,
+  #diag-fish > div {
+    height: auto !important;
+    min-height: 290px !important;
+    max-height: 330px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    overflow: hidden !important;
+  }
+  #diag-chicken svg {
+    height: 275px !important;
+    max-height: 285px !important;
+    min-height: 250px !important;
+    width: auto !important;
+    max-width: 96% !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+  #diag-fish svg {
+    height: 185px !important;
+    max-height: 200px !important;
+    min-height: 165px !important;
+    width: auto !important;
+    max-width: 96% !important;
+    margin: 0 auto !important;
+    display: block !important;
   }
   .mobile-sheet-handle {
     display: none !important;
