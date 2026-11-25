@@ -12,6 +12,24 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Amorelot">
+<script>
+  (function() {
+    try {
+      if (window.location.search.includes('native=android')) {
+        localStorage.setItem('amorelot_native_app', 'true');
+      }
+      var ua = navigator.userAgent || '';
+      var isNative = (localStorage.getItem('amorelot_native_app') === 'true') ||
+                     ua.includes('AmorelotAndroid') || ua.includes('HiGrocesAndroid') || ua.includes('NativeApp') ||
+                     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                     (window.navigator.standalone === true) ||
+                     (document.referrer && document.referrer.includes('android-app://'));
+      if (isNative) {
+        document.documentElement.classList.add('is-native-app');
+      }
+    } catch(e) {}
+  })();
+</script>
 <style>
 :root {
   --brand-primary: #0C513F;
@@ -1188,7 +1206,7 @@ header {
   border-radius: 24px;
   font-size: 0.82rem;
   font-weight: 800;
-  display: inline-flex;
+  display: none; /* Hidden by default until verified in browser */
   align-items: center;
   gap: 6px;
   cursor: pointer;
@@ -1206,9 +1224,12 @@ header {
   transform: scale(0.94);
 }
 
-/* ⚡ CRITICAL RULE: Automatically hide Install button once opened in installed standalone app mode */
+/* ⚡ CRITICAL RULE: Automatically hide Install buttons if app is installed / native mode */
+html.is-native-app #btnInstallApp,
+html.is-native-app .btn-install-app,
+html.is-native-app #drawerInstallTile,
 @media all and (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-  #btnInstallApp, .btn-install-app {
+  #btnInstallApp, .btn-install-app, #drawerInstallTile {
     display: none !important;
   }
 }
@@ -2322,7 +2343,11 @@ header {
           📍 Use My Live Location
         </button>
       </div>
-      <textarea id="custAddress" placeholder="House no., Street, Landmark, Area..."></textarea>
+      <div id="savedAddressHint" style="display:none; font-size:0.75rem; color:#0C513F; background:#E8F8F5; border:1px solid #A2D9CE; padding:6px 10px; border-radius:6px; margin-bottom:6px; align-items:center; justify-content:space-between;">
+        <span>🏠 <strong>Saved Location:</strong> Using remembered address</span>
+        <button type="button" onclick="document.getElementById('custAddress').focus(); document.getElementById('custAddress').select();" style="background:none; border:none; color:#0C513F; font-size:0.75rem; font-weight:700; cursor:pointer; text-decoration:underline;">Change</button>
+      </div>
+      <textarea id="custAddress" placeholder="House no., Street, Landmark, Area..." oninput="try{localStorage.setItem('amorelot_saved_address', this.value.trim());}catch(e){}"></textarea>
       <div id="liveLocBadge" style="display:none; font-size:0.75rem; color:#0C513F; background:#E8F8F5; padding:4px 8px; border-radius:4px; margin-top:4px;">
         ✅ GPS coordinates pinned for road navigation
       </div>
@@ -2443,7 +2468,7 @@ header {
     </a>
 
     <!-- 1-Click Install App Tile for Mobile (APK vs PWA) -->
-    <a href="javascript:void(0)" onclick="closeNavDrawer(); openInstallChoiceModal();" class="nav-drawer-link" style="background:rgba(255,183,77,0.12); border-color:rgba(255,183,77,0.4);">
+    <a href="javascript:void(0)" onclick="closeNavDrawer(); openInstallChoiceModal();" class="nav-drawer-link" id="drawerInstallTile" style="background:rgba(255,183,77,0.12); border-color:rgba(255,183,77,0.4);">
       <div class="nav-drawer-link-left">
         <span class="drawer-emoji">📲</span>
         <span style="color:#FFB74D; font-weight:700;">Install App (APK &amp; PWA)</span>
@@ -2482,27 +2507,16 @@ header {
       </div>
       <span class="nav-drawer-badge">Rider</span>
     </a>
-
-    <a href="/admin.html" class="nav-drawer-link">
-      <div class="nav-drawer-link-left">
-        <span class="drawer-emoji">⚙️</span>
-        <span>Admin &amp; Hub Master</span>
-      </div>
-      <span class="nav-drawer-badge" style="background:#4B5563; color:white;">Admin</span>
-    </a>
   </div>
 
-  <!-- Customer Support & Assistance (Clean, friendly replacement for internal security note) -->
-  <div class="nav-drawer-note" style="border-color:rgba(46,204,113,0.3); background:rgba(10,36,27,0.85); color:#A2D9CE;">
-    <div style="font-weight:700; color:#2ECC71; margin-bottom:4px; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
-      <span>💬</span> 24/7 Customer Help &amp; Support
+  <!-- Farm Fresh Guarantee -->
+  <div class="nav-drawer-note" style="border-color:rgba(46,204,113,0.25); background:rgba(10,36,27,0.7); color:#A2D9CE; padding:12px 14px; border-radius:8px; margin: 12px 14px 6px;">
+    <div style="font-weight:700; color:#2ECC71; margin-bottom:4px; font-size:0.82rem; display:flex; align-items:center; gap:6px;">
+      <span>🌿</span> 100% Farm Fresh Guarantee
     </div>
-    <div style="font-size:0.78rem; line-height:1.45; color:#cbd5e1; margin-bottom:8px;">
-      Questions about your order or cuts? Contact our support desk anytime:
+    <div style="font-size:0.75rem; line-height:1.4; color:#A0B2AA;">
+      Zero cold-storage meat &amp; harvested daily farm produce. Delivered directly to your door in 15 minutes.
     </div>
-    <a href="https://wa.me/919999999999?text=Hi%20Amorelot%2C%20I%20have%20a%20question%20about%20my%20order" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#25D366; color:#0b2612; padding:6px 14px; border-radius:6px; font-weight:800; font-size:0.76rem; text-decoration:none;">
-      <span>💬</span> Chat on WhatsApp
-    </a>
   </div>
 
   <div style="padding:14px 18px 22px; font-size:0.75rem; color:#60736B; text-align:center;">
@@ -2551,7 +2565,7 @@ header {
         <li><span class="check">✔</span> <strong>No browser tabs:</strong> Dedicated app shell, cannot accidentally close</li>
         <li><span class="check">✔</span> <strong>Full platform:</strong> Storefront, Butchery, Rider, Shop &amp; Admin</li>
       </ul>
-      <a href="https://github.com/Hemanthporeddy8/Higroces/releases/download/v1.0.0/Amorelot-v1.0.apk" 
+      <a href="https://github.com/Hemanthporeddy8/Higroces/releases/latest/download/Amorelot-v1.0.apk" 
          download="Amorelot-v1.0.apk"
          class="btn-install-choice-action apk"
          onclick="handleApkDownloadClick()">
@@ -2829,7 +2843,7 @@ header {
       <span id="billTotal">₹0</span>
     </div>
     <div class="cod-badge">💵 Cash on Delivery only (for now)</div>
-    <button class="btn-checkout" onclick="openOrderModal()">
+    <button class="btn-checkout" id="btnCartCheckout" onclick="openOrderModal()">
       🚀 Place Order
     </button>
   </div>
@@ -4058,6 +4072,19 @@ function openOrderModal() {
     return;
   }
 
+  // REQUIRE SIGN-IN: Without signin the confirm order must not come
+  if (!currentUser) {
+    closeCartDrawer();
+    window.pendingOrderCheckout = true;
+    openAuthModal('login');
+    if (typeof showAppToast === 'function') {
+      showAppToast('Sign In Required', 'Please sign in or create an account to confirm your order.', '🔐', 'warning');
+    } else {
+      alert('Please sign in or create an account before placing an order.');
+    }
+    return;
+  }
+
   const isOnline = appSettings.store_is_online !== false;
   const hasInstantItems = cart.some(item => {
     const prod = PRODUCTS.find(p => p.id === item.id);
@@ -4069,6 +4096,38 @@ function openOrderModal() {
     return;
   }
 
+  // Pre-fill user data & saved location/address
+  const nameInput = document.getElementById('custName');
+  const phoneInput = document.getElementById('custPhone');
+  const addrInput = document.getElementById('custAddress');
+  const hintEl = document.getElementById('savedAddressHint');
+
+  const savedName = (currentUser && currentUser.name) || localStorage.getItem('amorelot_saved_name') || '';
+  const savedPhone = (currentUser && currentUser.phone) || localStorage.getItem('amorelot_saved_phone') || '';
+  const savedAddr = localStorage.getItem('amorelot_saved_address') || '';
+
+  if (nameInput && !nameInput.value.trim()) nameInput.value = savedName;
+  if (phoneInput && !phoneInput.value.trim()) phoneInput.value = savedPhone;
+  if (addrInput && !addrInput.value.trim() && savedAddr) {
+    addrInput.value = savedAddr;
+  }
+  if (hintEl) {
+    hintEl.style.display = savedAddr ? 'flex' : 'none';
+  }
+
+  // Restore saved GPS coordinates if available
+  const savedLat = localStorage.getItem('amorelot_saved_lat');
+  const savedLng = localStorage.getItem('amorelot_saved_lng');
+  if (savedLat && savedLng && !customerLiveLat) {
+    customerLiveLat = parseFloat(savedLat);
+    customerLiveLng = parseFloat(savedLng);
+    const badge = document.getElementById('liveLocBadge');
+    if (badge) {
+      badge.style.display = 'block';
+      badge.textContent = `📍 Saved GPS Active: ${customerLiveLat.toFixed(4)}, ${customerLiveLng.toFixed(4)}`;
+    }
+  }
+
   closeCartDrawer();
   document.getElementById('orderModalBg').classList.add('open');
 }
@@ -4078,6 +4137,14 @@ function closeOrderModal() {
 }
 
 async function submitDirectOrder() {
+  if (!currentUser) {
+    closeOrderModal();
+    window.pendingOrderCheckout = true;
+    openAuthModal('login');
+    alert('Please sign in or create an account before placing an order.');
+    return;
+  }
+
   const name    = document.getElementById('custName').value.trim();
   const phone   = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
@@ -4091,6 +4158,17 @@ async function submitDirectOrder() {
     alert('Please enter a valid 10-digit phone number.');
     return;
   }
+
+  // Permanently save location and contact details so user never has to re-enter
+  try {
+    localStorage.setItem('amorelot_saved_address', address);
+    localStorage.setItem('amorelot_saved_name', name);
+    localStorage.setItem('amorelot_saved_phone', phone);
+    if (customerLiveLat && customerLiveLng) {
+      localStorage.setItem('amorelot_saved_lat', customerLiveLat.toString());
+      localStorage.setItem('amorelot_saved_lng', customerLiveLng.toString());
+    }
+  } catch(e) {}
   
   const subtotal = calcSubtotal();
   const delivery = DELIVERY_FEE;
@@ -4555,25 +4633,42 @@ document.addEventListener('keydown', (e) => {
 let deferredInstallPrompt = null;
 
 function isRunningStandalone() {
-  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-         (window.navigator.standalone === true) ||
-         (navigator.userAgent && (navigator.userAgent.includes('AmorelotAndroid') || navigator.userAgent.includes('HiGrocesAndroid'))) ||
-         document.referrer.includes('android-app://');
+  if (window.location.search.includes('native=android')) {
+    try { localStorage.setItem('amorelot_native_app', 'true'); } catch(e){}
+    return true;
+  }
+  try {
+    if (localStorage.getItem('amorelot_native_app') === 'true') return true;
+  } catch(e){}
+  const ua = navigator.userAgent || '';
+  if (ua.includes('AmorelotAndroid') || ua.includes('HiGrocesAndroid') || ua.includes('NativeApp') || (ua.includes('Android') && ua.includes('Version/') && ua.includes('Chrome/'))) {
+    return true;
+  }
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+  if (window.navigator.standalone === true) return true;
+  if (document.referrer && document.referrer.includes('android-app://')) return true;
+  return false;
 }
 
 function checkAndDisplayInstallButton() {
   const btn = document.getElementById('btnInstallApp');
-  if (!btn) return;
+  const drawerTile = document.getElementById('drawerInstallTile');
+  const isStandalone = isRunningStandalone();
 
-  // Rule: If already installed and opened from phone home screen, NEVER show the install button
-  if (isRunningStandalone()) {
-    btn.style.display = 'none';
+  if (isStandalone) {
+    if (btn) btn.style.setProperty('display', 'none', 'important');
+    if (drawerTile) drawerTile.style.setProperty('display', 'none', 'important');
+    document.documentElement.classList.add('is-native-app');
     return;
   }
 
-  // If in standard browser, show button so mobile users can 1-tap download
-  btn.style.display = 'inline-flex';
+  // If in standard web browser, show install triggers
+  if (btn) btn.style.display = 'inline-flex';
+  if (drawerTile) drawerTile.style.display = 'flex';
 }
+
+// Run immediately to enforce visibility state
+checkAndDisplayInstallButton();
 
 function openInstallChoiceModal() {
   const modal = document.getElementById('installChoiceModal');
@@ -4899,6 +4994,18 @@ function updateUserAuthUI() {
     }
     if (drawerAuthIcon) drawerAuthIcon.textContent = '👤';
   }
+
+  // Update checkout button state in cart drawer
+  const chkBtn = document.getElementById('btnCartCheckout');
+  if (chkBtn) {
+    if (!currentUser) {
+      chkBtn.innerHTML = '🔐 Sign In to Place Order';
+      chkBtn.style.background = '#0C513F';
+    } else {
+      chkBtn.innerHTML = '🚀 Place Order';
+      chkBtn.style.background = 'var(--brand-accent)';
+    }
+  }
 }
 
 function handleAuthButtonClick() {
@@ -5109,6 +5216,12 @@ async function submitLoginForm(e) {
       if (phoneInput && !phoneInput.value && currentUser.phone) phoneInput.value = currentUser.phone || '';
 
       showAppToast(`Welcome back, ${currentUser.name}!`, 'Logged in successfully. Fast delivery is active.', '👋', 'success');
+
+      // Seamlessly resume order confirmation if checkout was pending
+      if (window.pendingOrderCheckout) {
+        window.pendingOrderCheckout = false;
+        setTimeout(() => openOrderModal(), 300);
+      }
     } else {
       showAuthError(data.error || "Invalid email or password.");
     }
@@ -5172,6 +5285,12 @@ async function submitRegisterForm(e) {
       if (phoneInput && currentUser.phone) phoneInput.value = currentUser.phone || '';
 
       showAppToast(`Welcome, ${currentUser.name}! 🎉`, 'Your account is active. Fast delivery is ready!', '✨', 'success');
+
+      // Seamlessly resume order confirmation if checkout was pending
+      if (window.pendingOrderCheckout) {
+        window.pendingOrderCheckout = false;
+        setTimeout(() => openOrderModal(), 300);
+      }
     } else {
       showAuthError(data.error || "Failed to create account.");
     }

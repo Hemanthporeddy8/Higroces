@@ -43,6 +43,7 @@ jobs:
         run: |
           mkdir -p release-output
           cp android/app/build/outputs/apk/debug/app-debug.apk release-output/Amorelot-v1.0.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-output/Amorelot-v1.0.1.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk release-output/HiGroces-v1.0.apk
           echo "APK generated successfully at release-output/Amorelot-v1.0.apk"
 
@@ -57,17 +58,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0
-          name: "Amorelot Android App v1.0.0"
+          tag_name: v1.0.1
+          name: "Amorelot Android App v1.0.1"
           body: |
-            ## 🚀 Amorelot Native Android App (Full Version)
+            ## 🚀 Amorelot Native Android App v1.0.1
             
-            This APK contains the full Amorelot platform:
-            * 🛒 **Customer Storefront:** Live catalog, fresh meat & grocery baskets
-            * 🥩 **Butcher Workshop:** 3D interactive chicken carving & custom harvest
-            * 📍 **Live Order Tracker:** Real-time road route with scooter GPS
-            * 🛵 **Rider Delivery Portal:** Full-screen delivery management with background GPS & screen wake-lock
-            * 🏪 **Merchant KDS:** Order packing and station counter
+            ### ✨ What's New:
+            * 📲 **Hidden In-App Install Prompt:** Resolved install app button appearing inside the installed Android app.
+            * 🥩 **New Butcher UI & Instant Digital Scale:** Smooth mobile-responsive cut selection, 1-tap weights (500g, 750g, 1kg, 1.5kg, 2kg) and steppers without annoying scale lag.
+            * 🔐 **Secure Sign-In Enforced:** Account login required before confirming orders.
+            * 📍 **Persistent Delivery Location:** Saved addresses and GPS coordinates are remembered permanently.
+            * 🧹 **Cleaned Customer Drawer:** Removed internal admin link and WhatsApp button.
             
             ### 📲 How to Install:
             1. Tap **`Amorelot-v1.0.apk`** below to download directly to your phone.
@@ -75,4 +76,5 @@ jobs:
             3. Open **Amorelot** from your home screen!
           files: |
             release-output/Amorelot-v1.0.apk
+            release-output/Amorelot-v1.0.1.apk
             release-output/HiGroces-v1.0.apk

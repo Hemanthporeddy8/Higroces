@@ -30,7 +30,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String APP_URL = "https://higroces.amorelotofficial.workers.dev/";
+    private static final String APP_URL = "https://higroces.amorelotofficial.workers.dev/?native=android";
     private static final int PERMISSIONS_REQUEST_CODE = 1001;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1002;
 
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setUserAgentString(settings.getUserAgentString() + " AmorelotAndroid/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " AmorelotAndroid/1.0 NativeApp");
 
         // Ensure cookies are enabled and synchronized
         CookieManager cookieManager = CookieManager.getInstance();

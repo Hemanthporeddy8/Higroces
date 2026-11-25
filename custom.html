@@ -3,8 +3,10 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwiftCuts — Interactive Custom Cuts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Amorelot — Butcher Mode &amp; Custom Fresh Cuts</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0C513F">
@@ -75,76 +77,91 @@ body {
 }
 .workshop-title:first-of-type { margin-top: 0; }
 
-/* Scale container */
+/* Digital Scale Terminal */
 .scale-container {
-  background: var(--paper-dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  text-align: center;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+  background: linear-gradient(145deg, #18221E 0%, #0F1714 100%);
+  border: 1.5px solid #284438;
+  border-radius: 12px;
+  padding: 14px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
   position: relative;
+  text-align: left;
 }
-.scale-pan-base {
-  width: 100px;
-  height: 6px;
-  background: var(--border);
-  margin: 10px auto 2px;
-  border-radius: 4px;
+.scale-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
-.scale-pan {
-  width: 140px;
-  height: 12px;
-  background: var(--ink-light);
-  margin: 0 auto;
-  border-radius: 10px 10px 0 0;
-  position: relative;
-  transition: transform 0.1s ease;
+.scale-title-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.scale-pan.weighing {
-  transform: translateY(6px);
-}
-.scale-emoji-overlay {
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.4rem;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.scale-display {
-  background: #1A0C00;
-  color: #FF5E2B;
-  border: 2px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-top: 14px;
+.scale-price-badge {
+  background: rgba(46,204,113,0.15);
+  border: 1px solid #2ECC71;
+  color: #2ECC71;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 800;
   font-family: 'DM Mono', monospace;
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+  font-size: 0.95rem;
+}
+.scale-readout {
+  background: #080D0B;
+  border: 1px solid #1C2D25;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
 }
 .display-weight {
-  font-size: 1.8rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 6px rgba(255, 94, 43, 0.4);
+  font-size: 2.1rem;
+  font-weight: 800;
+  font-family: 'DM Mono', monospace;
+  color: #2ECC71;
+  letter-spacing: 0.02em;
 }
 .display-unit {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  color: var(--border);
-  letter-spacing: 0.1em;
-  margin-top: 2px;
+  font-size: 0.82rem;
+  color: #7B9E90;
+  margin-left: 4px;
+  font-weight: 600;
 }
-.display-part-name {
-  font-size: 0.72rem;
-  color: var(--meat);
-  margin-top: 6px;
-  font-family: 'Libre Baskerville', serif;
-  font-style: italic;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+.display-kg {
+  font-size: 0.8rem;
+  color: #A0B2AA;
+  font-family: 'DM Mono', monospace;
+}
+.btn-weight-pill {
+  flex: 1;
+  min-width: 52px;
+  background: #15221C;
+  border: 1px solid #253C31;
+  color: #C0D2C8;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-weight-pill:hover {
+  background: #1E332A;
+  color: #FFFFFF;
+}
+.btn-weight-pill.active {
+  background: #2ECC71 !important;
+  color: #0A1C14 !important;
+  border-color: #2ECC71 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
 }
 
 /* Offal Box */
@@ -560,79 +577,122 @@ body {
 
 /* ── MOBILE RESPONSIVE ADAPTATIONS (PHONES & TABLETS) ── */
 @media screen and (max-width: 900px) {
+  body {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+  }
   .workshop-app {
     flex-direction: column !important;
-    height: 100vh !important;
-    width: 100vw !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    width: 100% !important;
     position: relative !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
   .custom-right-panel {
-    flex: 1 !important;
+    flex: none !important;
     width: 100% !important;
-    height: 100% !important;
-    padding-top: 56px !important;
-    padding-bottom: 74px !important;
-    overflow: hidden !important;
+    height: 330px !important;
+    min-height: 310px !important;
+    padding-top: 50px !important;
+    padding-bottom: 8px !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
   }
   .ws-toolbar {
-    top: 8px !important;
-    width: calc(100% - 20px) !important;
-    left: 10px !important;
-    padding: 6px 10px !important;
+    top: 6px !important;
+    width: calc(100% - 16px) !important;
+    left: 8px !important;
+    padding: 6px 8px !important;
     justify-content: space-between !important;
-    gap: 6px !important;
-    border-radius: 12px !important;
+    gap: 4px !important;
+    border-radius: 10px !important;
   }
   .ws-tool-btn {
-    padding: 5px 10px !important;
+    padding: 5px 8px !important;
     font-size: 0.72rem !important;
   }
   .ws-hint {
     display: none !important;
   }
   .quick-select-sidebar {
-    top: 60px !important;
-    right: 8px !important;
-    width: 180px !important;
-    max-height: 240px !important;
-    padding: 8px !important;
-    font-size: 0.7rem !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.22) !important;
-    display: none;
-  }
-  .quick-select-sidebar.mobile-open {
-    display: flex !important;
+    display: none !important;
   }
   .custom-left-panel {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
+    position: relative !important;
+    transform: none !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
     width: 100% !important;
-    max-height: 80vh !important;
+    max-height: none !important;
     border-right: none !important;
     border-top: 2px solid var(--border) !important;
     border-radius: 16px 16px 0 0 !important;
-    box-shadow: 0 -8px 24px rgba(0,0,0,0.3) !important;
-    z-index: 500 !important;
-    padding: 12px 16px 20px !important;
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
-    transform: translateY(calc(100% - 66px));
-  }
-  .custom-left-panel.mobile-expanded {
-    transform: translateY(0) !important;
+    box-shadow: none !important;
+    z-index: 10 !important;
+    padding: 16px 14px 80px !important;
+    overflow-y: visible !important;
   }
   .mobile-sheet-handle {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed var(--border);
+    display: none !important;
   }
+  .mobile-cuts-carousel {
+    display: flex !important;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 12px;
+    background: #F3E8DB;
+    border-bottom: 1.5px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    width: 100%;
+  }
+  .mobile-cuts-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    user-select: none;
+  }
+  .mobile-cuts-card.active {
+    background: var(--brand-primary) !important;
+    color: white !important;
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 2px 10px rgba(12, 81, 63, 0.4);
+  }
+  .sticky-mobile-cart-bar {
+    display: flex !important;
+  }
+}
+
+.sticky-mobile-cart-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #0C513F;
+  color: white;
+  padding: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2000;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.25);
+  font-family: 'Outfit', sans-serif;
 }
 </style>
 </head>
@@ -673,50 +733,69 @@ body {
       </div>
     </div>
 
-    <div class="workshop-title">Digital scale</div>
-    <div class="scale-container" style="margin-bottom: 10px;">
-      <div class="scale-emoji-overlay" id="scaleEmoji">🥩</div>
-      <div class="scale-pan" id="scalePan"></div>
-      <div class="scale-pan-base"></div>
-      
-      <div class="scale-display">
-        <div class="display-weight" id="weightDisplay">0</div>
-        <div class="display-unit">grams</div>
-        <div class="display-part-name" id="scalePartName">— empty —</div>
-      </div>
+    <div class="workshop-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>Digital Butcher Terminal</span>
+      <span style="font-size:0.68rem; color:#2E7D32; font-weight:700; text-transform:none;">● Live Scale</span>
     </div>
 
-    <!-- Boneless & Skinless options -->
-    <div id="meatOptionsSection" style="margin-bottom: 12px; background: var(--paper-dark); border-radius: 6px; padding: 10px; border: 1px solid var(--border); width: 100%; display: flex; justify-content: space-around; gap: 8px;">
-      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--ink); cursor: pointer; user-select: none;">
-        <input type="checkbox" id="checkBoneless" onchange="toggleMeatOption('boneless')" style="width: 14px; height: 14px; accent-color: var(--brand-primary); cursor: pointer;">
-        Boneless (-20% wt)
-      </label>
-      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--ink); cursor: pointer; user-select: none;">
-        <input type="checkbox" id="checkSkinless" onchange="toggleMeatOption('skinless')" style="width: 14px; height: 14px; accent-color: var(--brand-primary); cursor: pointer;">
-        Skinless (-5% wt)
-      </label>
-    </div>
-
-    <!-- Weight selector section (quick weight presets and custom text input) -->
-    <div id="weightSelectorSection" style="display: none; margin-bottom: 10px; background: var(--paper-dark); border-radius: 6px; padding: 8px; border: 1px solid var(--border); width: 100%;">
-      <div style="font-size: 0.65rem; font-weight: 700; color: var(--ink-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Weight Selection</div>
-      <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-        <button type="button" onclick="setPartScaleWeight(250)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">250g</button>
-        <button type="button" onclick="setPartScaleWeight(500)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">500g</button>
-        <button type="button" onclick="setPartScaleWeight(1000)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">1kg</button>
-        <button type="button" onclick="setPartScaleWeight(2000)" class="ws-tool-btn" style="flex: 1; font-size: 0.65rem; padding: 4px 0; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer; color: var(--ink); justify-content: center; font-weight: 600;">2kg</button>
+    <div class="scale-container" id="scaleTerminalContainer">
+      <div class="scale-header-bar">
+        <div class="scale-title-info">
+          <span id="scaleEmoji" style="font-size: 1.5rem;">🍗</span>
+          <div>
+            <div id="scalePartName" style="font-weight:800; font-size:0.95rem; color:#FFFFFF;">Select a Cut</div>
+            <div id="scalePartSub" style="font-size:0.68rem; color:#8FA299;">Tap any cut to choose weight</div>
+          </div>
+        </div>
+        <div class="scale-price-badge" id="scalePriceTag">₹0</div>
       </div>
-      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; background: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px;">
-        <span style="font-size: 0.65rem; color: var(--ink-light); font-weight: 600;">Custom:</span>
-        <input type="number" id="inputCustomWeight" oninput="onCustomWeightInput(this.value)" min="50" max="5000" style="width: 55px; font-family: 'DM Mono', monospace; font-size: 0.75rem; border: none; outline: none; text-align: right; color: var(--ink); font-weight: bold;" value="250">
-        <span style="font-size: 0.65rem; color: var(--ink-light); font-weight: 600;">grams</span>
-      </div>
-    </div>
 
-    <!-- Harvest Button Container -->
-    <div id="harvestBtnContainer" style="display: none; margin-bottom: 12px; background: var(--paper-dark); border-radius: 6px; padding: 8px; border: 1px solid var(--border); width: 100%; text-align: center;">
-      <button id="btnHarvestSelect" onclick="harvestSelectedPart()" class="btn-workshop-save" style="padding: 8px 12px; font-size: 0.75rem; background: var(--brand-primary); margin: 0 auto; width: 100%;">Harvest Part</button>
+      <div class="scale-readout">
+        <div>
+          <span class="display-weight" id="weightDisplay">500</span>
+          <span class="display-unit">grams</span>
+        </div>
+        <div class="display-kg" id="weightKgDisplay">0.50 kg</div>
+      </div>
+
+      <!-- 1-Tap Weight Pills -->
+      <div style="font-size:0.68rem; font-weight:700; color:#8FA299; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.04em;">Weight Selection (Tap to change)</div>
+      <div style="display:flex; gap:5px; margin-bottom:10px;" id="weightPillsRow">
+        <button type="button" onclick="setPartScaleWeight(500)" class="btn-weight-pill active" data-weight="500">500g</button>
+        <button type="button" onclick="setPartScaleWeight(750)" class="btn-weight-pill" data-weight="750">750g</button>
+        <button type="button" onclick="setPartScaleWeight(1000)" class="btn-weight-pill" data-weight="1000">1 kg</button>
+        <button type="button" onclick="setPartScaleWeight(1500)" class="btn-weight-pill" data-weight="1500">1.5 kg</button>
+        <button type="button" onclick="setPartScaleWeight(2000)" class="btn-weight-pill" data-weight="2000">2 kg</button>
+      </div>
+
+      <!-- Fine Adjust Steppers -->
+      <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 10px; margin-bottom:10px;">
+        <span style="font-size:0.72rem; color:#A0B2AA; font-weight:600;">Fine Adjust:</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" onclick="adjustScaleWeightBy(-50)" style="background:#1C2D25; border:1px solid #2C483B; color:#fff; width:28px; height:28px; border-radius:6px; font-weight:800; font-size:0.9rem; cursor:pointer;">−</button>
+          <span style="font-size:0.75rem; color:#E2E8E5; min-width:42px; text-align:center; font-family:'DM Mono', monospace;">±50g</span>
+          <button type="button" onclick="adjustScaleWeightBy(50)" style="background:#1C2D25; border:1px solid #2C483B; color:#fff; width:28px; height:28px; border-radius:6px; font-weight:800; font-size:0.9rem; cursor:pointer;">+</button>
+        </div>
+      </div>
+
+      <!-- Boneless & Skinless options -->
+      <div id="meatOptionsSection" style="background:rgba(255,255,255,0.04); border-radius:6px; padding:8px 10px; border:1px solid rgba(255,255,255,0.08); width:100%; display:flex; justify-content:space-around; gap:8px; margin-bottom:10px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:600; color:#E2E8E5; cursor:pointer; user-select:none;">
+          <input type="checkbox" id="checkBoneless" onchange="toggleMeatOption('boneless')" style="width:15px; height:15px; accent-color:#2ECC71; cursor:pointer;">
+          Boneless (-20%)
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:600; color:#E2E8E5; cursor:pointer; user-select:none;">
+          <input type="checkbox" id="checkSkinless" onchange="toggleMeatOption('skinless')" style="width:15px; height:15px; accent-color:#2ECC71; cursor:pointer;">
+          Skinless (-5%)
+        </label>
+      </div>
+
+      <!-- Action Button inside scale card -->
+      <div id="harvestBtnContainer" style="width:100%; text-align:center;">
+        <button id="btnHarvestSelect" onclick="harvestSelectedPart()" class="btn-workshop-save" style="padding:10px 14px; font-size:0.85rem; background:#2ECC71; color:#081A12; font-weight:800; border:none; border-radius:8px; width:100%; cursor:pointer; box-shadow: 0 4px 12px rgba(46,204,113,0.35);">
+          ➕ Add Selected Cut to Order
+        </button>
+      </div>
     </div>
 
     <!-- Harvested cuts list (placed directly below the scale section) -->
@@ -785,6 +864,28 @@ body {
       </div>
       
       <span class="ws-hint" id="wsModeHint">▶ Select Mode - click parts to inspect</span>
+    </div>
+
+    <!-- MOBILE QUICK-CUT SELECTION CAROUSEL -->
+    <div class="mobile-cuts-carousel" id="mobileCutsCarousel">
+      <div class="mobile-cuts-card active" id="mcc_breast" onclick="selectMobileCut('breast_l')">
+        <span>🍗</span> Breast Fillet
+      </div>
+      <div class="mobile-cuts-card" id="mcc_leg" onclick="selectMobileCut('leg_l')">
+        <span>🍗</span> Drumsticks
+      </div>
+      <div class="mobile-cuts-card" id="mcc_thigh" onclick="selectMobileCut('thigh_l')">
+        <span>🍗</span> Thighs
+      </div>
+      <div class="mobile-cuts-card" id="mcc_whole_leg" onclick="selectMobileCut('leg_whole_l')">
+        <span>🍗</span> Whole Leg
+      </div>
+      <div class="mobile-cuts-card" id="mcc_wing" onclick="selectMobileCut('wing_l')">
+        <span>🍗</span> Wings
+      </div>
+      <div class="mobile-cuts-card" id="mcc_curry" onclick="selectMobileCut('back_upper')">
+        <span>🍗</span> Curry Cut (Ribs)
+      </div>
     </div>
 
     <!-- 2D SVG Diagram (Chicken) -->
@@ -1984,41 +2085,32 @@ const NO_BONELESS_PARTS = new Set([
 // ==========================================
 
 function animateScale(targetWeight, partName, emoji) {
-  const pan = document.getElementById('scalePan');
   const display = document.getElementById('weightDisplay');
   const partLabel = document.getElementById('scalePartName');
   const emojiEl = document.getElementById('scaleEmoji');
+  const kgEl = document.getElementById('weightKgDisplay');
+  const priceEl = document.getElementById('scalePriceTag');
+  const harvestBtn = document.getElementById('btnHarvestSelect');
 
-  pan.classList.remove('weighing');
-  void pan.offsetWidth;
-  pan.classList.add('weighing');
+  const w = targetWeight || 500;
+  if (emojiEl) emojiEl.textContent = emoji || '🥩';
+  if (partLabel) partLabel.textContent = partName || 'Custom Cut';
+  if (display) display.textContent = w.toLocaleString();
+  if (kgEl) kgEl.textContent = ((w / 1000).toFixed(2)) + ' kg';
 
-  emojiEl.textContent = emoji || '🥩';
-  emojiEl.style.opacity = '1';
-
-  const duration = 600;
-  const steps = 30;
-  const step = targetWeight / steps;
-  let current = 0;
-  let i = 0;
-
-  display.textContent = '0';
-  partLabel.textContent = partName;
-
-  const interval = setInterval(() => {
-    i++;
-    current = Math.min(Math.round(step * i), targetWeight);
-    display.textContent = current.toLocaleString();
-    if (i >= steps) {
-      clearInterval(interval);
-      display.textContent = targetWeight.toLocaleString();
+  // Live price estimation
+  if (priceEl && currentScalePartId) {
+    const info = (currentAnimal === 'fish' ? FISH_PART_INFO : PART_INFO)[currentScalePartId + '|' + currentAnimal] || PART_INFO[currentScalePartId];
+    if (info) {
+      const ppg = (info.price || 200) / (info.weight || 250);
+      const estPrice = Math.round(w * ppg);
+      priceEl.textContent = `₹${estPrice}`;
+      priceEl.style.display = 'inline-block';
+      if (harvestBtn) {
+        harvestBtn.innerHTML = `➕ Add ${info.name} (${w}g • ₹${estPrice})`;
+      }
     }
-  }, duration / steps);
-
-  setTimeout(() => {
-    pan.classList.remove('weighing');
-    emojiEl.style.opacity = '0.7';
-  }, duration + 100);
+  }
 }
 
 function updateAdjustedScaleWeight() {
@@ -2030,7 +2122,7 @@ function updateAdjustedScaleWeight() {
   setIsBonelessState(activeB);
   setIsSkinlessState(activeS);
   
-  let adjusted = baseScaleWeight;
+  let adjusted = baseScaleWeight || 500;
   if (activeB) adjusted *= 0.8;
   if (activeS) adjusted *= 0.95;
   adjusted = Math.round(adjusted);
@@ -2038,16 +2130,64 @@ function updateAdjustedScaleWeight() {
   setCurrentScaleWeightState(adjusted);
   
   const display = document.getElementById('weightDisplay');
-  if (display) {
-    display.textContent = adjusted.toLocaleString();
+  const kgEl = document.getElementById('weightKgDisplay');
+  const priceEl = document.getElementById('scalePriceTag');
+  const harvestBtn = document.getElementById('btnHarvestSelect');
+
+  if (display) display.textContent = adjusted.toLocaleString();
+  if (kgEl) kgEl.textContent = ((adjusted / 1000).toFixed(2)) + ' kg';
+
+  if (priceEl && currentScalePartId) {
+    const info = (currentAnimal === 'fish' ? FISH_PART_INFO : PART_INFO)[currentScalePartId + '|' + currentAnimal] || PART_INFO[currentScalePartId];
+    if (info) {
+      const ppg = (info.price || 200) / (info.weight || 250);
+      const estPrice = Math.round(adjusted * ppg);
+      priceEl.textContent = `₹${estPrice}`;
+      if (harvestBtn) {
+        harvestBtn.innerHTML = `➕ Add ${info.name} (${adjusted}g • ₹${estPrice})`;
+      }
+    }
   }
 }
 
 function setPartScaleWeight(weight) {
-  setBaseScaleWeightState(parseInt(weight) || 250);
+  const w = parseInt(weight) || 500;
+  setBaseScaleWeightState(w);
   updateAdjustedScaleWeight();
-  const inputEl = document.getElementById('inputCustomWeight');
-  if (inputEl) inputEl.value = baseScaleWeight;
+
+  // Highlight selected weight pill button
+  document.querySelectorAll('.btn-weight-pill').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.weight) === w);
+  });
+}
+
+function adjustScaleWeightBy(delta) {
+  const current = baseScaleWeight || 500;
+  let next = current + delta;
+  if (next < 100) next = 100;
+  if (next > 5000) next = 5000;
+  setPartScaleWeight(next);
+}
+
+function selectMobileCut(partId) {
+  // Highlight active mobile cut card
+  document.querySelectorAll('.mobile-cuts-card').forEach(card => {
+    card.classList.remove('active');
+  });
+  const activeEl = document.getElementById(`mcc_${partId}`) || event?.currentTarget;
+  if (activeEl) activeEl.classList.add('active');
+
+  // Trigger inspection and auto-select 500g
+  inspectPart(partId);
+  setPartScaleWeight(500);
+
+  // Smooth scroll down to the scale terminal if on mobile
+  if (window.innerWidth <= 900) {
+    const terminal = document.getElementById('scaleTerminalContainer');
+    if (terminal) {
+      terminal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
 }
 
 function onCustomWeightInput(weightVal) {
@@ -2718,6 +2858,10 @@ function updateCarcassWeightSummary() {
   if (sheetTotal) {
     sheetTotal.textContent = `${totalGrams}g • ₹${Math.round(totalPrice)} (${sessionCuts.length} cuts)`;
   }
+  const stickyTotal = document.getElementById('mobileStickyTotal');
+  if (stickyTotal) {
+    stickyTotal.textContent = `${totalGrams}g • ₹${Math.round(totalPrice)} (${sessionCuts.length} cuts)`;
+  }
 }
 
 function renderSessionCuts() {
@@ -2859,14 +3003,12 @@ function inspectPart(el) {
     setSelectedLegSideState(null);
     setCurrentScalePartIdState(partId);
 
-    document.getElementById('harvestBtnContainer').style.display = 'block';
-    document.getElementById('btnHarvestSelect').textContent = `Add ${info.name}`;
+    const harvestBtn = document.getElementById('btnHarvestSelect');
+    if (harvestBtn) harvestBtn.textContent = `Add ${info.name}`;
 
-    document.getElementById('weightSelectorSection').style.display = 'block';
-    document.getElementById('inputCustomWeight').value = info.weight;
-    setPartScaleWeight(info.weight);
+    setPartScaleWeight(info.weight || 500);
 
-    let adjusted = info.weight;
+    let adjusted = info.weight || 500;
     if (activeB && !NO_BONELESS_PARTS.has(partId)) adjusted *= 0.8;
     if (activeS) adjusted *= 0.95;
     adjusted = Math.round(adjusted);
@@ -2895,14 +3037,12 @@ function inspectPart(el) {
     setSelectedLegSideState(side);
     setCurrentScalePartIdState(wholeLegId);
     
-    document.getElementById('harvestBtnContainer').style.display = 'block';
-    document.getElementById('btnHarvestSelect').textContent = `Harvest Whole Leg`;
+    const harvestBtn = document.getElementById('btnHarvestSelect');
+    if (harvestBtn) harvestBtn.textContent = `Harvest Whole Leg`;
     
-    document.getElementById('weightSelectorSection').style.display = 'block';
-    document.getElementById('inputCustomWeight').value = info.weight;
-    setPartScaleWeight(info.weight);
+    setPartScaleWeight(info.weight || 500);
     
-    let adjusted = info.weight;
+    let adjusted = info.weight || 500;
     if (activeB2) adjusted *= 0.8;
     if (activeS2) adjusted *= 0.95;
     adjusted = Math.round(adjusted);
@@ -2918,14 +3058,12 @@ function inspectPart(el) {
     setSelectedLegSideState(null);
     setCurrentScalePartIdState(partId);
 
-    document.getElementById('harvestBtnContainer').style.display = 'block';
-    document.getElementById('btnHarvestSelect').textContent = `Cut & Harvest ${info.name}`;
+    const harvestBtn = document.getElementById('btnHarvestSelect');
+    if (harvestBtn) harvestBtn.textContent = `Add ${info.name}`;
     
-    document.getElementById('weightSelectorSection').style.display = 'block';
-    document.getElementById('inputCustomWeight').value = info.weight;
-    setPartScaleWeight(info.weight);
+    setPartScaleWeight(info.weight || 500);
     
-    let adjusted = info.weight;
+    let adjusted = info.weight || 500;
     if (activeB) adjusted *= 0.8;
     if (activeS) adjusted *= 0.95;
     adjusted = Math.round(adjusted);
@@ -3101,15 +3239,40 @@ window.setAnimal = function(animal) {
   const activeDiag = document.getElementById('diag-' + animal);
   if (activeDiag) activeDiag.style.display = 'block';
 
-  // Reset left-panel state
+  // Safely reset left-panel state
   const weightDisplay = document.getElementById('weightDisplay');
-  if (weightDisplay) weightDisplay.textContent = '0';
+  if (weightDisplay) weightDisplay.textContent = '500';
   const scalePartName = document.getElementById('scalePartName');
-  if (scalePartName) scalePartName.textContent = '— empty —';
+  if (scalePartName) scalePartName.textContent = 'Select a Cut';
+  const scalePriceTag = document.getElementById('scalePriceTag');
+  if (scalePriceTag) scalePriceTag.textContent = '₹0';
 
-  document.getElementById('harvestBtnContainer').style.display  = 'none';
-  document.getElementById('weightSelectorSection').style.display = 'none';
+  const wss = document.getElementById('weightSelectorSection');
+  if (wss) wss.style.display = 'none';
   document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+
+  // Update mobile cuts carousel
+  const carousel = document.getElementById('mobileCutsCarousel');
+  if (carousel) {
+    if (animal === 'fish') {
+      carousel.innerHTML = `
+        <div class="mobile-cuts-card active" onclick="selectMobileCut('fish_mid')"><span>🐟</span> Middle Steaks</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('fish_front')"><span>🐟</span> Front Steaks</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('fish_back')"><span>🐟</span> Back Steaks</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('fish_head')"><span>🐟</span> Fish Head</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('fish_tail')"><span>🐟</span> Tail Piece</div>
+      `;
+    } else {
+      carousel.innerHTML = `
+        <div class="mobile-cuts-card active" onclick="selectMobileCut('breast_l')"><span>🍗</span> Breast Fillet</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('leg_l')"><span>🍗</span> Drumsticks</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('thigh_l')"><span>🍗</span> Thighs</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('leg_whole_l')"><span>🍗</span> Whole Leg</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('wing_l')"><span>🍗</span> Wings</div>
+        <div class="mobile-cuts-card" onclick="selectMobileCut('back_upper')"><span>🍗</span> Curry Cut (Ribs)</div>
+      `;
+    }
+  }
 
   // Re-setup interactions and sidebar for new animal
   setupSVGInteractions();
@@ -3122,6 +3285,8 @@ window.setAnimal = function(animal) {
 };
 
 window.setPartScaleWeight = setPartScaleWeight;
+window.adjustScaleWeightBy = adjustScaleWeightBy;
+window.selectMobileCut = selectMobileCut;
 window.onCustomWeightInput = onCustomWeightInput;
 window.harvestSelectedPart = harvestSelectedPart;
 window.undoLastCut = undoLastCut;
@@ -3162,6 +3327,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initOffalBox();
   setupSVGInteractions();
   renderQuickSelectSidebar();
+  inspectPart('breast_l');
+  setPartScaleWeight(500);
 });
 
 </script>
@@ -3193,6 +3360,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <button type="button" onclick="closeLegCutModal()" style="background:none; border:none; color:#7F8C8D; font-size:0.8rem; font-weight:600; cursor:pointer; padding:6px 12px;">Cancel</button>
   </div>
+</div>
+
+<!-- STICKY MOBILE CART SUMMARY BAR -->
+<div class="sticky-mobile-cart-bar" id="stickyMobileCartBar">
+  <div>
+    <div style="font-size:0.68rem; color:#A3E4D7; text-transform:uppercase; font-weight:700;">Cart Total</div>
+    <div style="font-size:1.15rem; font-weight:800; font-family:'DM Mono', monospace;" id="mobileStickyTotal">0g • ₹0</div>
+  </div>
+  <button type="button" onclick="saveCustomCutsToCart()" style="background:#2ECC71; color:#0A1F16; border:none; border-radius:24px; padding:10px 18px; font-weight:800; font-size:0.88rem; cursor:pointer; font-family:'Outfit', sans-serif; display:flex; align-items:center; gap:6px; box-shadow:0 3px 10px rgba(46,204,113,0.35);">
+    <span>🛒</span> Add to Cart
+  </button>
 </div>
 
 </body>
