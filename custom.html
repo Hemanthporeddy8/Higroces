@@ -673,6 +673,9 @@ body {
   .mobile-sheet-handle {
     display: none !important;
   }
+  #tooltip {
+    display: none !important;
+  }
   .mobile-cuts-carousel {
     display: flex !important;
     gap: 8px;
@@ -2084,6 +2087,7 @@ function setSelectedLegSideState(val) { selectedLegSide = val; }
 function setBaseScaleWeightState(val) { baseScaleWeight = val; }
 function setIsBonelessState(val) { isBoneless = val; }
 function setIsSkinlessState(val) { isSkinless = val; }
+function syncPartTo3D(partId, visible) { /* Safe no-op */ }
 
 // Current animal type
 let currentAnimal = 'chicken'; // 'chicken' or 'fish'
@@ -2820,9 +2824,8 @@ function chooseLegOption(choice) {
       getSVGElements(p).forEach(elPart => {
         elPart.classList.add('cutting');
         setTimeout(() => elPart.classList.remove('cutting'), 420);
-        severPart(p);
       });
-      syncPartTo3D(p, false);
+      severPart(p);
     });
 
     spawn2DSlash(pos.cx, pos.cy);
