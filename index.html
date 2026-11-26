@@ -4204,53 +4204,68 @@ async function submitDirectOrder() {
     isCustom: !!i.isCustom
   }));
 
-  const orderHasMeat = cart.some(i => {
-    const c = (i.category || '').toLowerCase();
-    const n = (i.name || '').toLowerCase();
-    return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' || i.isCustom || i.isButcher ||
-           n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn') ||
-           n.includes('curry cut') || n.includes('biryani cut') || n.includes('boneless') || n.includes('bengali cut');
-  });
+  // Check if order contains custom carved butcher cuts (carved in 3D butcher mode)
+  const hasCustomButcherCuts = cart.some(i => i.isCustom || i.isButcher || i.category === 'custom' || (i.name && i.name.includes('(Custom Cut)')));
 
-  let targetShopId = (activeShop && activeShop.id) ? activeShop.id : 'shop_primary_hub';
+  let targetShopId = (activeShop && activeShop.id) ? activeShop.id : (registeredShops[0] ? registeredShops[0].id : null);
 
-  if (orderHasMeat) {
-    const isMeatCapable = activeShop && (activeShop.category === 'meat' || activeShop.category === 'all');
-    if (!isMeatCapable) {
-      const meatShops = registeredShops.filter(s => s.is_active == 1 && (s.category === 'meat' || s.category === 'all'));
-      if (meatShops.length === 0) {
-        alert('🛑 No meat shop near you: No active butcher hub is available to fulfill custom meat cuts in your area.');
+  // If order has actual custom butcher cuts, require a butcher shop
+  if (hasCustomButcherCuts) {
+    const meatShops = registeredShops.filter(s => s.is_active == 1 && (s.category === 'meat' || s.category === 'all'));
+    if (meatShops.length === 0) {
+      alert('🛑 No butcher hub available: Custom carved meat cuts require an active partner butcher shop in your area. Please remove custom cuts to proceed with standard store delivery.');
+      return;
+    }
+    if (customerLiveLat && customerLiveLng) {
+      let closestMeat = null;
+      let minD = Infinity;
+      for (const s of meatShops) {
+        const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
+        const maxR = Number(s.delivery_radius_km) || 15.0;
+        if (d <= maxR && d < minD) {
+          minD = d;
+          closestMeat = s;
+        }
+      }
+      if (!closestMeat) {
+        alert('🛑 Outside butcher delivery radius: You are located outside the delivery radius of our active butcher hubs for custom cuts.');
         return;
       }
-      if (customerLiveLat && customerLiveLng) {
-        let closestMeat = null;
-        let minD = Infinity;
-        for (const s of meatShops) {
-          const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
-          const maxR = Number(s.delivery_radius_km) || 15.0;
-          if (d <= maxR && d < minD) {
-            minD = d;
-            closestMeat = s;
-          }
+      targetShopId = closestMeat.id;
+      activeShop = closestMeat;
+      updateStorefrontHeaderBadge();
+    } else {
+      targetShopId = meatShops[0].id;
+      activeShop = meatShops[0];
+      updateStorefrontHeaderBadge();
+    }
+  } else {
+    // Standard catalog order (pre-packaged chicken, groceries, eggs, etc.)
+    // Route to the nearest serviceable partner shop in the delivery radius
+    if (customerLiveLat && customerLiveLng) {
+      const activeEligible = registeredShops.filter(s => s.is_active == 1);
+      let closestShop = null;
+      let minD = Infinity;
+      for (const s of activeEligible) {
+        const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
+        const maxR = Number(s.delivery_radius_km) || 15.0;
+        if (d <= maxR && d < minD) {
+          minD = d;
+          closestShop = s;
         }
-        if (!closestMeat) {
-          alert('🛑 No meat shop near you: You are located outside the delivery radius of our active butcher hubs.');
+      }
+      if (closestShop) {
+        targetShopId = closestShop.id;
+        activeShop = closestShop;
+      } else if (activeShop) {
+        const d = haversineDistKm(customerLiveLat, customerLiveLng, activeShop.latitude, activeShop.longitude);
+        const maxR = Number(activeShop.delivery_radius_km) || 15.0;
+        if (d > maxR) {
+          alert('🚫 Delivery not available in your location: You are outside the delivery zone of our active partner stores.');
           return;
         }
-        targetShopId = closestMeat.id;
-        activeShop = closestMeat;
-        updateStorefrontHeaderBadge();
       } else {
-        const defaultMeat = meatShops.find(s => s.id === 'shop_primary_hub') || meatShops[0];
-        targetShopId = defaultMeat.id;
-        activeShop = defaultMeat;
-        updateStorefrontHeaderBadge();
-      }
-    } else if (customerLiveLat && customerLiveLng) {
-      const d = haversineDistKm(customerLiveLat, customerLiveLng, activeShop.latitude, activeShop.longitude);
-      const maxR = Number(activeShop.delivery_radius_km) || 15.0;
-      if (d > maxR) {
-        alert('🛑 No meat shop near you: You are located outside the delivery radius of this butcher hub.');
+        alert('🚫 Delivery not available in your location: No active partner store delivers to this area.');
         return;
       }
     }

@@ -2164,75 +2164,93 @@ export default {
           const cust_lng = (body.cust_lng !== undefined && body.cust_lng !== null && body.cust_lng !== '') ? Number(body.cust_lng) : null;
           let shop_id = (body.shop_id && String(body.shop_id).trim()) ? String(body.shop_id).trim() : null;
 
-          // 🧠 Smart Shop Routing: Enforce Meat Store for meat orders and Grocery Store for groceries
-          let hasMeat = false;
+          // 🧠 Smart Shop Routing:
+          // Check if order contains interactive custom carved butcher cuts (carved in 3D butcher mode)
+          let hasCustomButcherCuts = false;
+          let parsedItems = [];
           try {
-            const parsedItems = typeof body.items === 'string' ? JSON.parse(body.items) : (body.items || []);
-            hasMeat = parsedItems.some(it => {
+            parsedItems = typeof body.items === 'string' ? JSON.parse(body.items) : (body.items || []);
+            hasCustomButcherCuts = parsedItems.some(it => {
               const n = (it.name || '').toLowerCase();
               const c = (it.category || '').toLowerCase();
-              return c === 'chicken' || c === 'mutton' || c === 'fish' || c === 'meat' || c === 'custom' || it.isButcher || it.isCustom ||
-                     n.includes('chicken') || n.includes('mutton') || n.includes('fish') || n.includes('meat') || n.includes('prawn') || n.includes('curry cut') || n.includes('biryani cut') || n.includes('boneless') || n.includes('bengali cut');
+              return c === 'custom' || it.isButcher || it.isCustom || it.custom_cuts ||
+                     n.includes('(custom cut)') || n.includes('harvested cut') || n.includes('butcher cut');
             });
           } catch(e) {}
 
           const shopRes = await env.DB.prepare("SELECT * FROM shops WHERE is_active = 1").all();
           const activeShops = shopRes.results || [];
 
-          // Filter shops strictly capable of fulfilling this item type
-          const eligibleShops = activeShops.filter(s => {
-            if (hasMeat) {
-              return s.category === 'meat' || s.category === 'all';
-            } else {
-              return s.category === 'grocery' || s.category === 'all' || !s.category;
-            }
-          });
-
-          // Check if customer-selected shop is valid for this item type
           let finalShop = null;
-          if (shop_id) {
-            finalShop = eligibleShops.find(s => s.id === shop_id);
-          }
 
-          // If customer-selected shop is valid, check delivery radius if customer GPS provided
-          if (finalShop && cust_lat && cust_lng) {
-            const d = haversineKm(cust_lat, cust_lng, finalShop.latitude, finalShop.longitude);
-            const radius = Number(finalShop.delivery_radius_km) || 15.0;
-            if (d > radius) {
-              // Selected shop is outside delivery radius, find another eligible shop within radius
-              finalShop = null;
+          if (hasCustomButcherCuts) {
+            // Strictly requires a butcher shop (category: 'meat' or 'all')
+            const butcherShops = activeShops.filter(s => s.category === 'meat' || s.category === 'all');
+            if (shop_id) {
+              finalShop = butcherShops.find(s => s.id === shop_id);
             }
-          }
-
-          // If no valid shop, or if grocery shop was selected for a meat order: auto-route to best eligible meat shop within radius
-          if (!finalShop && eligibleShops.length > 0) {
-            if (cust_lat && cust_lng) {
-              let closest = null;
-              let minD = Infinity;
-              for (const s of eligibleShops) {
-                const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
-                const radius = Number(s.delivery_radius_km) || 15.0;
-                if (d <= radius && d < minD) {
-                  minD = d;
-                  closest = s;
+            if (finalShop && cust_lat && cust_lng) {
+              const d = haversineKm(cust_lat, cust_lng, finalShop.latitude, finalShop.longitude);
+              const radius = Number(finalShop.delivery_radius_km) || 15.0;
+              if (d > radius) finalShop = null;
+            }
+            if (!finalShop && butcherShops.length > 0) {
+              if (cust_lat && cust_lng) {
+                let closest = null;
+                let minD = Infinity;
+                for (const s of butcherShops) {
+                  const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
+                  const radius = Number(s.delivery_radius_km) || 15.0;
+                  if (d <= radius && d < minD) {
+                    minD = d;
+                    closest = s;
+                  }
                 }
+                finalShop = closest;
+              } else {
+                finalShop = butcherShops[0];
               }
-              finalShop = closest;
-            } else {
-              finalShop = eligibleShops[0] || null;
             }
-          }
 
-          if (!finalShop) {
-            if (hasMeat) {
+            if (!finalShop) {
               return new Response(JSON.stringify({ 
                 success: false,
                 error: "No meat shop near you: No active butcher hub is available to fulfill custom meat cuts in your area." 
               }), { status: 400, headers: corsHeaders(request) });
-            } else {
+            }
+          } else {
+            // Standard catalog order (pre-packaged chicken, eggs, grocery, etc.)
+            // Route to active shop in customer's delivery zone
+            if (shop_id) {
+              finalShop = activeShops.find(s => s.id === shop_id);
+            }
+            if (finalShop && cust_lat && cust_lng) {
+              const d = haversineKm(cust_lat, cust_lng, finalShop.latitude, finalShop.longitude);
+              const radius = Number(finalShop.delivery_radius_km) || 15.0;
+              if (d > radius) finalShop = null;
+            }
+            if (!finalShop && activeShops.length > 0) {
+              if (cust_lat && cust_lng) {
+                let closest = null;
+                let minD = Infinity;
+                for (const s of activeShops) {
+                  const d = haversineKm(cust_lat, cust_lng, s.latitude, s.longitude);
+                  const radius = Number(s.delivery_radius_km) || 15.0;
+                  if (d <= radius && d < minD) {
+                    minD = d;
+                    closest = s;
+                  }
+                }
+                finalShop = closest;
+              } else {
+                finalShop = activeShops[0];
+              }
+            }
+
+            if (!finalShop) {
               return new Response(JSON.stringify({ 
                 success: false,
-                error: "No grocery store available near you in this zone." 
+                error: "Delivery not available: No partner store is currently delivering to your location." 
               }), { status: 400, headers: corsHeaders(request) });
             }
           }

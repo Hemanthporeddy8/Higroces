@@ -777,6 +777,9 @@ body {
       <span style="font-size:0.68rem; color:#2E7D32; font-weight:700; text-transform:none;">● Live Scale</span>
     </div>
 
+    <!-- BUTCHER AVAILABILITY NOTICE BANNER (In Butcher Mode Only) -->
+    <div id="butcherHubNotice" style="display:none;"></div>
+
     <div class="scale-container" id="scaleTerminalContainer">
       <div class="scale-header-bar">
         <div class="scale-title-info">
@@ -2278,6 +2281,11 @@ function addCutToSession(partId, name, weight, price, emoji, size = 'Medium') {
 }
 
 function harvestSelectedPart() {
+  if (window.isButcherShopAvailable === false) {
+    alert("🛑 No meat shop near you: " + (window.butcherUnavailableReason || "No active butcher hub is available to fulfill custom meat cuts in your area.") + "\n\nYou can still order fresh pre-packaged cuts from the main storefront!");
+    return;
+  }
+
   if (!currentScalePartId) {
     alert("Please select a part of the chicken to cut & harvest!");
     return;
@@ -3317,7 +3325,87 @@ window.toggleMeatOption = toggleMeatOption;
 window.renderQuickSelectSidebar = renderQuickSelectSidebar;
 window.inspectPart = inspectPart;
 
+function haversineDistKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+window.isButcherShopAvailable = true;
+window.butcherUnavailableReason = '';
+
+async function checkButcherShopAvailability() {
+  try {
+    const res = await fetch('/api/shops');
+    const data = await res.json();
+    const allShops = data.shops || [];
+    const butcherShops = allShops.filter(s => s.is_active == 1 && (s.category === 'meat' || s.category === 'all'));
+    
+    let userLat = parseFloat(localStorage.getItem('user_lat'));
+    let userLng = parseFloat(localStorage.getItem('user_lng'));
+
+    if (butcherShops.length === 0) {
+      window.isButcherShopAvailable = false;
+      window.butcherUnavailableReason = 'No active butcher hub is available to fulfill custom meat cuts in your area.';
+    } else if (!isNaN(userLat) && !isNaN(userLng)) {
+      let inRange = false;
+      for (const s of butcherShops) {
+        const d = haversineDistKm(userLat, userLng, s.latitude, s.longitude);
+        const radius = Number(s.delivery_radius_km) || 15.0;
+        if (d <= radius) {
+          inRange = true;
+          break;
+        }
+      }
+      if (!inRange) {
+        window.isButcherShopAvailable = false;
+        window.butcherUnavailableReason = 'You are located outside the delivery radius of our active butcher hubs.';
+      } else {
+        window.isButcherShopAvailable = true;
+      }
+    } else {
+      window.isButcherShopAvailable = true;
+    }
+
+    const noticeEl = document.getElementById('butcherHubNotice');
+    if (!window.isButcherShopAvailable) {
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.innerHTML = `
+          <div style="background:#FFF3CD; border:1.5px solid #FFEBAA; border-radius:10px; padding:12px; margin-bottom:14px; font-family:'Outfit', sans-serif;">
+            <div style="display:flex; align-items:center; gap:8px; color:#856404; font-weight:800; font-size:0.88rem;">
+              <span style="font-size:1.1rem;">🛑</span> No Meat Shop Near You
+            </div>
+            <div style="color:#664D03; font-size:0.78rem; margin-top:5px; line-height:1.4;">
+              ${window.butcherUnavailableReason}
+            </div>
+            <div style="margin-top:8px;">
+              <a href="index.html" style="display:inline-block; background:#0C513F; color:#fff; font-size:0.75rem; font-weight:700; padding:5px 12px; border-radius:6px; text-decoration:none;">
+                ← Order Standard Pre-Packs from Store
+              </a>
+            </div>
+          </div>
+        `;
+      }
+    } else if (noticeEl) {
+      noticeEl.style.display = 'none';
+    }
+  } catch(e) {
+    console.warn("Could not check butcher availability:", e);
+  }
+}
+
 window.saveCustomCutsToCart = function() {
+  if (window.isButcherShopAvailable === false) {
+    alert("🛑 No meat shop near you: " + (window.butcherUnavailableReason || "No active butcher hub is available to fulfill custom meat cuts in your area.") + "\n\nYou can still order fresh pre-packaged cuts directly from the main storefront!");
+    return;
+  }
+
   if (sessionCuts.length === 0) {
     alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
     return;
@@ -3352,6 +3440,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderQuickSelectSidebar();
   inspectPart('breast_l');
   setPartScaleWeight(500);
+
+  // Check if an active butcher hub is nearby for custom cuts
+  checkButcherShopAvailability();
 });
 
 </script>
