@@ -2378,15 +2378,15 @@ html.is-native-app #drawerInstallTile,
   </div>
 </div>
 
-<!-- LOCATION & PARTNER SHOP SELECTOR MODAL -->
+<!-- LOCATION MODAL -->
 <div class="modal-backdrop" id="locationShopModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); z-index:3500; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:#FFFFFF; border-radius:16px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; padding:22px; box-shadow:0 12px 35px rgba(0,0,0,0.3); font-family:'Outfit', sans-serif;">
+  <div style="background:#FFFFFF; border-radius:16px; width:100%; max-width:440px; max-height:90vh; overflow-y:auto; padding:22px; box-shadow:0 12px 35px rgba(0,0,0,0.3); font-family:'Outfit', sans-serif;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #ECEEEF; padding-bottom:12px;">
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:1.4rem;">📍</span>
         <div>
-          <h3 style="margin:0; font-size:1.15rem; color:#1C2826; font-weight:800;">Delivery Location &amp; Shop</h3>
-          <p style="margin:2px 0 0; font-size:0.75rem; color:#6B7C75;">Select your locality or choose your preferred partner shop</p>
+          <h3 style="margin:0; font-size:1.15rem; color:#1C2826; font-weight:800;">Set Delivery Location</h3>
+          <p style="margin:2px 0 0; font-size:0.75rem; color:#6B7C75;">Select your locality to check delivery availability</p>
         </div>
       </div>
       <button onclick="closeLocationShopModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#7E8D87;">&times;</button>
@@ -2397,10 +2397,10 @@ html.is-native-app #drawerInstallTile,
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div style="flex:1;">
           <div style="font-size:0.88rem; font-weight:800; color:#0C513F; display:flex; align-items:center; gap:6px;">
-            <span>🎯</span> Auto-Match Nearest Partner Shop
+            <span>🎯</span> Auto-Detect My Location
           </div>
           <div style="font-size:0.75rem; color:#4E6B62; margin-top:2px;" id="gpsMatchStatus">
-            Uses your GPS device location to route directly to the closest shop.
+            Uses your device GPS to verify instant store delivery.
           </div>
         </div>
         <button type="button" onclick="detectGpsAndAutoSelectShop()" id="btnGpsMatch" style="background:#0C513F; color:white; border:none; padding:8px 14px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap;">
@@ -2414,25 +2414,19 @@ html.is-native-app #drawerInstallTile,
       <label style="display:block; font-size:0.8rem; font-weight:700; color:#2C3E37; margin-bottom:6px;">
         Delivery Locality / Area:
       </label>
-      <input type="text" id="modalZoneInput" placeholder="e.g. HSR Layout, Sector 2 or Subedari Warangal" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid #D1D8D5; font-size:0.9rem; font-family:inherit; box-sizing:border-box;" oninput="onZoneInputChange(this.value)" />
+      <input type="text" id="modalZoneInput" placeholder="e.g. Subedari, Warangal or HSR Layout" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid #D1D8D5; font-size:0.9rem; font-family:inherit; box-sizing:border-box;" oninput="onZoneInputChange(this.value)" />
     </div>
 
-    <!-- AVAILABLE PARTNER SHOPS -->
+    <!-- SERVICE AVAILABILITY STATUS CONTAINER -->
     <div style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <label style="font-size:0.82rem; font-weight:800; color:#2C3E37;">
-          Available Partner Shops Nearby:
-        </label>
-        <span style="font-size:0.72rem; color:#6B7C75;" id="shopListCount">Loading shops...</span>
-      </div>
-      <div id="modalShopsList" style="display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto; padding-right:4px;">
+      <div id="modalShopsList" style="display:flex; flex-direction:column; gap:8px;">
         <!-- Populated dynamically via loadStorefrontShops -->
       </div>
     </div>
 
     <div style="display:flex; justify-content:flex-end; gap:10px;">
-      <button type="button" onclick="closeLocationShopModal()" style="background:#0C513F; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:700; font-size:0.88rem; cursor:pointer;">
-        Confirm &amp; Start Shopping
+      <button type="button" onclick="confirmLocationAndClose()" id="btnConfirmLocation" style="background:#0C513F; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:700; font-size:0.88rem; width:100%; cursor:pointer;">
+        Confirm Location &amp; Start Shopping
       </button>
     </div>
   </div>
@@ -2613,15 +2607,15 @@ html.is-native-app #drawerInstallTile,
       </a>
     </div>
 
-    <!-- Dynamic Location & Partner Shop Selector -->
-    <div class="delivery-badge" id="deliveryBadgeBtn" onclick="openLocationShopModal()" title="Tap to select your location or partner shop" style="cursor:pointer; transition:all 0.2s;">
-      <span style="font-size:1.15rem;">📍</span>
+    <!-- Dynamic Location Selector -->
+    <div class="delivery-badge" id="deliveryBadgeBtn" onclick="openLocationShopModal()" title="Tap to select your delivery location" style="cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.25rem;">📍</span>
       <div style="display:flex; flex-direction:column; line-height:1.2; text-align:left;">
-        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">
-          Delivering to <span id="headerZoneName" style="color:var(--brand-primary); font-weight:800;">HSR Layout</span> ▾
+        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">
+          Delivering to ▾
         </div>
-        <div style="font-size:0.8rem; color:var(--brand-accent); font-weight:700; display:flex; align-items:center; gap:4px;">
-          <span id="headerShopIcon">🏪</span> <span id="headerShopName">Finding Nearest Shop...</span>
+        <div style="font-size:0.88rem; color:var(--brand-primary); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" id="headerZoneName">
+          Select Location
         </div>
       </div>
     </div>
@@ -3267,6 +3261,8 @@ function haversineDistKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+window.isAreaServiceable = false;
+
 async function loadStorefrontShops() {
   try {
     const res = await fetch('/api/shops');
@@ -3274,15 +3270,19 @@ async function loadStorefrontShops() {
     const data = await res.json();
     registeredShops = data.shops || [];
 
-    // Attempt restoring saved shop from localStorage
-    const savedId = localStorage.getItem('amorelot_active_shop_id');
-    if (savedId) {
-      activeShop = registeredShops.find(s => s.id === savedId && s.is_active == 1);
+    // Attempt restoring saved location & shop
+    const savedZone = localStorage.getItem('user_delivery_zone') || localStorage.getItem('amorelot_saved_address');
+    if (savedZone) {
+      activeZone = savedZone;
     }
-    // If no valid saved shop, pick first active shop
-    if (!activeShop && registeredShops.length > 0) {
-      activeShop = registeredShops.find(s => s.is_active == 1) || registeredShops[0];
+    const savedLat = parseFloat(localStorage.getItem('amorelot_saved_lat'));
+    const savedLng = parseFloat(localStorage.getItem('amorelot_saved_lng'));
+    if (!isNaN(savedLat) && !isNaN(savedLng)) {
+      customerLiveLat = savedLat;
+      customerLiveLng = savedLng;
     }
+
+    evaluateShopServiceability();
     updateStorefrontHeaderBadge();
     renderModalShopsList();
   } catch(err) {
@@ -3290,21 +3290,59 @@ async function loadStorefrontShops() {
   }
 }
 
+function evaluateShopServiceability() {
+  if (registeredShops.length === 0) {
+    activeShop = null;
+    window.isAreaServiceable = false;
+    return;
+  }
+
+  if (customerLiveLat && customerLiveLng) {
+    let closest = null;
+    let minD = Infinity;
+    registeredShops.forEach(s => {
+      if (s.is_active == 1) {
+        const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
+        const maxRadius = Number(s.delivery_radius_km) || 12.0;
+        if (d <= maxRadius && d < minD) {
+          minD = d;
+          closest = s;
+        }
+      }
+    });
+
+    if (closest) {
+      activeShop = closest;
+      window.isAreaServiceable = true;
+      localStorage.setItem('amorelot_active_shop_id', closest.id);
+    } else {
+      activeShop = null;
+      window.isAreaServiceable = false;
+    }
+  } else {
+    // If no coordinates yet, check if any active shop exists
+    const anyActive = registeredShops.find(s => s.is_active == 1);
+    if (anyActive) {
+      activeShop = anyActive;
+      window.isAreaServiceable = true;
+    } else {
+      activeShop = null;
+      window.isAreaServiceable = false;
+    }
+  }
+}
+
 function updateStorefrontHeaderBadge() {
   const zoneEl = document.getElementById('headerZoneName');
-  const shopEl = document.getElementById('headerShopName');
-  const iconEl = document.getElementById('headerShopIcon');
-
-  if (zoneEl) zoneEl.textContent = activeZone || 'Select Area';
-  if (shopEl) {
-    if (activeShop) {
-      shopEl.textContent = activeShop.name;
-      if (iconEl) {
-        iconEl.textContent = activeShop.category === 'grocery' ? '🛒' : (activeShop.category === 'meat' ? '🥩' : '🏪');
-      }
+  if (zoneEl) {
+    if (activeZone && activeZone !== 'HSR Layout') {
+      zoneEl.textContent = activeZone;
+    } else if (localStorage.getItem('user_delivery_zone')) {
+      zoneEl.textContent = localStorage.getItem('user_delivery_zone');
+    } else if (localStorage.getItem('amorelot_saved_address')) {
+      zoneEl.textContent = localStorage.getItem('amorelot_saved_address').split(',')[0];
     } else {
-      shopEl.textContent = 'All Hubs Active';
-      if (iconEl) iconEl.textContent = '🏪';
+      zoneEl.textContent = 'Select Location';
     }
   }
 }
@@ -3312,7 +3350,7 @@ function updateStorefrontHeaderBadge() {
 function openLocationShopModal() {
   const modal = document.getElementById('locationShopModal');
   const zoneInput = document.getElementById('modalZoneInput');
-  if (zoneInput) zoneInput.value = activeZone || '';
+  if (zoneInput) zoneInput.value = activeZone || localStorage.getItem('user_delivery_zone') || '';
   if (modal) modal.style.display = 'flex';
   renderModalShopsList();
 }
@@ -3322,36 +3360,22 @@ function closeLocationShopModal() {
   if (modal) modal.style.display = 'none';
 }
 
+function confirmLocationAndClose() {
+  const zoneInput = document.getElementById('modalZoneInput');
+  if (zoneInput && zoneInput.value.trim()) {
+    activeZone = zoneInput.value.trim();
+    localStorage.setItem('user_delivery_zone', activeZone);
+  }
+  updateStorefrontHeaderBadge();
+  closeLocationShopModal();
+}
+
 function onZoneInputChange(val) {
-  activeZone = val.trim() || 'HSR Layout';
+  activeZone = val.trim();
   localStorage.setItem('user_delivery_zone', activeZone);
   updateStorefrontHeaderBadge();
-}
-
-function changeActiveZone(newZone) {
-  onZoneInputChange(newZone);
-  showToast(`📍 Zone updated to ${newZone}`);
-}
-
-function selectStorefrontShop(shopId) {
-  const shop = registeredShops.find(s => s.id === shopId);
-  if (!shop) return;
-  activeShop = shop;
-  localStorage.setItem('amorelot_active_shop_id', shop.id);
-  updateStorefrontHeaderBadge();
+  evaluateShopServiceability();
   renderModalShopsList();
-
-  // Smart cart warning: If cart has meat and shop is grocery only
-  const hasMeat = cart.some(item => {
-    const p = PRODUCTS.find(prod => prod.id === item.id);
-    return p && (p.category === 'chicken' || p.category === 'mutton' || p.category === 'fish' || p.category === 'meat' || p.category === 'custom');
-  });
-
-  if (hasMeat && shop.category === 'grocery') {
-    showToast(`💡 Notice: ${shop.name} specializes in groceries. Your meat cuts will be dispatched from our central meat hub.`);
-  } else {
-    showToast(`🏬 Store set to ${shop.name}`);
-  }
 }
 
 function detectGpsAndAutoSelectShop() {
@@ -3361,48 +3385,50 @@ function detectGpsAndAutoSelectShop() {
     alert("Geolocation is not supported by your browser");
     return;
   }
-  if (statusEl) statusEl.textContent = "⏳ Pinning GPS device coordinates...";
+  if (statusEl) statusEl.textContent = "⏳ Detecting GPS device location...";
   if (btn) btn.disabled = true;
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
+    async (pos) => {
       customerLiveLat = pos.coords.latitude;
       customerLiveLng = pos.coords.longitude;
+      localStorage.setItem('amorelot_saved_lat', customerLiveLat);
+      localStorage.setItem('amorelot_saved_lng', customerLiveLng);
 
-      if (registeredShops.length === 0) {
-        if (statusEl) statusEl.textContent = "✅ GPS Pinned!";
-        if (btn) btn.disabled = false;
-        return;
-      }
-
-      // Compute distances to all active shops
-      let closest = null;
-      let minD = Infinity;
-      registeredShops.forEach(s => {
-        if (s.is_active == 1) {
-          const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
-          if (d < minD) {
-            minD = d;
-            closest = s;
-          }
+      // Reverse geocode to get locality name
+      try {
+        const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${customerLiveLat}&longitude=${customerLiveLng}&localityLanguage=en`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const detectedLoc = geoData.locality || geoData.city || geoData.principalSubdivision || 'Current Location';
+          activeZone = detectedLoc;
+          localStorage.setItem('user_delivery_zone', activeZone);
+          const zoneInput = document.getElementById('modalZoneInput');
+          if (zoneInput) zoneInput.value = activeZone;
+          updateStorefrontHeaderBadge();
         }
-      });
+      } catch(e) {}
 
-      if (closest) {
-        selectStorefrontShop(closest.id);
-        const distStr = minD < 1 ? `${Math.round(minD * 1000)}m` : `${minD.toFixed(1)}km`;
-        if (statusEl) {
-          statusEl.innerHTML = `<strong style="color:#0C513F;">🎯 Matched Nearest:</strong> ${closest.name} (${distStr} away)`;
-        }
-        showToast(`📍 Nearest shop matched: ${closest.name} (${distStr})`);
-      } else {
-        if (statusEl) statusEl.textContent = "✅ GPS Pinned! (Default Hub Active)";
-      }
+      evaluateShopServiceability();
       if (btn) btn.disabled = false;
+
+      if (window.isAreaServiceable && activeShop) {
+        const d = haversineDistKm(customerLiveLat, customerLiveLng, activeShop.latitude, activeShop.longitude);
+        const distStr = d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:#2ECC71; font-weight:700;">✅ Service Available (${distStr} from store)</span>`;
+        }
+        showToast(`📍 Service Available in your area`);
+      } else {
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:#E74C3C; font-weight:700;">🚫 No Shop Available in your location</span>`;
+        }
+        showToast(`🚫 No partner store operating in this area yet`);
+      }
       renderModalShopsList();
     },
     (err) => {
-      if (statusEl) statusEl.textContent = "⚠️ Could not access GPS. Please pick a shop below.";
+      if (statusEl) statusEl.textContent = "⚠️ Could not access GPS. Please type your locality above.";
       if (btn) btn.disabled = false;
     },
     { enableHighAccuracy: true, timeout: 8000 }
@@ -3411,55 +3437,30 @@ function detectGpsAndAutoSelectShop() {
 
 function renderModalShopsList() {
   const container = document.getElementById('modalShopsList');
-  const countEl = document.getElementById('shopListCount');
   if (!container) return;
 
-  if (registeredShops.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:18px; color:#888; font-size:0.85rem;">Finding partner shops...</div>`;
-    return;
-  }
-
-  if (countEl) countEl.textContent = `${registeredShops.length} Hubs Available`;
-
-  container.innerHTML = registeredShops.map(s => {
-    const isSelected = activeShop && activeShop.id === s.id;
-    const isOnline = s.is_active == 1;
-
-    let distText = '';
-    if (customerLiveLat && customerLiveLng) {
-      const d = haversineDistKm(customerLiveLat, customerLiveLng, s.latitude, s.longitude);
-      distText = d < 1 ? ` • ${Math.round(d * 1000)}m away` : ` • ${d.toFixed(1)} km away`;
-    }
-
-    const catBadge = s.category === 'grocery'
-      ? `<span style="font-size:0.7rem; background:#E8F8F1; color:#27AE60; border:1px solid #A9DFBF; padding:2px 8px; border-radius:4px; font-weight:700;">🛒 Grocery &amp; Kiranam</span>`
-      : (s.category === 'meat'
-        ? `<span style="font-size:0.7rem; background:#FDF2E9; color:#E67E22; border:1px solid #F5CBA7; padding:2px 8px; border-radius:4px; font-weight:700;">🥩 Butcher &amp; Fresh Meat</span>`
-        : `<span style="font-size:0.7rem; background:#EBF5FB; color:#2980B9; border:1px solid #AED6F1; padding:2px 8px; border-radius:4px; font-weight:700;">🏢 All-in-One Super Hub</span>`);
-
-    return `
-      <div onclick="selectStorefrontShop('${s.id}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-radius:10px; border:2px solid ${isSelected ? '#0C513F' : '#E2E7E4'}; background:${isSelected ? '#F0F8F5' : '#FFFFFF'}; cursor:pointer; transition:all 0.18s; ${!isOnline ? 'opacity:0.6;' : ''}">
-        <div style="flex:1;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
-            <strong style="color:#1C2826; font-size:0.92rem;">${s.name}</strong>
-            ${catBadge}
-            ${s.id === 'shop_primary_hub' ? '<span style="font-size:0.65rem; background:#FFF3CD; color:#856404; padding:2px 6px; border-radius:4px; font-weight:800;">PRIMARY</span>' : ''}
-          </div>
-          <div style="font-size:0.75rem; color:#6B7C75;">
-            📍 ${s.address || 'Local Dispatch Center'} ${distText}
-          </div>
-          <div style="font-size:0.72rem; color:${isOnline ? '#27AE60' : '#E74C3C'}; font-weight:700; margin-top:2px;">
-            ${isOnline ? '🟢 Open for 15-min instant drop' : '🔴 Closed / Restocking'}
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; margin-left:12px;">
-          ${isSelected 
-            ? '<span style="background:#0C513F; color:white; font-size:0.72rem; font-weight:800; padding:4px 10px; border-radius:6px;">✓ ACTIVE</span>' 
-            : '<span style="border:1px solid #CCD5D0; color:#5D6D66; font-size:0.72rem; font-weight:700; padding:4px 10px; border-radius:6px;">SELECT</span>'}
+  if (registeredShops.length === 0 || !activeShop || window.isAreaServiceable === false) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:22px 16px; background:#FEF2F2; border:1.5px solid #FCA5A5; border-radius:12px; margin-top:8px;">
+        <div style="font-size:2rem; margin-bottom:6px;">🚫</div>
+        <div style="font-weight:800; font-size:1rem; color:#991B1B;">No Shop Available in this Location</div>
+        <div style="font-size:0.78rem; color:#B91C1C; margin-top:4px; line-height:1.45;">
+          There are currently no active partner butcher or grocery shops delivering to your location. We are expanding rapidly!
         </div>
       </div>
     `;
-  }).join('');
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="text-align:center; padding:18px 14px; background:#F0FDF4; border:1.5px solid #86EFAC; border-radius:12px; margin-top:8px;">
+      <div style="font-size:1.6rem; margin-bottom:4px;">✅</div>
+      <div style="font-weight:800; font-size:0.95rem; color:#166534;">Store Delivery Available</div>
+      <div style="font-size:0.75rem; color:#15803D; margin-top:2px;">
+        15-minute express dispatch is ready for your location.
+      </div>
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════════════
@@ -4082,6 +4083,14 @@ function openOrderModal() {
     } else {
       alert('Please sign in or create an account before placing an order.');
     }
+    return;
+  }
+
+  // SERVICEABILITY CHECK: Verify partner store is available in this area
+  if (window.isAreaServiceable === false || (!activeShop && registeredShops.length === 0)) {
+    closeCartDrawer();
+    alert('🚫 No Shop Available in your location.\n\nAmorelot does not currently have an active partner butcher or grocery shop delivering to this area. Please select a serviceable location or check back soon!');
+    openLocationShopModal();
     return;
   }
 

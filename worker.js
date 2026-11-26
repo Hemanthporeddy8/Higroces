@@ -514,50 +514,15 @@ async function ensureAllSchemas(db) {
     `).run();
   } catch(e) {}
 
-  // Auto-seed primary hub if shops table is empty
+  // Purge any old dummy mock shops from the database
   try {
-    const existingShops = await db.prepare("SELECT count(*) as count FROM shops").first();
-    if (!existingShops || existingShops.count === 0) {
-      await db.prepare(`
-        INSERT INTO shops (id, name, owner_name, phone, address, latitude, longitude, delivery_radius_km, is_active, category, email, approval_status)
-        VALUES ('shop_primary_hub', 'HSR Meat Hub & Dark Store', 'Hemanth Poreddy', '+91 9876543210', 'HSR Layout, Sector 2, Bengaluru', 17.987000, 79.535900, 10.0, 1, 'meat', 'hub@amorelot.com', 'approved')
-      `).run();
-    }
-  } catch(e) {}
-
-  // Auto-categorize known shops if still generic 'all'
-  try {
-    await db.prepare("UPDATE shops SET category = 'grocery' WHERE name LIKE '%kiranam%' AND (category IS NULL OR category = 'all')").run();
-    await db.prepare("UPDATE shops SET category = 'meat' WHERE (name LIKE '%meat%' OR name LIKE '%butcher%') AND (category IS NULL OR category = 'all')").run();
-    await db.prepare("UPDATE shops SET approval_status = 'approved' WHERE approval_status IS NULL").run();
-  } catch(e) {}
-
-  // Auto-seed initial 6-digit merchant passcodes ('123456') and Master Passwords for existing shops if unassigned
-  try {
-    const s1 = await db.prepare("SELECT passcode_hash, password_hash FROM shops WHERE id = 'shop_primary_hub'").first();
-    if (!s1 || !s1.passcode_hash || !s1.password_hash) {
-      const salt1 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-      const pSalt1 = 'f0e1d2c3b4a5968778695a4b3c2d1e0f';
-      const hash1 = '447699188107b8d71af481d4d87f123c7a7ab686b235bc23c5dcaac8cd797ff8';
-      const pHash1 = 'd016092350d6fcdb7ce36e82146b71ab163cecd99cc6de59d0a1b5df5e26c4cc';
-      await db.prepare(`
-        UPDATE shops 
-        SET email = 'hub@amorelot.com', passcode_hash = ?, salt = ?, password_hash = ?, password_salt = ?, approval_status = 'approved' 
-        WHERE id = 'shop_primary_hub'
-      `).bind(hash1, salt1, pHash1, pSalt1).run();
-    }
-    const s2 = await db.prepare("SELECT passcode_hash, password_hash FROM shops WHERE id = 'shop_84917e65'").first();
-    if (!s2 || !s2.passcode_hash || !s2.password_hash) {
-      const salt2 = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-      const pSalt2 = 'e4d3c2b1a0988776655443322110ffeedd';
-      const hash2 = '447699188107b8d71af481d4d87f123c7a7ab686b235bc23c5dcaac8cd797ff8';
-      const pHash2 = '26faf3578006fb3db43bad6e434c323dffa5d8990403c7baa27504c9e52e2862';
-      await db.prepare(`
-        UPDATE shops 
-        SET email = 'balaji@higroces.com', passcode_hash = ?, salt = ?, password_hash = ?, password_salt = ?, approval_status = 'approved' 
-        WHERE id = 'shop_84917e65'
-      `).bind(hash2, salt2, pHash2, pSalt2).run();
-    }
+    await db.prepare(`
+      DELETE FROM shops 
+      WHERE id IN ('shop_primary_hub', 'shop_84917e65') 
+         OR name LIKE '%HSR Meat Hub%' 
+         OR name LIKE '%Balaji kiranam%'
+         OR address LIKE '%Bengaluru%'
+    `).run();
   } catch(e) {}
 
   // Product Inventory Table (Stock, Merchant Custom Pricing & Discounts)
@@ -662,9 +627,9 @@ async function ensureAllSchemas(db) {
   try {
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('feature_fresh_tmrw', '0')").run();
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('feature_subscriptions', '0')").run();
-    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_name', 'HSR Meat Hub & Dark Store')").run();
-    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lat', '12.9121')").run();
-    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lng', '77.6408')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_name', 'Amorelot Central Hub')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lat', '17.9870')").run();
+    await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('dark_store_lng', '79.5359')").run();
     await db.prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smart_recommendation_mode', 'auto')").run();
   } catch(e) {}
 }
@@ -1277,9 +1242,9 @@ export default {
             feature_subscriptions: false,
             store_is_online: isOnline,
             admin_session_hours: 4,
-            dark_store_name: "HSR Meat Hub & Dark Store",
-            dark_store_lat: "12.9121",
-            dark_store_lng: "77.6408",
+            dark_store_name: "Amorelot Central Hub",
+            dark_store_lat: "17.9870",
+            dark_store_lng: "79.5359",
             smart_recommendation_mode: "auto"
           };
           (rows.results || []).forEach(r => {
@@ -1592,7 +1557,7 @@ export default {
                 COUNT(CASE WHEN o.status = 'pending' OR o.status = 'preparing' OR o.status = 'packed' THEN 1 END) as active_orders,
                 COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) as delivered_orders
               FROM shops s
-              LEFT JOIN orders o ON (o.shop_id = s.id OR (o.shop_id IS NULL AND s.id = 'shop_primary_hub'))
+              LEFT JOIN orders o ON o.shop_id = s.id
               WHERE s.approval_status != 'pending' OR s.approval_status IS NULL
               GROUP BY s.id
               ORDER BY s.created_at DESC
@@ -2254,8 +2219,7 @@ export default {
               }
               finalShop = closest;
             } else {
-              // Default to primary meat hub if meat order and no GPS provided
-              finalShop = eligibleShops.find(s => s.id === 'shop_primary_hub') || eligibleShops[0];
+              finalShop = eligibleShops[0] || null;
             }
           }
 
@@ -2374,8 +2338,8 @@ export default {
             let query = "SELECT * FROM orders";
             let params = [];
             if (shopFilter && shopFilter !== 'all') {
-              query += " WHERE (shop_id = ? OR (shop_id IS NULL AND ? = 'shop_primary_hub'))";
-              params.push(shopFilter, shopFilter);
+              query += " WHERE shop_id = ?";
+              params.push(shopFilter);
             }
             query += " ORDER BY datetime(created_at) DESC LIMIT 100";
 
@@ -2461,8 +2425,8 @@ export default {
             `;
             let params = [];
             if (targetShopId && targetShopId !== 'all') {
-              shopQuery += ` AND (shop_id = ? OR (shop_id IS NULL AND ? = 'shop_primary_hub'))`;
-              params.push(targetShopId, targetShopId);
+              shopQuery += ` AND shop_id = ?`;
+              params.push(targetShopId);
             } else if (zone && zone !== 'all') {
               shopQuery += ` AND delivery_zone = ?`;
               params.push(zone);
