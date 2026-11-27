@@ -670,6 +670,21 @@ async function runExpirySweep(db) {
 // In-Memory Live Rider Location Telemetry (0 D1 Writes, sub-millisecond edge RAM)
 const riderLocationsMap = new Map();
 
+// In-Memory & Edge Cached Butcher Pricing (0 D1 Writes, Unlimited Free Updates)
+let inMemoryButcherRates = {
+  base_rate_kg: 240, // Base live/dressed chicken rate ₹240/kg
+  cuts: {
+    breast: { multiplier: 1.15, name: 'Breast Fillet' },
+    wing: { multiplier: 1.05, name: 'Wings' },
+    thigh: { multiplier: 1.10, name: 'Thighs' },
+    drumstick: { multiplier: 1.10, name: 'Drumsticks' },
+    leg_whole: { multiplier: 1.10, name: 'Whole Leg' },
+    ribs: { multiplier: 0.65, name: 'Ribs / Soup Carcass' },
+    neck: { multiplier: 0.55, name: 'Neck' }
+  },
+  updated_at: new Date().toISOString()
+};
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -693,6 +708,61 @@ export default {
       }
       await ensureAllSchemas(env.DB);
       return new Response(JSON.stringify({ success: true, message: "Database schemas verified and synced successfully." }), { headers: corsHeaders(request) });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/butcher/rates (0 D1 Database Writes — Edge RAM & Cache API)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/butcher/rates") {
+      const cache = caches.default;
+      const cacheKey = new Request("https://cache.amorelot.local/butcher/rates", { method: 'GET' });
+
+      // GET: Returns current butcher pricing with 0 D1 reads
+      if (request.method === "GET") {
+        try {
+          const cachedRes = await cache.match(cacheKey);
+          if (cachedRes) {
+            const cachedData = await cachedRes.json();
+            return new Response(JSON.stringify(cachedData), {
+              headers: { ...corsHeaders(request), "Content-Type": "application/json", "X-Cache-Source": "Edge-Cache" }
+            });
+          }
+        } catch(e) {}
+        return new Response(JSON.stringify(inMemoryButcherRates), {
+          headers: { ...corsHeaders(request), "Content-Type": "application/json", "X-Cache-Source": "Edge-RAM" }
+        });
+      }
+
+      // POST: Butcher or Admin updates rates — 0 D1 writes!
+      if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          if (body.base_rate_kg) inMemoryButcherRates.base_rate_kg = Number(body.base_rate_kg);
+          if (body.cuts && typeof body.cuts === 'object') {
+            inMemoryButcherRates.cuts = { ...inMemoryButcherRates.cuts, ...body.cuts };
+          }
+          inMemoryButcherRates.updated_at = new Date().toISOString();
+
+          // Store in Cloudflare Edge Cache API (unlimited free writes)
+          try {
+            const cacheResponse = new Response(JSON.stringify(inMemoryButcherRates), {
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "public, max-age=86400"
+              }
+            });
+            ctx.waitUntil(cache.put(cacheKey, cacheResponse));
+          } catch(e) {}
+
+          return new Response(JSON.stringify({
+            success: true,
+            message: "Rates updated successfully with 0 D1 database writes!",
+            rates: inMemoryButcherRates
+          }), { headers: corsHeaders(request) });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 400, headers: corsHeaders(request) });
+        }
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════

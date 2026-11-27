@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amorelot — 10 Chicken Butchery Diagram Designs (Demo Showcase)</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #0C513F;
+  --primary-light: #12755B;
+  --accent: #FF5E2B;
+  --bg-page: #F8F6F0;
+  --card-bg: #FFFFFF;
+  --ink: #1C2220;
+  --ink-light: #5A6660;
+  --border: #D8D2C4;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* Header */
+.demo-header {
+  background: #0C513F;
+  color: white;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 4px 18px rgba(12,81,63,0.18);
+}
+.demo-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.85rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+.demo-header p {
+  color: #A2D9CE;
+  font-size: 0.92rem;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Control Bar */
+.control-bar {
+  background: white;
+  border-bottom: 1.5px solid var(--border);
+  padding: 14px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+.control-bar-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.rate-slider-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F2F7F4;
+  border: 1px solid #B8DACF;
+  border-radius: 8px;
+  padding: 6px 14px;
+}
+.rate-slider-box label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+.rate-slider-box input[type="range"] {
+  accent-color: var(--primary);
+  cursor: pointer;
+  width: 110px;
+}
+.rate-val-tag {
+  font-family: 'DM Mono', monospace;
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+/* Style Selector Carousel / Tabs */
+.style-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: thin;
+}
+.style-btn {
+  background: #F4EFE6;
+  border: 1.5px solid var(--border);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.style-btn:hover {
+  border-color: var(--primary);
+  background: #E8F4EE;
+}
+.style-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(12,81,63,0.3);
+}
+
+/* Main Layout */
+.showcase-container {
+  max-width: 1300px;
+  margin: 24px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  .showcase-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Diagram Stage */
+.diagram-stage {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+  position: relative;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.stage-badge {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  background: rgba(12,81,63,0.08);
+  border: 1px solid rgba(12,81,63,0.2);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.stage-prompt {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  color: var(--ink-light);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* SVG interactive part styling */
+.carve-part {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.carve-part:hover {
+  filter: brightness(1.12) drop-shadow(0 0 8px rgba(255, 94, 43, 0.45));
+}
+.carve-part.selected {
+  filter: brightness(1.18) drop-shadow(0 0 12px rgba(12, 81, 63, 0.7));
+}
+
+/* Side Info Terminal */
+.info-terminal {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+  height: fit-content;
+  position: sticky;
+  top: 80px;
+}
+.term-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.term-sub {
+  font-size: 0.78rem;
+  color: var(--ink-light);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
+}
+.part-card-highlight {
+  background: linear-gradient(145deg, #18221E 0%, #0F1714 100%);
+  border-radius: 12px;
+  padding: 16px;
+  color: white;
+  margin-bottom: 18px;
+}
+.part-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.part-name-display {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.part-price-badge {
+  background: #2ECC71;
+  color: #072216;
+  font-family: 'DM Mono', monospace;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+}
+.part-weight-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.part-weight-num {
+  font-size: 2rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 800;
+  color: #2ECC71;
+}
+.part-cook-tip {
+  font-size: 0.78rem;
+  color: #A2D9CE;
+  line-height: 1.4;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 8px;
+}
+
+/* Primal Cuts Breakdown Table */
+.cuts-breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+}
+.cuts-breakdown-table th {
+  text-align: left;
+  padding: 6px 4px;
+  color: var(--ink-light);
+  border-bottom: 1.5px solid var(--border);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.cuts-breakdown-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #EFEAE0;
+}
+.cuts-breakdown-table tr:hover {
+  background: #F7FAF8;
+  cursor: pointer;
+}
+.cuts-breakdown-table tr.active {
+  background: #E8F5EF;
+  font-weight: 700;
+}
+
+.btn-confirm-design {
+  background: #0C513F;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  width: 100%;
+  padding: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(12,81,63,0.3);
+  transition: all 0.2s;
+}
+.btn-confirm-design:hover {
+  background: #12755B;
+  transform: translateY(-1px);
+}
+</style>
+</head>
+<body>
+
+<header class="demo-header">
+  <h1>🐔 Chicken Diagram Showcase — 10 Unique Butchery Styles</h1>
+  <p>Test, compare, and choose the most realistic and customer-friendly chicken diagram for your butcher shop. Click any cut to inspect weights &amp; market pricing.</p>
+</header>
+
+<div class="control-bar">
+  <div class="control-bar-inner">
+    <div class="style-nav" id="styleNav">
+      <!-- 10 style tabs populated by JS -->
+    </div>
+    
+    <div class="rate-slider-box">
+      <label>Live Broiler Rate:</label>
+      <input type="range" id="rateSlider" min="180" max="340" value="240" step="5" oninput="updateBaseRate(this.value)">
+      <span class="rate-val-tag" id="rateValTag">₹240/kg</span>
+    </div>
+  </div>
+</div>
+
+<div class="showcase-container">
+  
+  <!-- Left Diagram Stage -->
+  <div class="diagram-stage" id="diagramStage">
+    <div class="stage-badge" id="styleBadge">Style 1: Realistic Dressed Carcass</div>
+    <div class="stage-prompt">Click any body part to test butchery cut highlight</div>
+    
+    <!-- Active SVG Diagram Container -->
+    <div id="svgContainer" style="width:100%; max-width:580px; height:580px; display:flex; align-items:center; justify-content:center;">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Design description footer -->
+    <div id="styleDescFooter" style="text-align:center; max-width:560px; margin-top:14px; font-size:0.84rem; color:var(--ink-light); line-height:1.45;">
+      Anatomically accurate dressed broiler. Smooth natural skin, distinct thighs and drumsticks, plump breast, and natural wing folding. Zero cartoon alien spheres.
+    </div>
+  </div>
+
+  <!-- Right Part Info & Cut Breakdown Panel -->
+  <div class="info-terminal">
+    <div class="term-title" id="terminalTitle">Anatomical Cut Inspector</div>
+    <div class="term-sub">Simulates realistic cut pricing based on current broiler market rate</div>
+
+    <div class="part-card-highlight">
+      <div class="part-card-top">
+        <div class="part-name-display" id="inspectPartName">🍗 Whole Leg</div>
+        <div class="part-price-badge" id="inspectPartPrice">₹83</div>
+      </div>
+      <div class="part-weight-row">
+        <span class="part-weight-num" id="inspectPartWeight">320</span>
+        <span style="font-size:0.85rem; color:#A2D9CE;">grams (~0.32 kg)</span>
+      </div>
+      <div class="part-cook-tip" id="inspectPartTip">
+        Drumstick + Thigh intact. Premium cut ideal for Tandoori, Dum Biryani &amp; Slow Roast.
+      </div>
+    </div>
+
+    <div style="font-size:0.75rem; font-weight:800; color:var(--ink); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.04em;">
+      Full Carcass Cut Yield (~1.8 kg Bird)
+    </div>
+    
+    <table class="cuts-breakdown-table">
+      <thead>
+        <tr>
+          <th>Primal Cut</th>
+          <th style="text-align:right;">Weight</th>
+          <th style="text-align:right;">Est. Price</th>
+        </tr>
+      </thead>
+      <tbody id="cutsTableBody">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+
+    <button type="button" class="btn-confirm-design" onclick="confirmDesignSelection()">
+      <span>✅</span> Confirm This Design for Store
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ==========================================
+// 10 UNIQUE CHICKEN DIAGRAM STYLES
+// ==========================================
+
+let baseRatePerKg = 240; // Default ₹240/kg live dressed broiler
+let currentStyleIdx = 0;
+let currentSelectedPart = 'leg_whole_l';
+
+const PRIMAL_CUTS = [
+  { id: 'breast_l',   name: 'Breast (Left)',      weight: 255, multiplier: 1.15, emoji: '🥩', tip: 'Lean boneless or bone-in breast meat. Perfect for steaks and salads.' },
+  { id: 'breast_r',   name: 'Breast (Right)',     weight: 255, multiplier: 1.15, emoji: '🥩', tip: 'Juicy tender breast fillet. High protein, zero waste.' },
+  { id: 'wing_l',     name: 'Wing (Left)',        weight: 95,  multiplier: 1.05, emoji: '🍗', tip: 'Wing drumette & flat. Crispy fry, tandoori grill, soup stock.' },
+  { id: 'wing_r',     name: 'Wing (Right)',       weight: 95,  multiplier: 1.05, emoji: '🍗', tip: 'Wing drumette & flat. Crispy fry, tandoori grill, soup stock.' },
+  { id: 'thigh_l',    name: 'Thigh (Left)',       weight: 172, multiplier: 1.10, emoji: '🍗', tip: 'Tender dark meat. Rich flavor for spicy curries and biryani.' },
+  { id: 'thigh_r',    name: 'Thigh (Right)',      weight: 172, multiplier: 1.10, emoji: '🍗', tip: 'Tender dark meat. Rich flavor for spicy curries and biryani.' },
+  { id: 'leg_l',      name: 'Drumstick (Left)',   weight: 148, multiplier: 1.10, emoji: '🍗', tip: 'Classic drumstick leg piece. Favorite for fry and dum biryani.' },
+  { id: 'leg_r',      name: 'Drumstick (Right)',  weight: 148, multiplier: 1.10, emoji: '🍗', tip: 'Classic drumstick leg piece. Favorite for fry and dum biryani.' },
+  { id: 'leg_whole_l',name: 'Whole Leg (Left)',   weight: 320, multiplier: 1.10, emoji: '🍗', tip: 'Drumstick + Thigh intact. Ideal for tandoori roast and biryani.' },
+  { id: 'leg_whole_r',name: 'Whole Leg (Right)',  weight: 320, multiplier: 1.10, emoji: '🍗', tip: 'Drumstick + Thigh intact. Ideal for tandoori roast and biryani.' },
+  { id: 'ribs',       name: 'Ribs & Upper Back',  weight: 200, multiplier: 0.65, emoji: '🦴', tip: 'Marrow rich rib cage bones. Clean chicken broth and stock.' },
+  { id: 'lower_back', name: 'Lower Back',         weight: 180, multiplier: 0.60, emoji: '🦴', tip: 'Tail and pelvic bone cut. Excellent flavor base for gravies.' },
+  { id: 'neck',       name: 'Neck',               weight: 115, multiplier: 0.55, emoji: '🦴', tip: 'Collagen rich neck meat. Traditional pepper soup and broth.' }
+];
+
+const STYLES = [
+  {
+    id: 'realistic_carcass',
+    name: '1. Realistic Dressed Carcass',
+    badge: 'Style 1: Realistic Dressed Carcass (Artisan Butcher)',
+    desc: 'Anatomically accurate dressed broiler. Smooth natural skin, distinct thighs and drumsticks, plump breast, and natural wing folding. Zero cartoon alien spheres.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%" style="overflow:visible;">
+        <defs>
+          <radialGradient id="gRealSkin" cx="50%" cy="40%" r="55%">
+            <stop offset="0%" stop-color="#FFF9EA"/>
+            <stop offset="65%" stop-color="#F4D9A6"/>
+            <stop offset="100%" stop-color="#DEB876"/>
+          </radialGradient>
+          <radialGradient id="gBreastMeat" cx="45%" cy="35%" r="50%">
+            <stop offset="0%" stop-color="#FFF7EE"/>
+            <stop offset="70%" stop-color="#F6CE98"/>
+            <stop offset="100%" stop-color="#DF9B52"/>
+          </radialGradient>
+          <filter id="shadowReal" x="-10%" y="-10%" width="125%" height="125%">
+            <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#553010" flood-opacity="0.22"/>
+          </filter>
+        </defs>
+
+        <!-- Shadow Base -->
+        <ellipse cx="250" cy="510" rx="140" ry="25" fill="rgba(80,40,10,0.12)"/>
+
+        <!-- Neck -->
+        <g class="carve-part ${selectedId === 'neck' ? 'selected' : ''}" onclick="selectCut('neck')" filter="url(#shadowReal)">
+          <path d="M228 110 C228 70 272 70 272 110 L266 145 L234 145 Z" fill="#E8C28A" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Left Wing -->
+        <g class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')" filter="url(#shadowReal)">
+          <path d="M195 180 C155 170 120 200 115 240 C110 270 135 295 155 285 C175 275 190 230 195 180 Z" fill="url(#gRealSkin)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Right Wing -->
+        <g class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')" filter="url(#shadowReal)">
+          <path d="M305 180 C345 170 380 200 385 240 C390 270 365 295 345 285 C325 275 310 230 305 180 Z" fill="url(#gRealSkin)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Main Torso / Breasts -->
+        <g class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')" filter="url(#shadowReal)">
+          <path d="M250 145 C205 145 180 185 185 270 C190 325 220 355 250 360 Z" fill="url(#gBreastMeat)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+        <g class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')" filter="url(#shadowReal)">
+          <path d="M250 145 C295 145 320 185 315 270 C310 325 280 355 250 360 Z" fill="url(#gBreastMeat)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Left Thigh -->
+        <g class="carve-part ${selectedId === 'thigh_l' ? 'selected' : ''}" onclick="selectCut('thigh_l')" filter="url(#shadowReal)">
+          <path d="M185 310 C155 330 140 375 155 420 C170 455 210 450 225 410 C235 375 220 330 185 310 Z" fill="url(#gRealSkin)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Right Thigh -->
+        <g class="carve-part ${selectedId === 'thigh_r' ? 'selected' : ''}" onclick="selectCut('thigh_r')" filter="url(#shadowReal)">
+          <path d="M315 310 C345 330 360 375 345 420 C330 455 290 450 275 410 C265 375 280 330 315 310 Z" fill="url(#gRealSkin)" stroke="#B88A4A" stroke-width="2"/>
+        </g>
+
+        <!-- Left Drumstick -->
+        <g class="carve-part ${selectedId === 'leg_l' ? 'selected' : ''}" onclick="selectCut('leg_l')" filter="url(#shadowReal)">
+          <path d="M175 425 C155 445 155 480 168 505 C176 520 190 520 196 505 C208 480 205 445 195 425 Z" fill="#E8BD7C" stroke="#B88A4A" stroke-width="2"/>
+          <circle cx="182" cy="512" r="7" fill="#FFF5DB" stroke="#B88A4A" stroke-width="1.5"/>
+        </g>
+
+        <!-- Right Drumstick -->
+        <g class="carve-part ${selectedId === 'leg_r' ? 'selected' : ''}" onclick="selectCut('leg_r')" filter="url(#shadowReal)">
+          <path d="M325 425 C345 445 345 480 332 505 C324 520 310 520 304 505 C292 480 295 445 305 425 Z" fill="#E8BD7C" stroke="#B88A4A" stroke-width="2"/>
+          <circle cx="318" cy="512" r="7" fill="#FFF5DB" stroke="#B88A4A" stroke-width="1.5"/>
+        </g>
+      </svg>
+    `
+  },
+  {
+    id: 'french_charcuterie',
+    name: '2. French Charcuterie Blueprint',
+    badge: 'Style 2: French Charcuterie Blueprint (Fine Line & Cut Zones)',
+    desc: 'High-end culinary blueprint with delicate architectural line art, colored primal cut zones, and clear butcher cutting seams (Poulet de Bresse style).',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Silhouette base with dashed seam lines -->
+        <path d="M250 80 C270 80 280 120 280 145 C320 150 370 170 380 230 C390 280 340 320 320 330 C350 360 360 410 345 450 C330 490 300 520 300 520 C270 510 260 480 250 480 C240 480 230 510 200 520 C200 520 170 490 155 450 C140 410 150 360 180 330 C160 320 110 280 120 230 C130 170 180 150 220 145 C220 120 230 80 250 80 Z"
+          fill="#FAF6EE" stroke="#2C3E50" stroke-width="2.5" stroke-dasharray="4,3"/>
+
+        <!-- Neck Cut Zone -->
+        <path class="carve-part ${selectedId === 'neck' ? 'selected' : ''}" onclick="selectCut('neck')"
+          d="M230 110 Q250 85 270 110 L275 145 L225 145 Z" fill="#E8F8F5" stroke="#16A085" stroke-width="2"/>
+
+        <!-- Left Breast Cut Zone -->
+        <path class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M250 150 L250 350 C210 345 180 310 185 240 C190 180 215 155 250 150 Z" fill="#FDEDEC" stroke="#E74C3C" stroke-width="2"/>
+
+        <!-- Right Breast Cut Zone -->
+        <path class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+          d="M250 150 L250 350 C290 345 320 310 315 240 C310 180 285 155 250 150 Z" fill="#FDEDEC" stroke="#E74C3C" stroke-width="2"/>
+
+        <!-- Left Wing Cut Zone -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M185 180 C140 170 115 210 120 250 C125 280 160 270 175 240 Z" fill="#FEF9E7" stroke="#F39C12" stroke-width="2"/>
+
+        <!-- Right Wing Cut Zone -->
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M315 180 C360 170 385 210 380 250 C375 280 340 270 325 240 Z" fill="#FEF9E7" stroke="#F39C12" stroke-width="2"/>
+
+        <!-- Left Whole Leg Cut Zone -->
+        <path class="carve-part ${selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')"
+          d="M180 340 C150 365 145 425 160 465 C175 500 205 515 200 480 C195 440 220 390 225 360 Z" fill="#EAF2F8" stroke="#2980B9" stroke-width="2"/>
+
+        <!-- Right Whole Leg Cut Zone -->
+        <path class="carve-part ${selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')"
+          d="M320 340 C350 365 355 425 340 465 C325 500 295 515 300 480 C305 440 280 390 275 360 Z" fill="#EAF2F8" stroke="#2980B9" stroke-width="2"/>
+      </svg>
+    `
+  },
+  {
+    id: 'modern_gourmet',
+    name: '3. Modern Gourmet Minimalist',
+    badge: 'Style 3: Modern Gourmet Minimalist (Quick-Commerce Style)',
+    desc: 'Clean vector shapes with soft ambient shadows, crisp outlines, and appetizing warm golden tones. Friendly and highly intuitive.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <defs>
+          <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFEAA7"/>
+            <stop offset="100%" stop-color="#FDCB6E"/>
+          </linearGradient>
+          <linearGradient id="gBreastWarm" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFF3E0"/>
+            <stop offset="100%" stop-color="#FFE0B2"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Torso -->
+        <path class="carve-part ${selectedId.startsWith('breast') ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M250 140 C190 140 180 200 185 300 C190 360 220 380 250 380 C280 380 310 360 315 300 C320 200 310 140 250 140 Z"
+          fill="url(#gBreastWarm)" stroke="#D35400" stroke-width="3" rx="20"/>
+
+        <!-- Left Wing -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M185 190 C135 180 115 220 125 260 C135 290 170 280 185 240 Z"
+          fill="url(#gGold)" stroke="#D35400" stroke-width="3"/>
+
+        <!-- Right Wing -->
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M315 190 C365 180 385 220 375 260 C365 290 330 280 315 240 Z"
+          fill="url(#gGold)" stroke="#D35400" stroke-width="3"/>
+
+        <!-- Left Leg -->
+        <path class="carve-part ${selectedId === 'leg_l' || selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')"
+          d="M190 350 C155 370 145 420 160 470 C170 500 195 500 205 460 C215 420 220 370 190 350 Z"
+          fill="url(#gGold)" stroke="#D35400" stroke-width="3"/>
+
+        <!-- Right Leg -->
+        <path class="carve-part ${selectedId === 'leg_r' || selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')"
+          d="M310 350 C345 370 355 420 340 470 C330 500 305 500 295 460 C285 420 280 370 310 350 Z"
+          fill="url(#gGold)" stroke="#D35400" stroke-width="3"/>
+      </svg>
+    `
+  },
+  {
+    id: 'isometric_3d',
+    name: '4. Isometric 3D Carcass Angle',
+    badge: 'Style 4: Isometric 3D Carcass Angle',
+    desc: 'Perspective angle showing natural carcass volume, folded poultry wings, and joint depth. Feels authentic and tangible.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Isometric projection chicken body -->
+        <g transform="translate(60, 40) rotate(-10 250 250)">
+          <!-- Base carcass volume -->
+          <ellipse cx="250" cy="300" rx="110" ry="150" fill="#E8C388" stroke="#8A5A20" stroke-width="3"/>
+          <ellipse cx="230" cy="280" rx="85" ry="120" fill="#FCE9C8" stroke="#8A5A20" stroke-width="2"/>
+
+          <!-- Breast Ridge -->
+          <path class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+            d="M210 170 Q240 260 210 380 Q160 320 160 220 Z" fill="#FFECCC" stroke="#8A5A20" stroke-width="2"/>
+          <path class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+            d="M210 170 Q260 260 280 350 Q310 250 260 190 Z" fill="#FADCB0" stroke="#8A5A20" stroke-width="2"/>
+
+          <!-- Isometric Folded Wing -->
+          <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+            d="M130 200 C80 220 70 290 110 320 C140 340 160 280 140 220 Z" fill="#E4AE64" stroke="#8A5A20" stroke-width="3"/>
+
+          <!-- Isometric Leg -->
+          <path class="carve-part ${selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')"
+            d="M150 370 C100 410 110 490 140 510 C165 520 190 480 190 430 Z" fill="#DFA148" stroke="#8A5A20" stroke-width="3"/>
+          <path class="carve-part ${selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')"
+            d="M270 370 C310 400 320 480 290 500 C270 510 250 470 250 420 Z" fill="#E4AE64" stroke="#8A5A20" stroke-width="3"/>
+        </g>
+      </svg>
+    `
+  },
+  {
+    id: 'hanging_hook',
+    name: '5. Traditional Hanging Bird (Hook View)',
+    badge: 'Style 5: Traditional Hanging Bird (Artisan Hook View)',
+    desc: 'Butcher shop cold-room display: bird hanging upside down by feet from meat hooks, showcasing full carcass length and dressed quality.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Meat Hooks -->
+        <path d="M190 20 L190 60 C190 75 170 75 170 60" fill="none" stroke="#7F8C8D" stroke-width="4"/>
+        <path d="M310 20 L310 60 C310 75 290 75 290 60" fill="none" stroke="#7F8C8D" stroke-width="4"/>
+
+        <!-- Hanging Legs -->
+        <g class="carve-part ${selectedId === 'leg_l' ? 'selected' : ''}" onclick="selectCut('leg_l')">
+          <path d="M175 60 C160 90 160 140 170 170 C185 200 210 200 215 160 C220 120 195 80 185 60 Z" fill="#E8C28A" stroke="#8A5A20" stroke-width="2.5"/>
+        </g>
+        <g class="carve-part ${selectedId === 'leg_r' ? 'selected' : ''}" onclick="selectCut('leg_r')">
+          <path d="M295 60 C280 90 280 140 290 170 C305 200 330 200 335 160 C340 120 315 80 305 60 Z" fill="#E8C28A" stroke="#8A5A20" stroke-width="2.5"/>
+        </g>
+
+        <!-- Hanging Torso -->
+        <path class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M250 180 C180 180 170 250 175 360 C180 430 220 460 250 480 L250 180 Z" fill="#FFF3DB" stroke="#8A5A20" stroke-width="2.5"/>
+        <path class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+          d="M250 180 C320 180 330 250 325 360 C320 430 280 460 250 480 L250 180 Z" fill="#F8E5C4" stroke="#8A5A20" stroke-width="2.5"/>
+
+        <!-- Hanging Wings -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M175 250 C120 270 110 340 135 380 C155 400 175 350 175 300 Z" fill="#DEB876" stroke="#8A5A20" stroke-width="2.5"/>
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M325 250 C380 270 390 340 365 380 C345 400 325 350 325 300 Z" fill="#DEB876" stroke="#8A5A20" stroke-width="2.5"/>
+      </svg>
+    `
+  },
+  {
+    id: 'exploded_cuts',
+    name: '6. Exploded Primal Cuts View',
+    badge: 'Style 6: Exploded Primal Cuts View',
+    desc: 'All primal cuts naturally separated and hovering around the central axis, making each distinct piece 100% obvious for carving.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Center Backbone Silhouette -->
+        <ellipse cx="250" cy="270" rx="40" ry="130" fill="#E5D9C5" stroke="#B8A890" stroke-width="2" stroke-dasharray="4,4"/>
+
+        <!-- Exploded Neck -->
+        <g class="carve-part ${selectedId === 'neck' ? 'selected' : ''}" onclick="selectCut('neck')" transform="translate(0, -20)">
+          <path d="M230 100 C230 70 270 70 270 100 L260 130 L240 130 Z" fill="#E8C28A" stroke="#8A5A20" stroke-width="2"/>
+          <text x="250" y="60" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">NECK (115g)</text>
+        </g>
+
+        <!-- Exploded Wings (Pushed left & right) -->
+        <g class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')" transform="translate(-40, 0)">
+          <path d="M140 180 C100 170 70 210 75 250 C80 280 120 270 135 230 Z" fill="#F4D9A6" stroke="#8A5A20" stroke-width="2"/>
+          <text x="95" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">WING L (95g)</text>
+        </g>
+        <g class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')" transform="translate(40, 0)">
+          <path d="M360 180 C400 170 430 210 425 250 C420 280 380 270 365 230 Z" fill="#F4D9A6" stroke="#8A5A20" stroke-width="2"/>
+          <text x="405" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">WING R (95g)</text>
+        </g>
+
+        <!-- Exploded Breasts -->
+        <g class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')" transform="translate(-15, 0)">
+          <path d="M235 160 C190 160 170 210 175 290 C180 340 210 360 235 365 Z" fill="#FFF5E5" stroke="#8A5A20" stroke-width="2"/>
+          <text x="180" y="380" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">BREAST (255g)</text>
+        </g>
+        <g class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')" transform="translate(15, 0)">
+          <path d="M265 160 C310 160 330 210 325 290 C320 340 290 360 265 365 Z" fill="#FFF5E5" stroke="#8A5A20" stroke-width="2"/>
+          <text x="320" y="380" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">BREAST (255g)</text>
+        </g>
+
+        <!-- Exploded Whole Legs -->
+        <g class="carve-part ${selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')" transform="translate(-30, 20)">
+          <path d="M190 350 C150 370 140 430 160 480 C175 515 200 515 210 470 C220 425 220 375 190 350 Z" fill="#F4D9A6" stroke="#8A5A20" stroke-width="2"/>
+          <text x="160" y="535" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">WHOLE LEG (320g)</text>
+        </g>
+        <g class="carve-part ${selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')" transform="translate(30, 20)">
+          <path d="M310 350 C350 370 360 430 340 480 C325 515 300 515 290 470 C280 425 280 375 310 350 Z" fill="#F4D9A6" stroke="#8A5A20" stroke-width="2"/>
+          <text x="340" y="535" text-anchor="middle" font-size="11" font-weight="700" fill="#8A5A20">WHOLE LEG (320g)</text>
+        </g>
+      </svg>
+    `
+  },
+  {
+    id: 'chalkboard',
+    name: '7. Rustic Chalkboard Gastropub',
+    badge: 'Style 7: Rustic Chalkboard & Craft Butcher',
+    desc: 'Dark charcoal slate backdrop with golden amber meat cuts and crisp chalk cutting paths. Sophisticated craft butchery aesthetic.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%" style="background:#1A1E1D; border-radius:12px;">
+        <rect width="500" height="580" fill="#1A1E1D"/>
+        <!-- Chalk Guide Lines -->
+        <ellipse cx="250" cy="300" rx="140" ry="210" fill="none" stroke="rgba(255,255,255,0.15)" stroke-dasharray="6,6" stroke-width="1.5"/>
+
+        <!-- Breasts -->
+        <path class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M250 150 C200 150 180 200 185 290 C190 350 220 370 250 370 Z" fill="#E67E22" stroke="#F39C12" stroke-width="2.5" opacity="0.9"/>
+        <path class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+          d="M250 150 C300 150 320 200 315 290 C310 350 280 370 250 370 Z" fill="#D35400" stroke="#F39C12" stroke-width="2.5" opacity="0.9"/>
+
+        <!-- Wings -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M185 190 C135 180 110 220 120 260 C130 290 170 280 185 240 Z" fill="#F39C12" stroke="#FFF" stroke-width="2"/>
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M315 190 C365 180 390 220 380 260 C370 290 330 280 315 240 Z" fill="#F39C12" stroke="#FFF" stroke-width="2"/>
+
+        <!-- Legs -->
+        <path class="carve-part ${selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')"
+          d="M190 350 C150 370 140 430 160 480 C175 510 200 500 210 460 C220 420 220 370 190 350 Z" fill="#E67E22" stroke="#FFF" stroke-width="2"/>
+        <path class="carve-part ${selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')"
+          d="M310 350 C350 370 360 430 340 480 C325 510 300 500 290 460 C280 420 280 370 310 350 Z" fill="#D35400" stroke="#FFF" stroke-width="2"/>
+        
+        <text x="250" y="550" text-anchor="middle" font-family="'Playfair Display', serif" font-size="16" fill="#F4D03F" letter-spacing="2">ARTISAN POULTRY CUTS</text>
+      </svg>
+    `
+  },
+  {
+    id: 'culinary_cutmap',
+    name: '8. Culinary Precision Cut-Map',
+    badge: 'Style 8: Culinary Precision Cut-Map (Zero Bone Clutter)',
+    desc: 'Culinary academy chart: clean pastel tinting for each cut section with bold labeled seams. No internal skeleton or organ distractions.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Breast Cut -->
+        <rect class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          x="190" y="160" width="60" height="190" rx="14" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+        <rect class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+          x="250" y="160" width="60" height="190" rx="14" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+
+        <!-- Wings -->
+        <rect class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          x="115" y="180" width="65" height="110" rx="14" fill="#FCF3CF" stroke="#D4AC0D" stroke-width="2"/>
+        <rect class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          x="320" y="180" width="65" height="110" rx="14" fill="#FCF3CF" stroke="#D4AC0D" stroke-width="2"/>
+
+        <!-- Thighs -->
+        <rect class="carve-part ${selectedId === 'thigh_l' ? 'selected' : ''}" onclick="selectCut('thigh_l')"
+          x="150" y="360" width="65" height="70" rx="12" fill="#D4EFDF" stroke="#27AE60" stroke-width="2"/>
+        <rect class="carve-part ${selectedId === 'thigh_r' ? 'selected' : ''}" onclick="selectCut('thigh_r')"
+          x="285" y="360" width="65" height="70" rx="12" fill="#D4EFDF" stroke="#27AE60" stroke-width="2"/>
+
+        <!-- Drumsticks -->
+        <rect class="carve-part ${selectedId === 'leg_l' ? 'selected' : ''}" onclick="selectCut('leg_l')"
+          x="155" y="440" width="55" height="85" rx="12" fill="#D6EAF8" stroke="#2980B9" stroke-width="2"/>
+        <rect class="carve-part ${selectedId === 'leg_r' ? 'selected' : ''}" onclick="selectCut('leg_r')"
+          x="290" y="440" width="55" height="85" rx="12" fill="#D6EAF8" stroke="#2980B9" stroke-width="2"/>
+
+        <!-- Neck -->
+        <rect class="carve-part ${selectedId === 'neck' ? 'selected' : ''}" onclick="selectCut('neck')"
+          x="230" y="90" width="40" height="60" rx="8" fill="#E8DAEF" stroke="#8E44AD" stroke-width="2"/>
+      </svg>
+    `
+  },
+  {
+    id: 'organic_farm',
+    name: '9. Organic Farm Fresh Poultry',
+    badge: 'Style 9: Organic Farm Fresh Poultry',
+    desc: 'Soft country poultry styling with warm earthy butter-yellow skin and tender curves, communicating free-range freshness.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <defs>
+          <radialGradient id="gFarmSkin" cx="50%" cy="40%" r="50%">
+            <stop offset="0%" stop-color="#FFFDF0"/>
+            <stop offset="70%" stop-color="#FFEAA7"/>
+            <stop offset="100%" stop-color="#F5CD79"/>
+          </radialGradient>
+        </defs>
+        <!-- Body Contour -->
+        <path class="carve-part ${selectedId.startsWith('breast') ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M250 130 C180 130 160 200 170 310 C180 380 220 400 250 400 C280 400 320 380 330 310 C340 200 320 130 250 130 Z"
+          fill="url(#gFarmSkin)" stroke="#CF9E53" stroke-width="2.5"/>
+
+        <!-- Organic Wings -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M175 190 C125 180 100 220 110 265 C120 295 160 280 175 240 Z" fill="#F8D37E" stroke="#CF9E53" stroke-width="2.5"/>
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M325 190 C375 180 400 220 390 265 C380 295 340 280 325 240 Z" fill="#F8D37E" stroke="#CF9E53" stroke-width="2.5"/>
+
+        <!-- Organic Whole Legs -->
+        <path class="carve-part ${selectedId === 'leg_whole_l' ? 'selected' : ''}" onclick="selectCut('leg_whole_l')"
+          d="M185 350 C145 375 135 435 155 480 C170 515 200 510 205 460 C210 410 215 370 185 350 Z" fill="#F5CD79" stroke="#CF9E53" stroke-width="2.5"/>
+        <path class="carve-part ${selectedId === 'leg_whole_r' ? 'selected' : ''}" onclick="selectCut('leg_whole_r')"
+          d="M315 350 C355 375 365 435 345 480 C330 515 300 510 295 460 C290 410 285 370 315 350 Z" fill="#F5CD79" stroke="#CF9E53" stroke-width="2.5"/>
+      </svg>
+    `
+  },
+  {
+    id: 'magnetic_puzzle',
+    name: '10. Interactive Magnetic Segmented',
+    badge: 'Style 10: Interactive Magnetic Segmented Puzzle',
+    desc: 'Modern interlocking cuts that highlight individually with hover glow and magnetic severing feedback. Perfect for gamified ordering.',
+    renderSvg: (selectedId) => `
+      <svg viewBox="0 0 500 580" width="100%" height="100%">
+        <!-- Puzzle Segments -->
+        <!-- Neck Segment -->
+        <path class="carve-part ${selectedId === 'neck' ? 'selected' : ''}" onclick="selectCut('neck')"
+          d="M230 110 L270 110 L265 145 L235 145 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="2.5"/>
+
+        <!-- Left Breast Segment -->
+        <path class="carve-part ${selectedId === 'breast_l' ? 'selected' : ''}" onclick="selectCut('breast_l')"
+          d="M246 150 L246 345 C205 340 180 300 185 230 C190 170 215 152 246 150 Z" fill="#3498DB" stroke="#2980B9" stroke-width="2.5"/>
+
+        <!-- Right Breast Segment -->
+        <path class="carve-part ${selectedId === 'breast_r' ? 'selected' : ''}" onclick="selectCut('breast_r')"
+          d="M254 150 L254 345 C295 340 320 300 315 230 C310 170 285 152 254 150 Z" fill="#3498DB" stroke="#2980B9" stroke-width="2.5"/>
+
+        <!-- Left Wing Segment -->
+        <path class="carve-part ${selectedId === 'wing_l' ? 'selected' : ''}" onclick="selectCut('wing_l')"
+          d="M180 180 C135 170 110 210 115 250 C120 280 155 270 170 235 Z" fill="#E67E22" stroke="#D35400" stroke-width="2.5"/>
+
+        <!-- Right Wing Segment -->
+        <path class="carve-part ${selectedId === 'wing_r' ? 'selected' : ''}" onclick="selectCut('wing_r')"
+          d="M320 180 C365 170 390 210 385 250 C380 280 345 270 330 235 Z" fill="#E67E22" stroke="#D35400" stroke-width="2.5"/>
+
+        <!-- Left Thigh Segment -->
+        <path class="carve-part ${selectedId === 'thigh_l' ? 'selected' : ''}" onclick="selectCut('thigh_l')"
+          d="M180 350 C145 375 135 425 150 460 C165 475 200 460 210 425 C215 390 210 365 180 350 Z" fill="#9B59B6" stroke="#8E44AD" stroke-width="2.5"/>
+
+        <!-- Right Thigh Segment -->
+        <path class="carve-part ${selectedId === 'thigh_r' ? 'selected' : ''}" onclick="selectCut('thigh_r')"
+          d="M320 350 C355 375 365 425 350 460 C335 475 300 460 290 425 C285 390 290 365 320 350 Z" fill="#9B59B6" stroke="#8E44AD" stroke-width="2.5"/>
+
+        <!-- Left Drumstick Segment -->
+        <path class="carve-part ${selectedId === 'leg_l' ? 'selected' : ''}" onclick="selectCut('leg_l')"
+          d="M165 465 C150 480 150 515 165 535 C175 545 190 535 195 515 C200 495 195 470 185 465 Z" fill="#F1C40F" stroke="#F39C12" stroke-width="2.5"/>
+
+        <!-- Right Drumstick Segment -->
+        <path class="carve-part ${selectedId === 'leg_r' ? 'selected' : ''}" onclick="selectCut('leg_r')"
+          d="M335 465 C350 480 350 515 335 535 C325 545 310 535 305 515 C300 495 305 470 315 465 Z" fill="#F1C40F" stroke="#F39C12" stroke-width="2.5"/>
+      </svg>
+    `
+  }
+];
+
+// Initialize UI
+function initShowcase() {
+  const nav = document.getElementById('styleNav');
+  nav.innerHTML = STYLES.map((s, idx) => `
+    <button type="button" class="style-btn ${idx === 0 ? 'active' : ''}" onclick="switchStyle(${idx})">
+      ${s.name}
+    </button>
+  `).join('');
+
+  renderCurrentStyle();
+  renderCutsTable();
+  selectCut('leg_whole_l');
+}
+
+function switchStyle(idx) {
+  currentStyleIdx = idx;
+  document.querySelectorAll('.style-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  renderCurrentStyle();
+}
+
+function renderCurrentStyle() {
+  const style = STYLES[currentStyleIdx];
+  document.getElementById('styleBadge').textContent = style.badge;
+  document.getElementById('styleDescFooter').textContent = style.desc;
+  
+  const container = document.getElementById('svgContainer');
+  container.innerHTML = style.renderSvg(currentSelectedPart);
+}
+
+function selectCut(partId) {
+  currentSelectedPart = partId;
+  const cut = PRIMAL_CUTS.find(c => c.id === partId) || PRIMAL_CUTS[0];
+
+  // Re-render SVG to update selected highlights
+  renderCurrentStyle();
+
+  // Update inspector card
+  const price = Math.round((cut.weight / 1000) * baseRatePerKg * cut.multiplier);
+  document.getElementById('inspectPartName').textContent = `${cut.emoji} ${cut.name}`;
+  document.getElementById('inspectPartPrice').textContent = `₹${price}`;
+  document.getElementById('inspectPartWeight').textContent = cut.weight;
+  document.getElementById('inspectPartTip').textContent = cut.tip;
+
+  // Highlight table row
+  document.querySelectorAll('#cutsTableBody tr').forEach(row => {
+    row.classList.toggle('active', row.dataset.id === partId);
+  });
+}
+
+function updateBaseRate(val) {
+  baseRatePerKg = parseInt(val) || 240;
+  document.getElementById('rateValTag').textContent = `₹${baseRatePerKg}/kg`;
+  
+  // Re-render cut inspector & table with new rate (100% Edge RAM calculation)
+  selectCut(currentSelectedPart);
+  renderCutsTable();
+}
+
+function renderCutsTable() {
+  const tbody = document.getElementById('cutsTableBody');
+  tbody.innerHTML = PRIMAL_CUTS.map(c => {
+    const price = Math.round((c.weight / 1000) * baseRatePerKg * c.multiplier);
+    return `
+      <tr data-id="${c.id}" class="${c.id === currentSelectedPart ? 'active' : ''}" onclick="selectCut('${c.id}')">
+        <td>${c.emoji} ${c.name}</td>
+        <td style="text-align:right; font-family:'DM Mono', monospace;">${c.weight}g</td>
+        <td style="text-align:right; font-family:'DM Mono', monospace; font-weight:700; color:#166534;">₹${price}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function confirmDesignSelection() {
+  const selected = STYLES[currentStyleIdx];
+  localStorage.setItem('preferred_chicken_style', selected.id);
+  alert(`✅ Selected: "${selected.name}"\n\nThis design blueprint is saved and can now be confirmed by you & your butcher to replace the diagram in custom.html!`);
+}
+
+document.addEventListener('DOMContentLoaded', initShowcase);
+</script>
+
+</body>
+</html>
