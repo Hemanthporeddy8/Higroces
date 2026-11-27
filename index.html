@@ -3120,6 +3120,98 @@ const PRODUCTS = [
     emoji: '🫙',
     category: 'staples'
   },
+  {
+    id: 'sp_shahi_biryani',
+    name: 'Shahi Biryani Whole Spices',
+    desc: 'Star anise, mace, green cardamom, cloves, cinnamon stick.',
+    price: 35,
+    unit: '50g',
+    emoji: '🌿',
+    category: 'staples',
+    badge: 'Chef Choice',
+    badgeClass: 'fresh'
+  },
+  {
+    id: 'sp_desi_ghee',
+    name: 'Pure Cow Desi Ghee Pouch',
+    desc: 'Golden aroma pure ghee for dum layering and frying.',
+    price: 65,
+    unit: '100ml',
+    emoji: '🧈',
+    category: 'dairy'
+  },
+  {
+    id: 'sp_meat_masala',
+    name: 'Master Curry Meat Masala',
+    desc: 'Slow roasted coriander, cumin, black pepper & red chilli.',
+    price: 42,
+    unit: '100g',
+    emoji: '🌶️',
+    category: 'staples'
+  },
+  {
+    id: 'sp_gg_paste',
+    name: 'Fresh Ginger-Garlic Paste',
+    desc: '100% natural, fresh-ground paste with zero vinegar.',
+    price: 25,
+    unit: '100g',
+    emoji: '🧄',
+    category: 'staples'
+  },
+  {
+    id: 'sp_kasuri_methi',
+    name: 'Kasuri Methi (Fenugreek)',
+    desc: 'Sun-dried fenugreek leaves for restaurant-style aroma.',
+    price: 20,
+    unit: '25g',
+    emoji: '🍃',
+    category: 'staples'
+  },
+  {
+    id: 'sp_guntur_masala',
+    name: 'Spicy Guntur Roast Masala',
+    desc: 'Fiery chili & coriander dry rub for pepper fry.',
+    price: 30,
+    unit: '50g',
+    emoji: '🔥',
+    category: 'staples'
+  },
+  {
+    id: 'sp_tandoori_tikka',
+    name: 'Tandoori Tikka Marinade Mix',
+    desc: 'Authentic Kashmiri red chili, mustard oil & ginger spice.',
+    price: 35,
+    unit: '60g',
+    emoji: '🍢',
+    category: 'staples'
+  },
+  {
+    id: 'sp_black_pepper',
+    name: 'Cracked Black Pepper Grinder',
+    desc: 'Freshly crushed Malabar peppercorns.',
+    price: 45,
+    unit: '50g',
+    emoji: '🧂',
+    category: 'staples'
+  },
+  {
+    id: 'sp_mint_coriander',
+    name: 'Fresh Mint & Coriander Bunch',
+    desc: 'Fresh farm-picked herbs for biryani and curries.',
+    price: 20,
+    unit: 'Bunch',
+    emoji: '🌱',
+    category: 'staples'
+  },
+  {
+    id: 'sp_chaat_lemon',
+    name: 'Chaat Masala & Fresh Lemon',
+    desc: 'Tangy seasoning combo for starters and kebabs.',
+    price: 22,
+    unit: 'Combo',
+    emoji: '🍋',
+    category: 'staples'
+  },
 
   // ── TECH & KITCHEN APPLIANCES ──
   {
@@ -3472,7 +3564,15 @@ function getCartItem(id) { return cart.find(i => i.id === id); }
 
 function addToCart(id) {
   const product = PRODUCTS.find(p => p.id === id);
-  if (!product) return;
+  if (!product) {
+    const existing = getCartItem(id);
+    if (existing) {
+      existing.qty++;
+      updateCartBadge();
+      showToast(`🛒 ${existing.name} updated!`);
+    }
+    return;
+  }
   const pricing = getProductPricing(product);
   const existing = getCartItem(id);
   if (existing) {
@@ -3986,7 +4086,7 @@ function renderCartItems() {
         <span class="di-emoji">${item.emoji}</span>
         <div>
           <div class="di-name">${item.name}</div>
-          <div class="di-meta">${item.unit}${item.isCustom ? ' • Custom Cut' : ''}</div>
+          <div class="di-meta">${item.unit}${item.isCustom ? ' • Custom Cut' : ''}${item.isDarkStorePick ? ' • <span style="color:#2ECC71; font-weight:700;">⚡ Dark Store Pick</span>' : ''}</div>
         </div>
       </div>
       <div class="di-right">
@@ -5487,6 +5587,34 @@ window.addEventListener('DOMContentLoaded', () => {
         openCartDrawer();
       }
       localStorage.removeItem('custom_chicken_cuts');
+    }
+
+    // Pick up accompanying recipe spices from Dark Store (custom.html)
+    const rawSpices = localStorage.getItem('custom_recipe_spices');
+    if (rawSpices) {
+      try {
+        const spices = JSON.parse(rawSpices);
+        if (Array.isArray(spices) && spices.length > 0) {
+          spices.forEach(sp => {
+            cart.push({
+              id:       sp.id,
+              name:     sp.name,
+              price:    sp.price,
+              unit:     sp.unit,
+              emoji:    sp.emoji || '🧂',
+              category: 'staples',
+              qty:      1,
+              isDarkStorePick: true,
+              desc:     sp.desc
+            });
+          });
+          updateCartBadge();
+          openCartDrawer();
+        }
+      } catch(err) {
+        console.warn('Failed to parse custom_recipe_spices', err);
+      }
+      localStorage.removeItem('custom_recipe_spices');
     }
   } catch (e) {
     console.error('Failed to load custom cuts:', e);
