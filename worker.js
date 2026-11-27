@@ -685,6 +685,42 @@ let inMemoryButcherRates = {
   updated_at: new Date().toISOString()
 };
 
+// 32 Built-in Indian & Global Culinary Poultry Dishes
+const DEFAULT_CULINARY_DISHES = [
+  { id: "hyderabadi_biryani", name: "Hyderabadi Dum Biryani", category: "Biryani", emoji: "🍲", parts: ["leg_whole_l", "leg_whole_r", "thigh_l", "thigh_r", "back_lower"], piece_size: "Large Dum Cut (65g - 75g)", skinless: true, boneless: false, grams_per_person: 250, tip: "Juicy bone-in dark meat cut into large pieces so they stay succulent during 45 minutes of dum cooking without drying out." },
+  { id: "kolkata_biryani", name: "Lucknowi / Kolkata Biryani", category: "Biryani", emoji: "🍚", parts: ["leg_whole_l", "leg_whole_r", "breast_l"], piece_size: "Extra Large Royal Cut (80g - 90g)", skinless: true, boneless: false, grams_per_person: 250, tip: "Extra large royal cuts with light marbling, cooked gently with aromatics and saffron potatoes." },
+  { id: "butter_chicken", name: "Butter Chicken (Murgh Makhani)", category: "Curry / Gravy", emoji: "🥘", parts: ["breast_l", "breast_r"], piece_size: "Bite-Sized Cubes (25g)", skinless: true, boneless: true, grams_per_person: 200, tip: "100% tender white breast meat cut into boneless tikka cubes that soak up rich butter-tomato gravy." },
+  { id: "homestyle_curry", name: "Classic Homestyle Chicken Curry", category: "Curry / Gravy", emoji: "🍛", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "breast_l", "back_upper"], piece_size: "Medium Curry Cut (40g - 50g)", skinless: true, boneless: false, grams_per_person: 220, tip: "Balanced bone-in mix (dark meat + breast + ribs) providing both meat bites and rich bone marrow flavor in the gravy." },
+  { id: "andhra_spicy_curry", name: "Andhra / Telangana Spicy Kodi Kura", category: "Curry / Gravy", emoji: "🌶️", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "neck", "back_lower"], piece_size: "Medium Chota Cut (35g - 45g)", skinless: false, boneless: false, grams_per_person: 250, tip: "Bone-in cuts allowing fiery Guntur red chilli masala to cling tightly to every piece." },
+  { id: "chettinad_pepper_fry", name: "Chettinad Pepper Chicken Fry", category: "Fry / Dry", emoji: "🍗", parts: ["thigh_l", "thigh_r", "wing_l", "wing_r", "back_lower"], piece_size: "Small Sukka Cut (25g - 30g)", skinless: true, boneless: false, grams_per_person: 200, tip: "Small chota cuts so black pepper, curry leaves, and roasted spices sear fast and coat every surface in the kadai." },
+  { id: "chicken_65", name: "Chicken 65 / Chilli Chicken", category: "Starters / Appetizers", emoji: "🔥", parts: ["breast_l", "breast_r", "thigh_l"], piece_size: "Bite-Sized Popcorn Cut (20g - 25g)", skinless: true, boneless: true, grams_per_person: 180, tip: "Boneless bite-sized cuts that crisp up in 4 minutes of hot oil frying with red chili, ginger, and curry leaves." },
+  { id: "kerala_roast", name: "Kerala Malabar Chicken Roast", category: "Fry / Dry", emoji: "🥥", parts: ["leg_whole_l", "thigh_l", "thigh_r", "back_lower"], piece_size: "Medium Roast Cut (45g - 50g)", skinless: true, boneless: false, grams_per_person: 220, tip: "Juicy bone-in pieces slow-roasted with caramelized shallots, coconut oil, fennel, and curry leaves." },
+  { id: "ghee_roast", name: "Mangalorean Chicken Ghee Roast", category: "Fry / Dry", emoji: "🧈", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "wing_l", "wing_r"], piece_size: "Small-to-Medium (35g - 40g)", skinless: true, boneless: false, grams_per_person: 220, tip: "Bone-in dark meat that absorbs fragrant Byadgi chili paste and aromatic pure ghee without turning dry." },
+  { id: "kolhapuri_chicken", name: "Kolhapuri Chicken (Spicy Rassa)", category: "Curry / Gravy", emoji: "🌋", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "back_upper", "neck"], piece_size: "Medium Curry Cut (40g - 50g)", skinless: true, boneless: false, grams_per_person: 240, tip: "Bone-rich cuts essential for the signature Tambda and Pandhra Rassa broth." },
+  { id: "mughlai_korma", name: "Mughlai Chicken Shahi Korma", category: "Curry / Gravy", emoji: "👑", parts: ["breast_l", "breast_r", "thigh_l", "thigh_r"], piece_size: "Medium Tender Cuts (45g)", skinless: true, boneless: false, grams_per_person: 220, tip: "Prime tender cuts that simmer gently in rich cashew, almond, and yogurt velvet gravy." },
+  { id: "kadai_chicken", name: "Kadai Chicken (Bell Peppers & Wok)", category: "Curry / Gravy", emoji: "🍳", parts: ["thigh_l", "thigh_r", "breast_l", "breast_r"], piece_size: "Medium Cubes (35g - 40g)", skinless: true, boneless: false, grams_per_person: 220, tip: "Semi-dry wok cuts tossed with freshly ground coriander seeds, dry red chillies, and crunchy capsicum." },
+  { id: "chicken_saagwala", name: "Chicken Saagwala (Palak Chicken)", category: "Curry / Gravy", emoji: "🥬", parts: ["breast_l", "breast_r", "thigh_l"], piece_size: "Bite-Sized Boneless Cubes (30g)", skinless: true, boneless: true, grams_per_person: 200, tip: "Lean boneless pieces that stay succulent when simmered in spiced garlic spinach puree." },
+  { id: "bbq_tandoori_whole", name: "Charcoal Whole Tandoori / BBQ", category: "BBQ / Grill", emoji: "🍢", parts: ["leg_whole_l", "leg_whole_r", "breast_l", "breast_r", "wing_l", "wing_r"], piece_size: "Whole Bird with Deep Score Slits", skinless: true, boneless: false, grams_per_person: 350, tip: "Whole dressed chicken with deep knife score cuts across breast and thighs for intense smoke and tandoori penetration." },
+  { id: "spatchcock_bbq", name: "Spatchcock Butterfly BBQ Chicken", category: "BBQ / Grill", emoji: "🔥", parts: ["leg_whole_l", "leg_whole_r", "breast_l", "breast_r", "wing_l", "wing_r"], piece_size: "Spatchcock (Backbone Removed, Flattened)", skinless: false, boneless: false, grams_per_person: 350, tip: "Pressed flat bird allowing uniform charcoal searing on both sides without burning the breast meat." },
+  { id: "pepper_soup_cure", name: "Pepper Chicken Soup / Bone Broth", category: "Soup / Health", emoji: "🥣", parts: ["back_upper", "back_lower", "neck", "wing_l", "wing_r"], piece_size: "Split Bone Cuts", skinless: true, boneless: false, grams_per_person: 250, tip: "High-gelatin, marrow-rich bones and neck pieces that extract maximum immunity-boosting collagen and calcium." },
+  { id: "sweet_corn_soup", name: "Sweet Corn Chicken Soup", category: "Soup / Health", emoji: "🌽", parts: ["breast_l"], piece_size: "Fine Shredded / Minced Fillet", skinless: true, boneless: true, grams_per_person: 100, tip: "Lean tender breast poached and shredded into fine ribbons with creamy sweet corn and egg drop." },
+  { id: "chicken_shawarma", name: "Chicken Shawarma / Gyro Wraps", category: "Starters / Wraps", emoji: "🌯", parts: ["thigh_l", "thigh_r"], piece_size: "Thin Boneless Steaks (Flattened)", skinless: true, boneless: true, grams_per_person: 200, tip: "100% boneless chicken thighs pounded thin; retains maximum moisture on rotating spit or cast-iron skillet." },
+  { id: "popcorn_nuggets", name: "Crispy Popcorn Chicken / Nuggets", category: "Kids Special", emoji: "🍿", parts: ["breast_l", "breast_r"], piece_size: "Mini Bites (15g - 20g)", skinless: true, boneless: true, grams_per_person: 180, tip: "Bite-sized soft breast nuggets coated in seasoned breadcrumbs or panko for kid-friendly crunch." },
+  { id: "chicken_keema", name: "Chicken Keema (Minced Meat)", category: "Curry / Gravy", emoji: "🥙", parts: ["breast_l", "thigh_l", "thigh_r"], piece_size: "Coarse Machine Mince", skinless: true, boneless: true, grams_per_person: 200, tip: "70% lean breast + 30% juicy thigh mince; ideal for Keema Pav, samosas, and stuffed parathas." },
+  { id: "pan_seared_gym", name: "Pan-Seared Breast (Gym / Diet Meal Prep)", category: "Diet / Gym", emoji: "💪", parts: ["breast_l", "breast_r"], piece_size: "Whole Fillet (Butterfly Cut)", skinless: true, boneless: true, grams_per_person: 250, tip: "Zero fat, 31g protein per 100g. Clean butterfly cuts that cook in 6 minutes on olive oil pan." },
+  { id: "kfc_drumsticks", name: "Crispy Fried Drumsticks (KFC Style)", category: "Starters / Appetizers", emoji: "🍗", parts: ["leg_l", "leg_r"], piece_size: "Whole Drumstick with Ankle Knick", skinless: false, boneless: false, grams_per_person: 250, tip: "Bone-in whole drumsticks with skin intact for ultra-crispy batter adhesion and juicy interior." },
+  { id: "tangdi_kebab", name: "Tangdi Kebab (Tandoori Drumsticks)", category: "Starters / Appetizers", emoji: "🍢", parts: ["leg_l", "leg_r"], piece_size: "Deep Slit Drumstick", skinless: true, boneless: false, grams_per_person: 250, tip: "Skinless drumsticks with deep score cuts along the bone, marinated in hung curd and tandoori spices." },
+  { id: "hot_wings", name: "Hot Buffalo / BBQ Glazed Wings", category: "Starters / Appetizers", emoji: "🪽", parts: ["wing_l", "wing_r"], piece_size: "Split Drumette & Flat (Wingette)", skinless: false, boneless: false, grams_per_person: 250, tip: "Split wing flats and drumettes; skin-on for golden crackling and sauce glazing." },
+  { id: "bengali_jhol", name: "Bengali Murghir Jhol (with Potato)", category: "Curry / Gravy", emoji: "🥔", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "back_upper"], piece_size: "Medium-Large Bone-In (50g)", skinless: true, boneless: false, grams_per_person: 240, tip: "Light, soupy, golden turmeric gravy with whole fried potatoes and bone-in rustic cuts." },
+  { id: "dhaba_style", name: "Punjabi Highway Dhaba Chicken", category: "Curry / Gravy", emoji: "🚚", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "breast_l", "back_lower"], piece_size: "Rustic Curry Cut (45g - 50g)", skinless: true, boneless: false, grams_per_person: 240, tip: "Robust bone-in cuts seared in mustard oil with coarse pounded coriander and chunky onion gravy." },
+  { id: "chicken_lollipop", name: "Chicken Lollipop (Indo-Chinese)", category: "Starters / Appetizers", emoji: "🍭", parts: ["wing_l", "wing_r"], piece_size: "Frenched Wing Drumette", skinless: true, boneless: false, grams_per_person: 200, tip: "Frenched wing bone where meat is pushed to one end to form a neat handheld lollipop." },
+  { id: "offal_pepper_fry", name: "Chicken Liver & Gizzard Pepper Fry", category: "Specialty / Offal", emoji: "🫀", parts: ["neck"], piece_size: "Bite Sized (20g)", skinless: true, boneless: true, grams_per_person: 150, tip: "Iron-rich liver, gizzards, and heart pan-fried with curry leaves, crushed shallots, and black pepper." },
+  { id: "sunday_herb_roast", name: "Sunday Whole Herb Butter Roast", category: "BBQ / Grill", emoji: "🌿", parts: ["leg_whole_l", "leg_whole_r", "breast_l", "breast_r", "wing_l", "wing_r"], piece_size: "Whole Trussed Bird", skinless: false, boneless: false, grams_per_person: 350, tip: "Skin-on whole bird with garlic rosemary butter tucked beneath the skin for golden crisp crackling." },
+  { id: "malai_kebab", name: "Chicken Malai / Reshmi Kebab", category: "Starters / Appetizers", emoji: "🍶", parts: ["breast_l", "breast_r", "thigh_l"], piece_size: "Bite-Sized Tender Cubes (25g)", skinless: true, boneless: true, grams_per_person: 200, tip: "Silky melt-in-mouth boneless cubes marinated in heavy malai, green cardamom, cheese, and cashew paste." },
+  { id: "kundapur_curry", name: "Kundapur / Udupi Koli Saaru", category: "Curry / Gravy", emoji: "🥥", parts: ["thigh_l", "thigh_r", "leg_l", "leg_r", "back_upper", "back_lower"], piece_size: "Medium Curry Cut (40g)", skinless: true, boneless: false, grams_per_person: 230, tip: "Traditional coastal Karnataka curry cooked with freshly ground roasted coconut and Kundapur spices." },
+  { id: "chicken_steak", name: "Grilled Chicken Steak with Herbs", category: "Continental / Diet", emoji: "🥩", parts: ["breast_l", "breast_r"], piece_size: "Flattened Breast Steak (220g)", skinless: true, boneless: true, grams_per_person: 220, tip: "Prime boneless breast fillet lightly tenderized and grilled with herb butter and cracked black pepper." }
+];
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -761,6 +797,85 @@ export default {
           }), { headers: corsHeaders(request) });
         } catch(err) {
           return new Response(JSON.stringify({ error: err.message }), { status: 400, headers: corsHeaders(request) });
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // API: /api/culinary/dishes (Admin Extensible Dish Recipes Engine)
+    // ═══════════════════════════════════════════════════════════════
+    if (url.pathname === "/api/culinary/dishes") {
+      // GET: Returns all 32+ culinary dishes (Built-in + Admin custom)
+      if (request.method === "GET") {
+        try {
+          let customDishes = [];
+          if (env.DB) {
+            const row = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'custom_culinary_dishes'").first();
+            if (row && row.value) {
+              try { customDishes = JSON.parse(row.value); } catch(e) {}
+            }
+          }
+          const allDishes = [...DEFAULT_CULINARY_DISHES, ...customDishes];
+          return new Response(JSON.stringify({ success: true, dishes: allDishes }), {
+            headers: corsHeaders(request)
+          });
+        } catch(err) {
+          return new Response(JSON.stringify({ success: true, dishes: DEFAULT_CULINARY_DISHES }), {
+            headers: corsHeaders(request)
+          });
+        }
+      }
+
+      // POST: Admin adds a new custom dish
+      if (request.method === "POST") {
+        try {
+          const adminAuth = await verifyAdminAuth(request, env);
+          if (!adminAuth && request.headers.get('X-Admin-Key') !== ADMIN_SECRET_KEY) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Admin authorization required" }), { status: 401, headers: corsHeaders(request) });
+          }
+
+          const body = await request.json();
+          const { name, category, emoji, parts, piece_size, skinless, boneless, grams_per_person, tip } = body;
+
+          if (!name || !parts || !Array.isArray(parts) || parts.length === 0) {
+            return new Response(JSON.stringify({ error: "Dish Name and at least one recommended cut are required." }), { status: 400, headers: corsHeaders(request) });
+          }
+
+          const newDish = {
+            id: 'dish_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+            name: String(name).trim(),
+            category: (category || 'Specialty').trim(),
+            emoji: emoji || '🍗',
+            parts: parts,
+            piece_size: (piece_size || 'Medium Cut (40g)').trim(),
+            skinless: !!skinless,
+            boneless: !!boneless,
+            grams_per_person: Number(grams_per_person) || 220,
+            tip: (tip || 'Fresh artisan cut for signature cooking.').trim(),
+            created_at: new Date().toISOString()
+          };
+
+          let customDishes = [];
+          const existingRow = await env.DB.prepare("SELECT value FROM system_settings WHERE key = 'custom_culinary_dishes'").first();
+          if (existingRow && existingRow.value) {
+            try { customDishes = JSON.parse(existingRow.value); } catch(e) {}
+          }
+
+          customDishes.push(newDish);
+
+          await env.DB.prepare(`
+            INSERT INTO system_settings (key, value) VALUES ('custom_culinary_dishes', ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+          `).bind(JSON.stringify(customDishes)).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            message: "New dish recipe added successfully!",
+            dish: newDish,
+            totalDishes: DEFAULT_CULINARY_DISHES.length + customDishes.length
+          }), { status: 201, headers: corsHeaders(request) });
+        } catch(err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders(request) });
         }
       }
     }

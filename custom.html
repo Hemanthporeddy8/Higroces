@@ -780,6 +780,56 @@ body {
     <!-- BUTCHER AVAILABILITY NOTICE BANNER (In Butcher Mode Only) -->
     <div id="butcherHubNotice" style="display:none;"></div>
 
+    <!-- 👨‍🍳 CULINARY CHEF ASSISTANT (AMAZON-STYLE GUIDED DISH BOT) -->
+    <div class="chef-assistant-card" id="chefAssistantCard" style="background:#FFFFFF; border:1.5px solid #C8A87A; border-radius:12px; padding:12px; margin-bottom:14px; box-shadow:0 4px 14px rgba(90,48,24,0.08);">
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleChefAssistant()">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">👨‍🍳</span>
+          <div>
+            <div style="font-weight:800; font-size:0.85rem; color:#1E1006;">Culinary Butcher Guide</div>
+            <div style="font-size:0.7rem; color:#5A3018;">Not sure what to carve? Pick your dish</div>
+          </div>
+        </div>
+        <span id="chefAssistantArrow" style="font-size:0.85rem; font-weight:800; color:#8A5830; transition:transform 0.2s;">▾</span>
+      </div>
+
+      <div id="chefAssistantBody" style="margin-top:10px; display:none;">
+        <!-- Step 1: Dish Dropdown -->
+        <label style="font-size:0.68rem; font-weight:700; color:#5A3018; text-transform:uppercase; display:block; margin-bottom:4px;">1. Select What You're Cooking</label>
+        <select id="chefDishSelect" onchange="onChefDishSelected()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #C8A87A; font-family:'Outfit', sans-serif; font-size:0.82rem; font-weight:600; background:#FAF4EC; color:#1E1006; margin-bottom:10px; cursor:pointer;">
+          <option value="">-- Choose from 30+ Dishes --</option>
+          <!-- Populated by JS -->
+        </select>
+
+        <!-- Step 2: Servings Stepper -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; background:#F2E6D6; padding:6px 10px; border-radius:8px;">
+          <span style="font-size:0.72rem; font-weight:700; color:#1E1006;">2. People Eating:</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" onclick="adjustChefPeople(-1)" style="width:24px; height:24px; border-radius:4px; border:1px solid #C8A87A; background:#FAF4EC; font-weight:800; cursor:pointer;">−</button>
+            <span id="chefPeopleCount" style="font-family:'DM Mono', monospace; font-weight:800; font-size:0.85rem; min-width:28px; text-align:center;">4</span>
+            <button type="button" onclick="adjustChefPeople(1)" style="width:24px; height:24px; border-radius:4px; border:1px solid #C8A87A; background:#FAF4EC; font-weight:800; cursor:pointer;">+</button>
+          </div>
+        </div>
+
+        <!-- Recipe Recommendation Output Card -->
+        <div id="chefRecipeOutput" style="display:none; background:#FAF4EC; border:1px solid #E0CEB5; border-radius:8px; padding:10px; margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+            <span id="chefDishTitle" style="font-weight:800; font-size:0.85rem; color:#0C513F;">🍲 Hyderabadi Biryani</span>
+            <span id="chefRecWeight" style="font-family:'DM Mono', monospace; font-weight:800; font-size:0.82rem; color:#E04D1E;">1000g</span>
+          </div>
+          <div style="font-size:0.72rem; color:#5A3018; margin-bottom:4px;">
+            <strong>🔪 Piece Size:</strong> <span id="chefPieceSize" style="color:#0C513F; font-weight:700;">Large (70g)</span>
+          </div>
+          <div style="font-size:0.7rem; color:#8A5830; line-height:1.35; margin-bottom:8px;" id="chefTipText">
+            Juicy dark meat cuts that stay tender inside dum rice.
+          </div>
+          <button type="button" onclick="applyChefRecommendation()" style="width:100%; background:#0C513F; color:white; border:none; padding:8px; border-radius:6px; font-weight:700; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span>✨</span> Apply to Carcass &amp; Carve
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="scale-container" id="scaleTerminalContainer">
       <div class="scale-header-bar">
         <div class="scale-title-info">
@@ -3491,6 +3541,124 @@ window.goBackToStorefront = function() {
   window.location.href = 'index.html';
 };
 
+// ==========================================
+// CULINARY CHEF ASSISTANT (AMAZON BOT STYLE)
+// ==========================================
+let allCulinaryDishes = [];
+let currentChefPeople = 4;
+let activeChefDish = null;
+
+window.toggleChefAssistant = function() {
+  const body = document.getElementById('chefAssistantBody');
+  const arrow = document.getElementById('chefAssistantArrow');
+  if (!body) return;
+  const isHidden = body.style.display === 'none' || body.style.display === '';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  if (isHidden && allCulinaryDishes.length === 0) {
+    loadCulinaryDishes();
+  }
+};
+
+async function loadCulinaryDishes() {
+  try {
+    const res = await fetch('/api/culinary/dishes');
+    const data = await res.json();
+    if (data.dishes && data.dishes.length > 0) {
+      allCulinaryDishes = data.dishes;
+      populateChefDishesSelect();
+    }
+  } catch(e) {
+    console.warn("Could not load culinary dishes:", e);
+  }
+}
+
+function populateChefDishesSelect() {
+  const select = document.getElementById('chefDishSelect');
+  if (!select) return;
+
+  const categories = {};
+  allCulinaryDishes.forEach(d => {
+    const cat = d.category || 'Specialty';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(d);
+  });
+
+  let html = '<option value="">-- Choose from 30+ Dishes --</option>';
+  for (const cat in categories) {
+    html += `<optgroup label="── ${cat} ──">`;
+    categories[cat].forEach(d => {
+      html += `<option value="${d.id}">${d.emoji} ${d.name}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+  select.innerHTML = html;
+}
+
+window.adjustChefPeople = function(delta) {
+  currentChefPeople = Math.max(1, Math.min(12, currentChefPeople + delta));
+  const el = document.getElementById('chefPeopleCount');
+  if (el) el.textContent = currentChefPeople;
+  if (activeChefDish) updateChefOutput();
+};
+
+window.onChefDishSelected = function() {
+  const select = document.getElementById('chefDishSelect');
+  const dishId = select ? select.value : '';
+  activeChefDish = allCulinaryDishes.find(d => d.id === dishId) || null;
+  updateChefOutput();
+};
+
+function updateChefOutput() {
+  const output = document.getElementById('chefRecipeOutput');
+  if (!activeChefDish) {
+    if (output) output.style.display = 'none';
+    return;
+  }
+  if (output) output.style.display = 'block';
+
+  const totalGrams = (activeChefDish.grams_per_person || 220) * currentChefPeople;
+  document.getElementById('chefDishTitle').textContent = `${activeChefDish.emoji} ${activeChefDish.name}`;
+  document.getElementById('chefRecWeight').textContent = `~${totalGrams}g (${(totalGrams/1000).toFixed(2)} kg)`;
+  document.getElementById('chefPieceSize').textContent = activeChefDish.piece_size;
+  document.getElementById('chefTipText').textContent = activeChefDish.tip;
+}
+
+window.applyChefRecommendation = function() {
+  if (!activeChefDish) return;
+  const totalGrams = (activeChefDish.grams_per_person || 220) * currentChefPeople;
+
+  // 1. Set Boneless & Skinless checkboxes
+  const cbB = document.getElementById('checkBoneless');
+  const cbS = document.getElementById('checkSkinless');
+  if (cbB) { cbB.checked = !!activeChefDish.boneless; toggleMeatOption('boneless'); }
+  if (cbS) { cbS.checked = !!activeChefDish.skinless; toggleMeatOption('skinless'); }
+
+  // 2. Select primary recommended part
+  const primaryPart = activeChefDish.parts[0] || 'breast_l';
+  inspectPart(primaryPart);
+  setPartScaleWeight(totalGrams);
+
+  // 3. Highlight recommended parts on the carcass
+  document.querySelectorAll('.cut-part').forEach(p => p.classList.remove('selected-part'));
+  activeChefDish.parts.forEach(partId => {
+    const el = document.getElementById(`el-chicken-${partId}`);
+    if (el) el.classList.add('selected-part');
+  });
+
+  // 4. Update scale display label
+  const partNameEl = document.getElementById('scalePartName');
+  const partSubEl = document.getElementById('scalePartSub');
+  if (partNameEl) partNameEl.textContent = `${activeChefDish.name} Cut`;
+  if (partSubEl) partSubEl.textContent = `Size: ${activeChefDish.piece_size} (${currentChefPeople} People)`;
+
+  // 5. Scroll scale into view
+  const scaleEl = document.getElementById('scaleTerminalContainer');
+  if (scaleEl) scaleEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  alert(`👨‍🍳 Chef Recipe Applied!\n\nDish: ${activeChefDish.name}\nRecommended Meat: ~${totalGrams}g for ${currentChefPeople} people\nPiece Size: ${activeChefDish.piece_size}\n\nClick "+ Add Cut to Order" to carve!`);
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   // Show chicken by default
@@ -3506,6 +3674,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check if an active butcher hub is nearby for custom cuts
   checkButcherShopAvailability();
+
+  // Pre-load 30+ culinary dishes
+  loadCulinaryDishes();
 });
 
 </script>
