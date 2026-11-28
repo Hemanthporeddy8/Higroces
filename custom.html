@@ -2259,8 +2259,19 @@ function updateAdjustedScaleWeight() {
       const estPrice = Math.round(adjusted * ppg);
       priceEl.textContent = `₹${estPrice}`;
       if (harvestBtn) {
-        harvestBtn.innerHTML = `➕ Add ${info.name} (${adjusted}g • ₹${estPrice})`;
+        if (window.isScheduledMorningOrder) {
+          harvestBtn.innerHTML = `📅 Add ${info.name} (${adjusted}g • ₹${estPrice}) to Morning Order`;
+        } else {
+          harvestBtn.innerHTML = `➕ Add ${info.name} (${adjusted}g • ₹${estPrice})`;
+        }
       }
+    }
+  } else if (!currentScalePartId && harvestBtn) {
+    if (priceEl) priceEl.textContent = '₹0';
+    if (window.isScheduledMorningOrder || window.isButcherShopAvailable === false) {
+      harvestBtn.innerHTML = '📅 Choose Cuts &amp; Pre-Book Morning';
+    } else {
+      harvestBtn.innerHTML = '➕ Choose Cut on Chicken';
     }
   }
 }
@@ -2354,15 +2365,20 @@ function addCutToSession(partId, name, weight, price, emoji, size = 'Medium') {
 
 function harvestSelectedPart() {
   if (window.isButcherShopAvailable === false && !window.isScheduledMorningOrder) {
-    if (confirm("🌙 Instant 15-min carving is currently offline in this area.\n\nWould you like to pre-book this custom cut for Tomorrow Morning Delivery (6:30 AM – 7:30 AM) when our master butchers open?")) {
-      if (typeof enableMorningScheduleMode === 'function') enableMorningScheduleMode();
-    } else {
+    if (typeof openMorningPrebookModal === 'function') {
+      openMorningPrebookModal();
       return;
     }
   }
 
   if (!currentScalePartId) {
-    alert("Please select a part of the chicken to cut & harvest!");
+    if (window.isScheduledMorningOrder || window.isButcherShopAvailable === false) {
+      if (typeof openMorningPrebookModal === 'function') {
+        openMorningPrebookModal();
+        return;
+      }
+    }
+    alert("Please tap a part on the chicken carcass (or choose a recipe from the Culinary Guide above) to select your cut!");
     return;
   }
 
@@ -3424,11 +3440,16 @@ window.enableMorningScheduleMode = function() {
   if (noticeEl) {
     noticeEl.innerHTML = `
       <div style="background:#E8F5E9; border:1.5px solid #A5D6A7; border-radius:10px; padding:10px 12px; margin-bottom:14px; font-family:'Outfit', sans-serif;">
-        <div style="display:flex; align-items:center; gap:8px; color:#1B5E20; font-weight:800; font-size:0.85rem;">
-          <span>✅</span> Pre-Booking for Tomorrow Morning (6:30 AM – 7:30 AM)
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px; color:#1B5E20; font-weight:800; font-size:0.85rem;">
+            <span>✅</span> Pre-Booking for Tomorrow Morning (6:30 – 7:30 AM)
+          </div>
+          <button type="button" onclick="openMorningPrebookModal()" style="background:#1B5E20; color:white; border:none; border-radius:4px; font-size:0.7rem; font-weight:700; padding:4px 8px; cursor:pointer;">
+            Select Cuts 📦
+          </button>
         </div>
         <div style="color:#2E7D32; font-size:0.75rem; margin-top:3px; line-height:1.35;">
-          Carve your cuts freely! Our master butcher will slaughter a fresh bird and carve these exact cuts tomorrow morning upon opening.
+          Carve custom pieces freely on the 3D carcass, or click 'Select Cuts' to choose Biryani/Curry cut packs for morning delivery.
         </div>
       </div>
     `;
@@ -3439,9 +3460,39 @@ window.enableMorningScheduleMode = function() {
     harvestBtn.style.background = '#2ECC71';
     harvestBtn.style.color = '#081A12';
     harvestBtn.style.cursor = 'pointer';
-    harvestBtn.innerHTML = '📅 Add Cut (Morning Scheduled Delivery)';
+    if (currentScalePartId) {
+      updateAdjustedScaleWeight();
+    } else {
+      harvestBtn.innerHTML = '📅 Choose Cuts &amp; Pre-Book Morning';
+    }
   }
 };
+
+function resetScaleTerminal() {
+  currentScalePartId = null;
+  baseScaleWeight = 500;
+  const partNameEl = document.getElementById('scalePartName');
+  const partSubEl = document.getElementById('scalePartSub');
+  const priceEl = document.getElementById('scalePriceTag');
+  const harvestBtn = document.getElementById('btnHarvestSelect');
+  const display = document.getElementById('weightDisplay');
+  const kgEl = document.getElementById('weightKgDisplay');
+
+  if (partNameEl) partNameEl.textContent = 'Select a Cut';
+  if (partSubEl) partSubEl.textContent = 'Tap any part or choose a dish from guide';
+  if (priceEl) priceEl.textContent = '₹0';
+  if (display) display.textContent = '0';
+  if (kgEl) kgEl.textContent = '0.00 kg';
+  if (harvestBtn) {
+    if (window.isScheduledMorningOrder || window.isButcherShopAvailable === false) {
+      harvestBtn.innerHTML = '📅 Choose Cuts &amp; Pre-Book Morning';
+      harvestBtn.style.background = '#0C513F';
+      harvestBtn.style.color = '#FFFFFF';
+    } else {
+      harvestBtn.innerHTML = '➕ Choose Cut on Chicken';
+    }
+  }
+}
 
 async function checkButcherShopAvailability() {
   try {
@@ -3522,31 +3573,33 @@ async function checkButcherShopAvailability() {
         noticeEl.innerHTML = `
           <div style="background:#FFF8E7; border:1.5px solid #F5D77F; border-radius:10px; padding:12px; margin-bottom:14px; font-family:'Outfit', sans-serif;">
             <div style="display:flex; align-items:center; gap:8px; color:#B7791F; font-weight:800; font-size:0.88rem;">
-              <span style="font-size:1.1rem;">🌙</span> Instant Carving Offline — Pre-Book Morning Cut
+              <span style="font-size:1.1rem;">🌙</span> Instant 15-Min Carving Offline (Reopens 6:00 AM)
             </div>
             <div style="color:#744210; font-size:0.78rem; margin-top:5px; line-height:1.4;">
-              Our master butchers carve fresh birds starting from 6:00 AM daily. Pre-order your custom cuts now for tomorrow morning delivery (6:30 AM – 7:30 AM)!
+              Our master butchers slaughter fresh birds and carve daily from 6:00 AM. Choose your desired cuts to pre-book for tomorrow morning delivery (6:30 AM – 7:30 AM)!
             </div>
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" onclick="enableMorningScheduleMode()" style="background:#0C513F; color:#fff; font-size:0.75rem; font-weight:700; padding:6px 12px; border-radius:6px; border:none; cursor:pointer;">
-                📅 Pre-Book for Morning (6:30 - 7:30 AM)
+              <button type="button" onclick="openMorningPrebookModal()" style="background:#0C513F; color:#fff; font-size:0.78rem; font-weight:700; padding:8px 14px; border-radius:6px; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(12,81,63,0.3);">
+                <span>📅</span> Select Cuts &amp; Pre-Book Morning
               </button>
-              <a href="index.html" style="display:inline-block; background:white; color:#0C513F; border:1px solid #0C513F; font-size:0.75rem; font-weight:700; padding:5px 12px; border-radius:6px; text-decoration:none;">
+              <a href="index.html" style="display:inline-block; background:white; color:#0C513F; border:1px solid #0C513F; font-size:0.75rem; font-weight:700; padding:7px 12px; border-radius:6px; text-decoration:none;">
                 ← Order Store Pre-Packs
               </a>
             </div>
           </div>
         `;
       }
-      if (harvestBtn) {
+      if (harvestBtn && !currentScalePartId) {
         harvestBtn.style.background = '#0C513F';
-        harvestBtn.innerHTML = '📅 Pre-Book for Morning Delivery';
+        harvestBtn.style.color = '#FFFFFF';
+        harvestBtn.innerHTML = '📅 Choose Cuts &amp; Pre-Book Morning';
       }
     } else if (noticeEl && !window.isScheduledMorningOrder) {
       noticeEl.style.display = 'none';
-      if (harvestBtn) {
+      if (harvestBtn && !currentScalePartId) {
         harvestBtn.style.background = '#2ECC71';
         harvestBtn.style.color = '#081A12';
+        harvestBtn.innerHTML = '➕ Choose Cut on Chicken';
       }
     }
   } catch(e) {
@@ -3556,15 +3609,16 @@ async function checkButcherShopAvailability() {
 
 window.saveCustomCutsToCart = function() {
   if (window.isButcherShopAvailable === false && !window.isScheduledMorningOrder) {
-    if (confirm("🌙 Instant 15-min carving is currently offline in this location.\n\nWould you like to pre-book this custom cut for Tomorrow Morning Delivery (6:30 AM – 7:30 AM)?")) {
-      enableMorningScheduleMode();
-    } else {
-      return;
-    }
+    openMorningPrebookModal();
+    return;
   }
 
   if (sessionCuts.length === 0) {
-    alert("You haven't carved any cuts yet. Choose 'Knife Cut' to carve parts!");
+    if (window.isScheduledMorningOrder || window.isButcherShopAvailable === false) {
+      openMorningPrebookModal();
+    } else {
+      alert("You haven't carved any cuts yet. Tap a part on the chicken or choose a dish from the guide to carve!");
+    }
     return;
   }
   try {
@@ -3911,8 +3965,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initOffalBox();
   setupSVGInteractions();
   renderQuickSelectSidebar();
-  inspectPart('breast_l');
-  setPartScaleWeight(500);
+  resetScaleTerminal();
 
   // Check if an active butcher hub is nearby for custom cuts
   checkButcherShopAvailability();
@@ -3921,6 +3974,150 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCulinaryDishes();
 });
 
+// ==========================================
+// GUIDED MORNING PRE-BOOKING MODAL CONTROLLER
+// ==========================================
+let prebookCutType = 'curry';
+let prebookCutTitle = 'Classic Curry Cut';
+let prebookCutEmoji = '🍛';
+let prebookPieceSize = 'Medium (35-45g)';
+let prebookWeightGrams = 1000;
+let prebookIsSkinless = true;
+let prebookIsBoneless = false;
+
+window.openMorningPrebookModal = function() {
+  const modal = document.getElementById('morningPrebookModal');
+  if (modal) modal.style.display = 'flex';
+  updatePrebookPrice();
+};
+
+window.closeMorningPrebookModal = function() {
+  const modal = document.getElementById('morningPrebookModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.selectPrebookCut = function(type, title, emoji, pieceSize, el) {
+  prebookCutType = type;
+  prebookCutTitle = title;
+  prebookCutEmoji = emoji;
+  prebookPieceSize = pieceSize;
+  prebookIsBoneless = (type === 'boneless');
+
+  document.querySelectorAll('.prebook-cut-card').forEach(c => {
+    c.style.border = '1px solid #D5C2AA';
+    c.classList.remove('active');
+  });
+  if (el) {
+    el.style.border = '2px solid #0C513F';
+    el.classList.add('active');
+  }
+
+  const pieceSelect = document.getElementById('prebookPieceSelect');
+  if (pieceSelect) {
+    if (type === 'biryani') pieceSelect.value = 'Large (70-80g)';
+    else if (type === 'boneless') pieceSelect.value = 'Medium (35-45g)';
+    else if (type === 'whole') pieceSelect.value = 'Medium (35-45g)';
+    else pieceSelect.value = 'Medium (35-45g)';
+  }
+
+  updatePrebookPrice();
+};
+
+window.setPrebookWeight = function(grams, el) {
+  prebookWeightGrams = grams;
+  document.querySelectorAll('.btn-prebook-weight').forEach(b => {
+    b.style.background = 'white';
+    b.style.color = '#1C2826';
+    b.style.borderColor = '#C8A87A';
+    b.classList.remove('active');
+  });
+  if (el) {
+    el.style.background = '#0C513F';
+    el.style.color = 'white';
+    el.style.borderColor = '#0C513F';
+    el.classList.add('active');
+  }
+  const label = document.getElementById('prebookWeightLabel');
+  if (label) label.textContent = `${grams}g (${(grams/1000).toFixed(2)} kg)`;
+  updatePrebookPrice();
+};
+
+window.setPrebookSkin = function(skinless) {
+  prebookIsSkinless = skinless;
+  const btnLess = document.getElementById('btnSkinless');
+  const btnOn = document.getElementById('btnSkinOn');
+  if (btnLess && btnOn) {
+    if (skinless) {
+      btnLess.style.background = '#0C513F';
+      btnLess.style.color = 'white';
+      btnOn.style.background = '#FAF4EC';
+      btnOn.style.color = '#5A3018';
+    } else {
+      btnOn.style.background = '#0C513F';
+      btnOn.style.color = 'white';
+      btnLess.style.background = '#FAF4EC';
+      btnLess.style.color = '#5A3018';
+    }
+  }
+  updatePrebookPrice();
+};
+
+function updatePrebookPrice() {
+  const baseRate = window.baseChickenRatePerKg || 280;
+  let multiplier = 1.0;
+  if (prebookIsBoneless) multiplier = 1.35;
+
+  const price = Math.round((baseRate * (prebookWeightGrams / 1000)) * multiplier);
+  const display = document.getElementById('prebookPriceDisplay');
+  if (display) display.textContent = `₹${price}`;
+  return price;
+}
+
+window.switchPrebookTo3DCarving = function() {
+  closeMorningPrebookModal();
+  enableMorningScheduleMode();
+  alert("🔪 Interactive Carving Mode Activated!\n\nTap parts directly on the 3D bird to carve custom anatomy for tomorrow morning (6:30 - 7:30 AM).");
+};
+
+window.confirmMorningPrebookOrder = function() {
+  const finalPrice = updatePrebookPrice();
+  const notesInput = document.getElementById('prebookNotesInput');
+  const pieceSelect = document.getElementById('prebookPieceSelect');
+  const pieceSize = pieceSelect ? pieceSelect.value : prebookPieceSize;
+  const notes = notesInput ? notesInput.value.trim() : '';
+
+  const prebookItem = {
+    id: 'cut_morning_' + Date.now(),
+    name: `${prebookCutTitle} (${prebookIsSkinless ? 'Skinless' : 'Skin-on'})`,
+    size: pieceSize,
+    weight: prebookWeightGrams,
+    price: finalPrice,
+    emoji: prebookCutEmoji,
+    skinless: prebookIsSkinless,
+    boneless: prebookIsBoneless,
+    notes: notes,
+    isCustom: true,
+    isScheduled: true
+  };
+
+  sessionCuts = [prebookItem];
+  window.isScheduledMorningOrder = true;
+  window.isButcherShopAvailable = true;
+
+  try {
+    localStorage.setItem('custom_chicken_cuts', JSON.stringify(sessionCuts));
+    if (typeof selectedRecipeSpices !== 'undefined' && selectedRecipeSpices.length > 0) {
+      localStorage.setItem('custom_recipe_spices', JSON.stringify(selectedRecipeSpices));
+    }
+    localStorage.setItem('scheduled_delivery_slot', '6:30 AM - 7:30 AM');
+    localStorage.setItem('scheduled_order_type', 'scheduled');
+  } catch(e) {
+    console.error("Storage write error", e);
+  }
+
+  closeMorningPrebookModal();
+  window.location.href = 'index.html';
+};
 </script>
 
 <!-- CHICKEN LEG BUTCHERY CHOICE MODAL -->
@@ -3949,6 +4146,140 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 
     <button type="button" onclick="closeLegCutModal()" style="background:none; border:none; color:#7F8C8D; font-size:0.8rem; font-weight:600; cursor:pointer; padding:6px 12px;">Cancel</button>
+  </div>
+</div>
+
+<!-- GUIDED MORNING PRE-BOOKING MODAL -->
+<div class="order-modal-bg" id="morningPrebookModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:16px; overflow-y:auto;">
+  <div style="background:#FAF4EC; border:2px solid #C8A87A; border-radius:16px; max-width:560px; width:100%; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.5); font-family:'Outfit', sans-serif; color:#1C2826;">
+    
+    <!-- Modal Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid #E0CEB5; padding-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:2rem;">📅</span>
+        <div>
+          <h2 style="font-family:'Playfair Display', serif; font-size:1.35rem; color:#1E1006; margin:0;">Pre-Book Morning Slaughter</h2>
+          <div style="font-size:0.78rem; color:#6B8076; margin-top:2px;">Delivered fresh to doorstep: <strong>Tomorrow 6:30 AM – 7:30 AM</strong></div>
+        </div>
+      </div>
+      <button type="button" onclick="closeMorningPrebookModal()" style="background:none; border:none; color:#8A5830; font-size:1.6rem; cursor:pointer; line-height:1;">&times;</button>
+    </div>
+
+    <!-- Step 1: Cut Style Selection -->
+    <div style="margin-bottom:14px;">
+      <label style="font-size:0.75rem; font-weight:800; color:#5A3018; text-transform:uppercase; display:block; margin-bottom:6px;">
+        1. Select Desired Butchery Cut
+      </label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;" id="prebookCutGrid">
+        <div class="prebook-cut-card active" onclick="selectPrebookCut('curry', 'Classic Curry Cut', '🍗', 'Medium Cut (35-45g)', this)" style="background:#FFFFFF; border:2px solid #0C513F; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🍛</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#0C513F;">Curry Cut</div>
+          </div>
+          <div style="font-size:0.68rem; color:#606C66; margin-top:3px;">Medium pieces, bone-in mix with drumstick, breast &amp; marrow bones.</div>
+        </div>
+
+        <div class="prebook-cut-card" onclick="selectPrebookCut('biryani', 'Dum Biryani Cut', '🍲', 'Large Cut (70-80g)', this)" style="background:#FFFFFF; border:1px solid #D5C2AA; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🍲</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#1E1006;">Biryani Cut</div>
+          </div>
+          <div style="font-size:0.68rem; color:#606C66; margin-top:3px;">Large juicy dark meat cuts (thighs &amp; legs) that stay tender in dum rice.</div>
+        </div>
+
+        <div class="prebook-cut-card" onclick="selectPrebookCut('whole', 'Whole Dressed Chicken', '🐔', 'Whole Bird Cut', this)" style="background:#FFFFFF; border:1px solid #D5C2AA; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🐔</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#1E1006;">Whole Bird</div>
+          </div>
+          <div style="font-size:0.68rem; color:#606C66; margin-top:3px;">Cleaned whole chicken with cavity washed. Best for roast, BBQ, or carving at home.</div>
+        </div>
+
+        <div class="prebook-cut-card" onclick="selectPrebookCut('boneless', 'Boneless Breast Cubes', '🥩', 'Bite-sized (25g)', this)" style="background:#FFFFFF; border:1px solid #D5C2AA; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🥩</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#1E1006;">Boneless Cubes</div>
+          </div>
+          <div style="font-size:0.68rem; color:#606C66; margin-top:3px;">100% white breast meat, zero bones or skin. High protein gym meal prep.</div>
+        </div>
+
+        <div class="prebook-cut-card" onclick="selectPrebookCut('legs', 'Tandoori Whole Legs', '🍢', 'Whole Leg with Slits', this)" style="background:#FFFFFF; border:1px solid #D5C2AA; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🍢</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#1E1006;">Whole Legs</div>
+          </div>
+          <div style="font-size:0.68rem; color:#606C66; margin-top:3px;">Intact drumstick + thigh with deep score cuts along bone for marination.</div>
+        </div>
+
+        <div class="prebook-cut-card" onclick="switchPrebookTo3DCarving()" style="background:#FFF9EB; border:1px dashed #C8A87A; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.2s;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.3rem;">🔪</span>
+            <div style="font-weight:800; font-size:0.85rem; color:#B7791F;">Custom 3D Bird</div>
+          </div>
+          <div style="font-size:0.68rem; color:#744210; margin-top:3px;">Pick individual wings, thighs, necks, or breast on the 3D carcass.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Weight Selection -->
+    <div style="margin-bottom:14px; background:#F2E6D6; padding:12px; border-radius:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="font-size:0.75rem; font-weight:800; color:#5A3018; text-transform:uppercase;">
+          2. Desired Quantity
+        </label>
+        <span style="font-family:'DM Mono', monospace; font-size:1.05rem; font-weight:800; color:#0C513F;" id="prebookWeightLabel">1000g (1.00 kg)</span>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        <button type="button" class="btn-prebook-weight" onclick="setPrebookWeight(500, this)" style="flex:1; background:white; color:#1C2826; border:1px solid #C8A87A; padding:7px; border-radius:6px; font-weight:700; font-size:0.82rem; cursor:pointer;">500g</button>
+        <button type="button" class="btn-prebook-weight active" onclick="setPrebookWeight(1000, this)" style="flex:1; background:#0C513F; color:white; border:1px solid #0C513F; padding:7px; border-radius:6px; font-weight:800; font-size:0.82rem; cursor:pointer;">1 kg ⭐</button>
+        <button type="button" class="btn-prebook-weight" onclick="setPrebookWeight(1500, this)" style="flex:1; background:white; color:#1C2826; border:1px solid #C8A87A; padding:7px; border-radius:6px; font-weight:700; font-size:0.82rem; cursor:pointer;">1.5 kg</button>
+        <button type="button" class="btn-prebook-weight" onclick="setPrebookWeight(2000, this)" style="flex:1; background:white; color:#1C2826; border:1px solid #C8A87A; padding:7px; border-radius:6px; font-weight:700; font-size:0.82rem; cursor:pointer;">2 kg</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Preparation Preferences -->
+    <div style="margin-bottom:14px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div style="background:white; border:1px solid #E0CEB5; border-radius:8px; padding:10px;">
+        <div style="font-size:0.7rem; font-weight:700; color:#5A3018; margin-bottom:6px;">Skin Preference:</div>
+        <div style="display:flex; gap:6px;">
+          <button type="button" id="btnSkinless" onclick="setPrebookSkin(true)" style="flex:1; background:#0C513F; color:white; border:none; padding:6px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer;">Skinless</button>
+          <button type="button" id="btnSkinOn" onclick="setPrebookSkin(false)" style="flex:1; background:#FAF4EC; color:#5A3018; border:1px solid #C8A87A; padding:6px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer;">Skin-on</button>
+        </div>
+      </div>
+
+      <div style="background:white; border:1px solid #E0CEB5; border-radius:8px; padding:10px;">
+        <div style="font-size:0.7rem; font-weight:700; color:#5A3018; margin-bottom:6px;">Piece Size:</div>
+        <select id="prebookPieceSelect" onchange="updatePrebookPrice()" style="width:100%; padding:6px 8px; border-radius:4px; border:1px solid #C8A87A; font-family:'Outfit', sans-serif; font-size:0.8rem; font-weight:600; background:#FAF4EC; color:#1E1006; outline:none; cursor:pointer;">
+          <option value="Medium (35-45g)">Medium Cut (Standard)</option>
+          <option value="Small (25-30g)">Small Chota Cut (Fry)</option>
+          <option value="Large (70-80g)">Large Dum Cut (Biryani)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notes for Master Butcher -->
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.7rem; font-weight:700; color:#5A3018; display:block; margin-bottom:4px;">
+        Special Butcher Instructions (Optional):
+      </label>
+      <input type="text" id="prebookNotesInput" placeholder="e.g. Wash clean with turmeric, keep liver &amp; heart separate..." style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #C8A87A; font-family:'Outfit', sans-serif; font-size:0.82rem; background:white; color:#1E1006; outline:none;" />
+    </div>
+
+    <!-- Live Bill & Confirmation Action -->
+    <div style="background:#0C513F; color:white; border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div>
+        <div style="font-size:0.7rem; color:#A2D9CE; text-transform:uppercase; font-weight:700;">Morning Delivery Slot:</div>
+        <div style="font-size:0.88rem; font-weight:800;">🌅 6:30 AM – 7:30 AM (Fresh Slaughter)</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.7rem; color:#A2D9CE; text-transform:uppercase; font-weight:700;">Total Estimate:</div>
+        <div style="font-family:'DM Mono', monospace; font-size:1.35rem; font-weight:800; color:#FFB74D;" id="prebookPriceDisplay">₹280</div>
+      </div>
+    </div>
+
+    <button type="button" onclick="confirmMorningPrebookOrder()" style="width:100%; background:#2ECC71; color:#081A12; border:none; padding:12px; border-radius:10px; font-weight:800; font-size:0.95rem; cursor:pointer; font-family:'Outfit', sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(46,204,113,0.35);">
+      <span>📅</span> Confirm &amp; Pre-Book Morning Cut
+    </button>
   </div>
 </div>
 
